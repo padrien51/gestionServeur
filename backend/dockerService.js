@@ -25,11 +25,19 @@ async function startContainer(id) {
 
 async function stopContainer(id) {
     const container = docker.getContainer(id);
+    const info = await container.inspect();
+    if (info.Name.includes('gestion_serveur')) {
+        throw new Error("Opération non autorisée : Vous ne pouvez pas arrêter le gestionnaire lui-même !");
+    }
     await container.stop();
 }
 
 async function restartContainer(id) {
     const container = docker.getContainer(id);
+    const info = await container.inspect();
+    if (info.Name.includes('gestion_serveur')) {
+        throw new Error("Opération non autorisée : Le redémarrage du gestionnaire est désactivé depuis l'interface.");
+    }
     await container.restart();
 }
 

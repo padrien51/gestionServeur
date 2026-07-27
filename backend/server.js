@@ -15,6 +15,7 @@ app.use(express.json());
 const authenticate = (req, res, next) => {
     // Lecture dans l'en-tête, ou en querystring (pour Server-Sent Events car EventSource ne gère pas les headers)
     const clientPwd = req.headers['x-api-password'] || req.query.pwd;
+    console.log(`[AUTH] req to ${req.path} | received: "${clientPwd}" | expected: "${process.env.APP_PASSWORD}"`);
     if (process.env.APP_PASSWORD && clientPwd !== process.env.APP_PASSWORD) {
         // En développement local sans mdp, on peut laisser passer
         if (process.env.NODE_ENV === 'production') {

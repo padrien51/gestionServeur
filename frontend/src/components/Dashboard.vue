@@ -66,7 +66,22 @@ const fetchContainers = async () => {
     const res = await fetch(`${API_BASE}/docker/containers`, getFetchOptions());
     if (res.status === 401) return handleUnauthorized();
     if (!res.ok) throw new Error('Erreur conteneurs');
-    containers.value = await res.json();
+    
+    const newContainers = await res.json();
+    
+    // On conserve les informations de mise à jour pour éviter qu'elles ne disparaissent
+    for (const nc of newContainers) {
+       const oc = containers.value.find(c => c.id === nc.id);
+       if (oc && oc.hasUpdate !== undefined) {
+          nc.hasUpdate = oc.hasUpdate;
+          nc.currentVersion = oc.currentVersion;
+          nc.newVersion = oc.newVersion;
+          nc.hasBreakingChanges = oc.hasBreakingChanges;
+          nc.isUpdatableViaUI = oc.isUpdatableViaUI;
+       }
+    }
+    
+    containers.value = newContainers;
   } catch (err) {
     error.value = "Impossible de charger les conteneurs.";
     console.error(err);

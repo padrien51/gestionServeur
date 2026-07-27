@@ -9,9 +9,14 @@ const error = ref(null);
 
 const API_BASE = '/api'; // Chemin relatif pour fonctionner avec le backend Express
 
+const fetchOptions = {
+  headers: { 'x-api-password': localStorage.getItem('app_pwd') || '' }
+};
+
 const fetchMetrics = async () => {
   try {
-    const res = await fetch(`${API_BASE}/system/metrics`);
+    const res = await fetch(`${API_BASE}/system/metrics`, fetchOptions);
+    if (res.status === 401) throw new Error('Non autorisé - Mot de passe incorrect');
     if (!res.ok) throw new Error('Erreur métriques');
     metrics.value = await res.json();
   } catch (err) {
@@ -21,7 +26,8 @@ const fetchMetrics = async () => {
 
 const fetchContainers = async () => {
   try {
-    const res = await fetch(`${API_BASE}/docker/containers`);
+    const res = await fetch(`${API_BASE}/docker/containers`, fetchOptions);
+    if (res.status === 401) throw new Error('Non autorisé - Mot de passe incorrect');
     if (!res.ok) throw new Error('Erreur conteneurs');
     containers.value = await res.json();
   } catch (err) {
@@ -37,7 +43,11 @@ const refreshData = async () => {
 
 const handleContainerAction = async ({ id, action }) => {
   try {
-    const res = await fetch(`${API_BASE}/docker/containers/${id}/${action}`, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/docker/containers/${id}/${action}`, { 
+      method: 'POST',
+      ...fetchOptions
+    });
+    if (res.status === 401) throw new Error('Non autorisé - Mot de passe incorrect');
     if (!res.ok) throw new Error(`Erreur lors de l'action ${action}`);
     // Rafraîchir après une petite pause pour laisser le temps au démon Docker
     setTimeout(refreshData, 1000);

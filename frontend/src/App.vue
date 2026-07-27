@@ -1,6 +1,16 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import Dashboard from './components/Dashboard.vue';
+
+onMounted(() => {
+  if (!localStorage.getItem('app_pwd')) {
+    const pwd = prompt("Veuillez entrer le mot de passe (défaut: admin) :");
+    if (pwd) {
+      localStorage.setItem('app_pwd', pwd);
+      window.location.reload();
+    }
+  }
+});
 // Placeholder components for other tabs
 const Updates = { template: '<div class="p-4"><h2 class="text-xl font-bold mb-4">Mises à jour</h2><p class="text-gray-400">À venir (Module 2 & 3)...</p></div>' };
 const Backups = { template: '<div class="p-4"><h2 class="text-xl font-bold mb-4">Sauvegardes</h2><p class="text-gray-400">À venir (Module 5 & 6)...</p></div>' };

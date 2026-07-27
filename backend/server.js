@@ -25,7 +25,8 @@ const authenticate = (req, res, next) => {
     next();
 };
 
-app.use(authenticate);
+// Appliquer l'authentification uniquement sur les routes de l'API
+app.use('/api', authenticate);
 
 // Servir les fichiers statiques du frontend (dossier public)
 const path = require('path');

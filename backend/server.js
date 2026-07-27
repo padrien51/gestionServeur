@@ -31,6 +31,32 @@ const authenticate = (req, res, next) => {
 app.use('/api', authenticate);
 
 // --- ROUTES UPDATES ---
+app.post('/api/docker/containers/:id/:action', async (req, res) => {
+    const { id, action } = req.params;
+    try {
+        if (action === 'start') await dockerService.startContainer(id);
+        else if (action === 'stop') await dockerService.stopContainer(id);
+        else if (action === 'restart') await dockerService.restartContainer(id);
+        else return res.status(400).json({ error: "Action inconnue" });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/docker/projects/:name/:action', async (req, res) => {
+    const { name, action } = req.params;
+    try {
+        if (!['start', 'stop', 'restart'].includes(action)) {
+            return res.status(400).json({ error: "Action inconnue" });
+        }
+        await dockerService.handleProjectAction(name, action);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/updates/os', async (req, res) => {
     const info = await updateService.getOSUpdates();
     res.json(info);

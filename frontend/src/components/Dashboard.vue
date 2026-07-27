@@ -90,6 +90,26 @@ const handleContainerAction = async ({ id, action }) => {
   }
 };
 
+const handleProjectAction = async (projectName, action) => {
+  try {
+    // Petit message visuel pour patienter (on pourrait faire un loader plus propre)
+    const verb = action === 'start' ? 'Démarrage' : action === 'stop' ? 'Arrêt' : 'Redémarrage';
+    console.log(`${verb} de l'application ${projectName}...`);
+    
+    const res = await fetch(`${API_BASE}/docker/projects/${projectName}/${action}`, { 
+      method: 'POST',
+      ...getFetchOptions()
+    });
+    if (res.status === 401) return handleUnauthorized();
+    if (!res.ok) throw new Error(`Erreur lors de l'action ${action} sur le projet`);
+    
+    // Rafraîchir après une petite pause
+    setTimeout(refreshData, 1500);
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
 const isPruning = ref(false);
 
 const pruneDocker = async () => {
@@ -256,13 +276,29 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         <div v-if="viewMode === 'apps'" class="space-y-6">
           <div v-for="app in groupedApps" :key="app.name" class="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden shadow-sm">
             <!-- En-tête de l'application -->
-            <div class="bg-slate-800 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
+            <div class="bg-slate-800 px-4 py-3 border-b border-slate-700 flex justify-between items-center flex-wrap gap-2">
               <h3 class="font-bold text-slate-200 flex items-center text-lg">
                 <span class="mr-2">📂</span> {{ app.name }}
               </h3>
-              <span class="text-xs bg-slate-900 text-slate-400 px-2.5 py-1 rounded-md border border-slate-700">
-                {{ app.containers.length }} conteneur(s)
-              </span>
+              
+              <div class="flex items-center gap-2">
+                <span class="text-xs bg-slate-900 text-slate-400 px-2.5 py-1 rounded-md border border-slate-700 hidden sm:inline-block">
+                  {{ app.containers.length }} conteneur(s)
+                </span>
+                
+                <!-- Boutons d'actions pour le projet entier -->
+                <div class="flex bg-slate-900 border border-slate-700 rounded-md overflow-hidden" v-if="app.name !== 'gestion_serveur'">
+                  <button @click="handleProjectAction(app.name, 'start')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-emerald-400 transition-colors" title="Démarrer l'application">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </button>
+                  <button @click="handleProjectAction(app.name, 'restart')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-blue-400 transition-colors border-l border-slate-700" title="Redémarrer l'application">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                  </button>
+                  <button @click="handleProjectAction(app.name, 'stop')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-red-400 transition-colors border-l border-slate-700" title="Arrêter l'application">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+                  </button>
+                </div>
+              </div>
             </div>
             <!-- Liste des conteneurs de l'app -->
             <div class="p-3 space-y-3">

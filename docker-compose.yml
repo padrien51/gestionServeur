@@ -1,10 +1,10 @@
 services:
   app:
-    build: .
+    image: ghcr.io/padrien51/gestionserveur:latest
     container_name: gestion_serveur
     restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "8183:8080"
     env_file:
       - .env
     environment:

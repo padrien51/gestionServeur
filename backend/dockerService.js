@@ -68,6 +68,29 @@ async function pruneSystem() {
     }
 }
 
+async function handleProjectAction(projectName, action) {
+    const containers = await getContainers();
+    const projectContainers = containers.filter(c => c.project === projectName);
+    
+    if (projectContainers.length === 0) {
+        throw new Error(`Aucun conteneur trouvé pour le projet ${projectName}`);
+    }
+
+    for (const c of projectContainers) {
+        try {
+            if (action === 'start' && c.state !== 'running') {
+                await startContainer(c.id);
+            } else if (action === 'stop' && c.state === 'running') {
+                await stopContainer(c.id);
+            } else if (action === 'restart') {
+                await restartContainer(c.id);
+            }
+        } catch (err) {
+            console.error(`Erreur sur le conteneur ${c.name} :`, err.message);
+        }
+    }
+}
+
 // Récupérer toutes les applications (regroupement par projet Docker Compose)
 async function getApplications() {
     const containers = await docker.listContainers({ all: true });
@@ -78,7 +101,6 @@ async function getApplications() {
         const projectName = labels['com.docker.compose.project'];
         const workingDir = labels['com.docker.compose.project.working_dir'];
 
-        // Si le conteneur n'appartient pas à un projet compose, on peut l'ignorer ou le classer en "standalone"
         if (projectName && workingDir) {
             if (!appsMap[projectName]) {
                 appsMap[projectName] = {
@@ -105,5 +127,6 @@ module.exports = {
     stopContainer,
     restartContainer,
     pruneSystem,
-    getApplications
+    getApplications,
+    handleProjectAction
 };

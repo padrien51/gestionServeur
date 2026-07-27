@@ -1,6 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 
+import { useModal } from '../composables/useModal';
+
+const { showAlert } = useModal();
+
 const API_BASE = '/api';
 
 const getFetchOptions = () => ({
@@ -44,7 +48,7 @@ const saveSettings = async () => {
     saveSuccess.value = true;
     setTimeout(() => saveSuccess.value = false, 3000);
   } catch (e) {
-    alert(e.message);
+    showAlert("Erreur", e.message);
   } finally {
     isSaving.value = false;
   }

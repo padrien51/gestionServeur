@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard.vue';
 import Updates from './components/Updates.vue';
 import Backups from './components/Backups.vue';
 import Settings from './components/Settings.vue';
+import AppModal from './components/AppModal.vue';
 
 const currentTab = ref('dashboard');
 const isAuth = ref(false);
@@ -80,6 +81,9 @@ const logout = () => {
         <Settings v-else-if="currentTab === 'settings'" />
       </transition>
     </main>
+    
+    <!-- Modale Globale -->
+    <AppModal />
   </div>
 </template>
 

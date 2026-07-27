@@ -8,6 +8,10 @@ const props = defineProps({
   }
 });
 
+import { useModal } from '../composables/useModal';
+
+const { showConfirm } = useModal();
+
 const emit = defineEmits(['action', 'view-logs']);
 
 const isUp = computed(() => props.container.state === 'running');
@@ -16,9 +20,14 @@ const statusColor = computed(() => {
   return isUp.value ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]';
 });
 
-const handleAction = (action) => {
-  // Confirmation simple pour le moment (plus tard on pourra utiliser un swipe-to-confirm)
-  if (confirm(`Voulez-vous vraiment ${action} le conteneur ${props.container.name} ?`)) {
+const handleAction = async (action) => {
+  const verb = action === 'start' ? 'démarrer' : action === 'stop' ? 'arrêter' : 'redémarrer';
+  const isConfirmed = await showConfirm(
+    "Confirmation",
+    `Voulez-vous vraiment ${verb} le conteneur ${props.container.name} ?`
+  );
+  
+  if (isConfirmed) {
     emit('action', { id: props.container.id, action });
   }
 };

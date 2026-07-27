@@ -86,6 +86,9 @@ const toggleAppSelection = (appName) => {
   }
 };
 
+import { useModal } from '../composables/useModal';
+const { showAlert, showConfirm } = useModal();
+
 const saveJob = async () => {
   try {
     const method = editingId.value ? 'PUT' : 'POST';
@@ -102,7 +105,7 @@ const saveJob = async () => {
     showForm.value = false;
     await fetchJobs();
   } catch (e) {
-    alert(e.message);
+    showAlert("Erreur", e.message);
   }
 };
 
@@ -115,12 +118,17 @@ const toggleJob = async (job) => {
     });
     await fetchJobs();
   } catch (e) {
-    alert(e.message);
+    showAlert("Erreur", e.message);
   }
 };
 
 const deleteJob = async (id) => {
-  if (!confirm("Voulez-vous vraiment supprimer cette tâche de sauvegarde ?")) return;
+  const isConfirmed = await showConfirm(
+    "Confirmation de suppression", 
+    "Voulez-vous vraiment supprimer cette tâche de sauvegarde ?"
+  );
+  if (!isConfirmed) return;
+  
   try {
     await fetch(`${API_BASE}/backups/${id}`, {
       method: 'DELETE',
@@ -128,22 +136,27 @@ const deleteJob = async (id) => {
     });
     await fetchJobs();
   } catch (e) {
-    alert(e.message);
+    showAlert("Erreur", e.message);
   }
 };
 
 const triggerJob = async (id) => {
-  if (!confirm("Lancer cette sauvegarde immédiatement ? Les applications associées seront redémarrées.")) return;
+  const isConfirmed = await showConfirm(
+    "Lancement manuel",
+    "Lancer cette sauvegarde immédiatement ? Les applications associées seront arrêtées puis redémarrées."
+  );
+  if (!isConfirmed) return;
+  
   try {
     await fetch(`${API_BASE}/backups/${id}/trigger`, {
       method: 'POST',
       headers: getFetchOptions().headers
     });
-    alert("Sauvegarde lancée en arrière-plan ! Vérifiez les logs d'ici quelques minutes.");
+    showAlert("Succès", "Sauvegarde lancée en arrière-plan ! Vérifiez les logs d'ici quelques minutes.");
     activeTab.value = 'logs';
     fetchLogs();
   } catch (e) {
-    alert(e.message);
+    showAlert("Erreur", e.message);
   }
 };
 

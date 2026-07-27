@@ -1,5 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useModal } from '../composables/useModal';
+
+const { showConfirm, showAlert } = useModal();
 
 const API_BASE = '/api';
 
@@ -39,37 +42,41 @@ const checkDockerUpdates = async () => {
 };
 
 const applyUpdate = async (container) => {
-  if (container.isBreaking) {
-    if (!confirm(`⚠️ ATTENTION : Des Breaking Changes ont été détectés pour ${container.name}.\nLisez bien le changelog avant de continuer. Voulez-vous vraiment forcer la mise à jour ?`)) {
-      return;
-    }
+  if (container.hasBreakingChanges) {
+    const isConfirmed = await showConfirm(
+      "Breaking Changes",
+      `⚠️ ATTENTION : Des Breaking Changes ont été détectés pour ${container.name}.\nLisez bien le changelog avant de continuer. Voulez-vous vraiment forcer la mise à jour ?`
+    );
+    if (!isConfirmed) return;
   } else {
-    if (!confirm(`Voulez-vous lancer la mise à jour de ${container.name} (v.${container.currentVersion} -> v.${container.newVersion}) ?`)) {
-      return;
-    }
+    const isConfirmed = await showConfirm(
+      "Mise à jour",
+      `Voulez-vous lancer la mise à jour de ${container.name} (v.${container.currentVersion} -> v.${container.newVersion}) ?`
+    );
+    if (!isConfirmed) return;
   }
 
   updatingContainer.value = container.name;
-  updateMessage.value = `Lancement de Watchtower pour ${container.name}...`;
-
   try {
     const res = await fetch(`${API_BASE}/updates/docker/apply/${container.name}`, {
       method: 'POST',
       ...getFetchOptions()
     });
-    const data = await res.json();
-    if (res.ok) {
-      updateMessage.value = data.message || `Mise à jour terminée.`;
-      setTimeout(() => { updateMessage.value = ''; }, 5000);
-    } else {
-      throw new Error(data.error || "Erreur serveur");
+    
+    if (res.status === 401) {
+      localStorage.removeItem('app_pwd');
+      window.location.reload();
+      return;
     }
+    
+    if (!res.ok) throw new Error(await res.text());
+    
+    await showAlert("Succès", `La mise à jour de ${container.name} a été effectuée avec succès !`);
+    checkDockerUpdates();
   } catch (err) {
-    alert("Erreur lors de la mise à jour : " + err.message);
-    updateMessage.value = '';
+    showAlert("Erreur", "Erreur lors de la mise à jour : " + err.message);
   } finally {
     updatingContainer.value = null;
-    checkDockerUpdates();
   }
 };
 

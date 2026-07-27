@@ -2,6 +2,9 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import ContainerCard from './ContainerCard.vue';
 import LogViewer from './LogViewer.vue';
+import { useModal } from '../composables/useModal';
+
+const { showConfirm, showAlert } = useModal();
 
 const metrics = ref({ cpuLoad: 0, memUsed: 0, memTotal: 1, diskUsed: 0, diskTotal: 1 });
 const containers = ref([]);
@@ -86,13 +89,12 @@ const handleContainerAction = async ({ id, action }) => {
     // Rafraîchir après une petite pause pour laisser le temps au démon Docker
     setTimeout(refreshData, 1000);
   } catch (err) {
-    alert(err.message);
+    showAlert("Erreur", err.message);
   }
 };
 
 const handleProjectAction = async (projectName, action) => {
   try {
-    // Petit message visuel pour patienter (on pourrait faire un loader plus propre)
     const verb = action === 'start' ? 'Démarrage' : action === 'stop' ? 'Arrêt' : 'Redémarrage';
     console.log(`${verb} de l'application ${projectName}...`);
     
@@ -103,19 +105,21 @@ const handleProjectAction = async (projectName, action) => {
     if (res.status === 401) return handleUnauthorized();
     if (!res.ok) throw new Error(`Erreur lors de l'action ${action} sur le projet`);
     
-    // Rafraîchir après une petite pause
     setTimeout(refreshData, 1500);
   } catch (err) {
-    alert(err.message);
+    showAlert("Erreur", err.message);
   }
 };
 
 const isPruning = ref(false);
 
 const pruneDocker = async () => {
-  if (!confirm("⚠️ ATTENTION : Cela va supprimer TOUS les conteneurs arrêtés, les réseaux non utilisés, les volumes orphelins, et les images non tagguées (dangling). Voulez-vous continuer ?")) {
-    return;
-  }
+  const isConfirmed = await showConfirm(
+    "Nettoyage du système",
+    "⚠️ ATTENTION : Cela va supprimer TOUS les conteneurs arrêtés, les réseaux non utilisés, les volumes orphelins, et les images non tagguées (dangling).\n\nVoulez-vous continuer ?"
+  );
+  
+  if (!isConfirmed) return;
   
   isPruning.value = true;
   try {
@@ -128,11 +132,11 @@ const pruneDocker = async () => {
     
     const data = await res.json();
     if (data.success) {
-      alert(`Nettoyage terminé avec succès ! 🎉\n\nEspace libéré : ${formatBytes(data.spaceReclaimed)}`);
+      await showAlert("Nettoyage terminé", `Le nettoyage s'est terminé avec succès ! 🎉\n\nEspace libéré : ${formatBytes(data.spaceReclaimed)}`);
       refreshData();
     }
   } catch (err) {
-    alert("Erreur : " + err.message);
+    showAlert("Erreur", err.message);
   } finally {
     isPruning.value = false;
   }

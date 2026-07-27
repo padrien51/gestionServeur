@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard.vue';
 import Updates from './components/Updates.vue';
 import Backups from './components/Backups.vue';
 import Settings from './components/Settings.vue';
+import Profile from './components/Profile.vue';
 import AppModal from './components/AppModal.vue';
 
 // Vues d'authentification
@@ -109,7 +110,19 @@ const logout = () => {
           <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
           <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
           <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Paramètres</button>
-          <button @click="logout" class="px-4 py-2 rounded-md text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-900/30 transition-all whitespace-nowrap ml-auto sm:ml-2 border border-transparent hover:border-red-800/50">Déconnexion</button>
+          
+          <div class="flex items-center ml-auto sm:ml-2 pl-2 sm:pl-2 border-l border-slate-700">
+            <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="p-2 mr-1 rounded-md text-sm transition-all" title="Mon Compte">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <button @click="logout" class="p-2 rounded-md text-sm text-red-400 hover:text-red-300 hover:bg-red-900/30 transition-all border border-transparent hover:border-red-800/50" title="Déconnexion">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
         </nav>
       </div>
     </header>
@@ -121,6 +134,7 @@ const logout = () => {
         <Updates v-else-if="currentTab === 'updates'" />
         <Backups v-else-if="currentTab === 'backups'" />
         <Settings v-else-if="currentTab === 'settings'" />
+        <Profile v-else-if="currentTab === 'profile'" />
       </transition>
     </main>
     

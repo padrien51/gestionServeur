@@ -155,6 +155,16 @@ async function deleteUser(id) {
     return { success: true, message: 'Utilisateur supprimé.' };
 }
 
+// Changement d'email (pour utilisateur connecté)
+async function changeEmail(userId, newEmail) {
+    const rows = await getQuery(`SELECT id FROM users WHERE email = ?`, [newEmail]);
+    if (rows.length > 0 && rows[0].id !== userId) {
+        throw new Error('Cet email est déjà utilisé par un autre compte.');
+    }
+    await runQuery(`UPDATE users SET email = ? WHERE id = ?`, [newEmail, userId]);
+    return { success: true, message: 'Email mis à jour avec succès.', email: newEmail };
+}
+
 module.exports = {
     isSetupNeeded,
     setupAccount,
@@ -162,6 +172,7 @@ module.exports = {
     requestPasswordReset,
     resetPassword,
     changePassword,
+    changeEmail,
     verifyToken,
     getUsers,
     addUser,

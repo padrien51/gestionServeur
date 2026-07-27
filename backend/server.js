@@ -102,6 +102,16 @@ app.post('/api/auth/change-password', async (req, res) => {
     }
 });
 
+app.post('/api/auth/change-email', async (req, res) => {
+    try {
+        const { newEmail } = req.body;
+        const result = await authService.changeEmail(req.user.id, newEmail);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 // --- ROUTES GESTION UTILISATEURS ---
 app.get('/api/users', async (req, res) => {
     try {

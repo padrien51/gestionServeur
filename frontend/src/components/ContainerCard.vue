@@ -8,7 +8,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['action']);
+const emit = defineEmits(['action', 'view-logs']);
 
 const isUp = computed(() => props.container.state === 'running');
 
@@ -41,6 +41,9 @@ const handleAction = (action) => {
       
       <!-- Actions -->
       <div class="flex space-x-2">
+        <button @click="$emit('view-logs', container)" class="p-2 rounded-lg bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 transition-colors" title="Voir les logs">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+        </button>
         <button v-if="!isUp" @click="handleAction('start')" class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors" title="Démarrer">
           ▶️
         </button>

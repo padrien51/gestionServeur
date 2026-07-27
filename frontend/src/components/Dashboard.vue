@@ -1,11 +1,20 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import ContainerCard from './ContainerCard.vue';
+import LogViewer from './LogViewer.vue';
 
 const metrics = ref({ cpuLoad: 0, memUsed: 0, memTotal: 1, diskUsed: 0, diskTotal: 1 });
 const containers = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const activeLogContainer = ref(null);
+
+const openLogs = (container) => {
+  activeLogContainer.value = {
+    id: container.id,
+    name: container.name
+  };
+};
 
 const API_BASE = '/api'; // Chemin relatif pour fonctionner avec le backend Express
 
@@ -161,11 +170,19 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
           :key="container.id" 
           :container="container"
           @action="handleContainerAction"
+          @view-logs="openLogs"
         />
         <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
           Aucun conteneur trouvé.
         </div>
       </div>
     </section>
+
+    <!-- Composant des logs en direct -->
+    <LogViewer 
+      :container-id="activeLogContainer?.id"
+      :container-name="activeLogContainer?.name"
+      @close="activeLogContainer = null"
+    />
   </div>
 </template>

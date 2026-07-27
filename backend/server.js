@@ -13,9 +13,8 @@ app.use(express.json());
 
 // Middleware d'authentification basique
 const authenticate = (req, res, next) => {
-    // A implémenter plus tard avec un token ou une session
-    // Pour l'instant on laisse ouvert pour le dev, ou on vérifie un header x-api-key
-    const clientPwd = req.headers['x-api-password'];
+    // Lecture dans l'en-tête, ou en querystring (pour Server-Sent Events car EventSource ne gère pas les headers)
+    const clientPwd = req.headers['x-api-password'] || req.query.pwd;
     if (process.env.APP_PASSWORD && clientPwd !== process.env.APP_PASSWORD) {
         // En développement local sans mdp, on peut laisser passer
         if (process.env.NODE_ENV === 'production') {
@@ -76,6 +75,44 @@ app.post('/api/docker/containers/:id/restart', async (req, res) => {
         res.json({ message: 'Conteneur redémarré' });
     } catch (error) {
         res.status(500).json({ error: 'Erreur au redémarrage: ' + error.message });
+    }
+});
+
+app.get('/api/docker/containers/:id/logs', async (req, res) => {
+    // Configurer la connexion Server-Sent Events (SSE)
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    try {
+        const Docker = require('dockerode');
+        const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+        const container = docker.getContainer(req.params.id);
+        
+        // Obtenir le flux de logs (stdout/stderr), les 100 dernières lignes, puis follow
+        const logStream = await container.logs({
+            follow: true,
+            stdout: true,
+            stderr: true,
+            tail: 100
+        });
+
+        logStream.on('data', (chunk) => {
+            // Docker logs format : les 8 premiers octets contiennent le header (type de flux, taille)
+            // Pour simplifier l'envoi, on extrait la payload en string (en ignorant les 8 premiers octets)
+            // Mais la méthode propre est d'utiliser docker-modem ou un parser, on va tricher en envoyant le texte brut et le frontend le parsera.
+            
+            // On envoie le chunk brut encodé en base64 pour éviter les problèmes de caractères
+            res.write(`data: ${chunk.toString('base64')}\n\n`);
+        });
+
+        req.on('close', () => {
+            logStream.destroy();
+        });
+    } catch (error) {
+        res.write(`event: error\ndata: ${error.message}\n\n`);
+        res.end();
     }
 });
 

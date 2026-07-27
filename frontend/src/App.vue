@@ -2,15 +2,22 @@
 import { ref, onMounted } from 'vue';
 import Dashboard from './components/Dashboard.vue';
 
+const isAuthenticated = ref(false);
+const passwordInput = ref('');
+
 onMounted(() => {
-  if (!localStorage.getItem('app_pwd')) {
-    const pwd = prompt("Veuillez entrer le mot de passe (défaut: admin) :");
-    if (pwd) {
-      localStorage.setItem('app_pwd', pwd);
-      window.location.reload();
-    }
+  if (localStorage.getItem('app_pwd')) {
+    isAuthenticated.value = true;
   }
 });
+
+const login = () => {
+  if (passwordInput.value) {
+    localStorage.setItem('app_pwd', passwordInput.value);
+    isAuthenticated.value = true;
+    window.location.reload(); // Pour forcer le rechargement des requêtes initiales
+  }
+};
 // Placeholder components for other tabs
 const Updates = { template: '<div class="p-4"><h2 class="text-xl font-bold mb-4">Mises à jour</h2><p class="text-gray-400">À venir (Module 2 & 3)...</p></div>' };
 const Backups = { template: '<div class="p-4"><h2 class="text-xl font-bold mb-4">Sauvegardes</h2><p class="text-gray-400">À venir (Module 5 & 6)...</p></div>' };
@@ -27,7 +34,35 @@ const currentTab = ref(tabs[0]);
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-slate-900 text-white overflow-hidden pb-16">
+  <!-- Écran de connexion -->
+  <div v-if="!isAuthenticated" class="h-screen flex items-center justify-center bg-slate-900 text-white p-4">
+    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-sm">
+      <div class="text-center mb-8">
+        <div class="text-4xl mb-4">🔐</div>
+        <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
+          Connexion au Serveur
+        </h1>
+        <p class="text-slate-400 text-sm mt-2">Veuillez entrer le mot de passe d'administration</p>
+      </div>
+      <form @submit.prevent="login" class="space-y-4">
+        <div>
+          <input 
+            type="password" 
+            v-model="passwordInput" 
+            placeholder="Mot de passe" 
+            class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+            required
+          >
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-400 hover:to-teal-400 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all transform active:scale-95">
+          Se connecter
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Principale -->
+  <div v-else class="h-screen flex flex-col bg-slate-900 text-white overflow-hidden pb-16">
     <!-- Header -->
     <header class="bg-slate-800 p-4 shadow-md z-10 flex items-center justify-between">
       <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">

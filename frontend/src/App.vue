@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import Dashboard from './components/Dashboard.vue';
+import Updates from './components/Updates.vue';
 
 const isAuthenticated = ref(false);
 const passwordInput = ref('');
@@ -19,7 +20,6 @@ const login = () => {
   }
 };
 // Placeholder components for other tabs
-const Updates = { template: '<div class="p-4"><h2 class="text-xl font-bold mb-4">Mises à jour</h2><p class="text-gray-400">À venir (Module 2 & 3)...</p></div>' };
 const Backups = { template: '<div class="p-4"><h2 class="text-xl font-bold mb-4">Sauvegardes</h2><p class="text-gray-400">À venir (Module 5 & 6)...</p></div>' };
 const Settings = { template: '<div class="p-4"><h2 class="text-xl font-bold mb-4">Paramètres</h2><p class="text-gray-400">À venir (Module 7)...</p></div>' };
 

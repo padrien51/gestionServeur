@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { getContainers, startContainer, stopContainer, restartContainer } = require('./dockerService');
 const { getSystemMetrics } = require('./systemService');
+const updateService = require('./updateService');
 require('./db'); // Initialise DB
 
 const app = express();
@@ -27,6 +28,21 @@ const authenticate = (req, res, next) => {
 
 // Appliquer l'authentification uniquement sur les routes de l'API
 app.use('/api', authenticate);
+
+// --- ROUTES UPDATES ---
+app.get('/api/updates/os', async (req, res) => {
+    const info = await updateService.getOSUpdates();
+    res.json(info);
+});
+
+app.post('/api/updates/docker/apply/:name', async (req, res) => {
+    try {
+        const result = await updateService.applyDockerUpdate(req.params.name);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // Servir les fichiers statiques du frontend (dossier public)
 const path = require('path');

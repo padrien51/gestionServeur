@@ -1,0 +1,25 @@
+services:
+  app:
+    build: .
+    container_name: gestion_serveur_dev
+    restart: unless-stopped
+    ports:
+      - "8183:8080"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      # Montage pour la configuration dynamique SQLite
+      - ./data:/app/data
+      # Montage pour la lecture des MAJ OS (spécifique Debian/Ubuntu)
+      - /var/lib/update-notifier:/host/update-notifier:ro
+      # Montage pour l'accès à Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Montage (en lecture seule) pour lire les infos système de l'hôte
+      - /:/hostOS:ro

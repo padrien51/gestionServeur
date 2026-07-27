@@ -70,7 +70,7 @@ docker compose up -d
 
 ## 🛠️ Installation pour le Développement
 
-Si vous souhaitez modifier le code ou compiler l'image vous-même :
+Si vous souhaitez modifier le code ou compiler l'image vous-même localement, un fichier Docker Compose spécifique a été créé (`docker-compose.dev.yml`). Ce fichier indique à Docker de recompiler l'image à partir des sources locales plutôt que de la télécharger depuis GitHub.
 
 ```bash
 # 1. Cloner le dépôt
@@ -78,7 +78,7 @@ git clone https://github.com/padrien51/gestionServeur.git
 cd gestionServeur
 
 # 2. Recompiler et lancer l'image locale
-docker compose up -d --build
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 ---

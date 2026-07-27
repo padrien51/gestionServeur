@@ -35,22 +35,46 @@ const loadSettings = async () => {
 
 const saveSettings = async () => {
   isSaving.value = true;
-  saveSuccess.value = false;
   try {
     const res = await fetch(`${API_BASE}/settings`, {
       method: 'PUT',
       ...getFetchOptions(),
       body: JSON.stringify(form.value)
     });
-    
-    if (!res.ok) throw new Error("Erreur de sauvegarde");
-    
-    saveSuccess.value = true;
-    setTimeout(() => saveSuccess.value = false, 3000);
+    if (!res.ok) throw new Error("Erreur lors de la sauvegarde");
+    showAlert("Succès", "Paramètres sauvegardés avec succès");
   } catch (e) {
-    showAlert("Erreur", e.message);
+    console.error(e);
+    showAlert("Erreur", "Impossible de sauvegarder les paramètres");
   } finally {
     isSaving.value = false;
+  }
+};
+
+const isTestingWebhook = ref(false);
+
+const testWebhook = async () => {
+  if (!form.value.mattermost_webhook_url) {
+    return showAlert("Erreur", "Veuillez d'abord saisir une URL de webhook.");
+  }
+  
+  isTestingWebhook.value = true;
+  try {
+    const res = await fetch(`${API_BASE}/settings/test-webhook`, {
+      method: 'POST',
+      ...getFetchOptions(),
+      body: JSON.stringify({ webhookUrl: form.value.mattermost_webhook_url })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erreur lors du test du webhook");
+    
+    showAlert("Succès", "Le webhook de test a été envoyé avec succès !");
+  } catch (e) {
+    console.error(e);
+    showAlert("Erreur", e.message);
+  } finally {
+    isTestingWebhook.value = false;
   }
 };
 
@@ -136,15 +160,26 @@ onMounted(() => {
           </h3>
           
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">URL du Webhook Mattermost</label>
-            <input 
-              v-model="form.mattermost_webhook_url" 
-              type="url" 
-              placeholder="https://mattermost.mon-domaine.com/hooks/xyz..." 
-              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
-            />
-            <p class="text-xs text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde.</p>
-          </div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">URL du Webhook Mattermost</label>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <input 
+                  v-model="form.mattermost_webhook_url" 
+                  type="url" 
+                  placeholder="https://mattermost.mon-domaine.com/hooks/xyz..." 
+                  class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
+                />
+                <button 
+                  @click="testWebhook" 
+                  type="button"
+                  :disabled="isTestingWebhook || !form.mattermost_webhook_url"
+                  class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-all whitespace-nowrap"
+                >
+                  <span v-if="isTestingWebhook" class="animate-pulse">Test en cours...</span>
+                  <span v-else>Tester 🚀</span>
+                </button>
+              </div>
+              <p class="text-xs text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde.</p>
+            </div>
         </div>
 
         <!-- Section Utilisateurs -->
@@ -190,20 +225,16 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="flex justify-end pt-4">
-          <button 
-            type="submit" 
-            :disabled="isSaving"
-            class="flex items-center px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-900/50 transition-all disabled:opacity-50"
-          >
-            <span v-if="isSaving" class="mr-2 animate-spin">⏳</span>
-            {{ isSaving ? 'Enregistrement...' : 'Enregistrer les paramètres' }}
-          </button>
-        </div>
-        
-        <div v-if="saveSuccess" class="p-3 bg-emerald-900/30 border border-emerald-800/50 text-emerald-400 rounded-xl text-sm font-medium flex items-center justify-center transition-all animate-pulse">
-          ✅ Paramètres sauvegardés avec succès !
-        </div>
+        <div class="flex flex-col gap-4">
+        <button 
+          @click="saveSettings" 
+          :disabled="isSaving"
+          class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-900/20"
+        >
+          <span v-if="isSaving" class="animate-pulse">Sauvegarde en cours...</span>
+          <span v-else>Enregistrer les paramètres globaux</span>
+        </button>
+      </div>
       </form>
     </div>
   </div>

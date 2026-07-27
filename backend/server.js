@@ -235,6 +235,29 @@ app.put('/api/settings', async (req, res) => {
     }
 });
 
+app.post('/api/settings/test-webhook', async (req, res) => {
+    try {
+        const { webhookUrl } = req.body;
+        if (!webhookUrl) return res.status(400).json({ error: "L'URL du Webhook est manquante." });
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: "🚀 **Gestion Serveur** - Test de configuration du webhook Mattermost réussi !"
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Mattermost a répondu avec l'erreur HTTP ${response.status}`);
+        }
+        
+        res.json({ success: true, message: "Le webhook de test a été envoyé avec succès !" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- ROUTE NETTOYAGE DOCKER ---
 app.post('/api/docker/prune', async (req, res) => {
     try {

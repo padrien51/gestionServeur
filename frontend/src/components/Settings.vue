@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 
 import { useModal } from '../composables/useModal';
 
-const { showAlert } = useModal();
+const { showAlert, showConfirm } = useModal();
 
 const API_BASE = '/api';
 
@@ -54,8 +54,66 @@ const saveSettings = async () => {
   }
 };
 
+const users = ref([]);
+const newUserEmail = ref('');
+const newUserPassword = ref('');
+
+const loadUsers = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/users`, { headers: getFetchOptions().headers });
+    if (res.ok) {
+      users.value = await res.json();
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+const handleAddUser = async () => {
+  if (!newUserEmail.value || !newUserPassword.value) {
+    return showAlert("Erreur", "Veuillez remplir l'email et le mot de passe");
+  }
+  try {
+    const res = await fetch(`${API_BASE}/users`, {
+      method: 'POST',
+      ...getFetchOptions(),
+      body: JSON.stringify({ email: newUserEmail.value, password: newUserPassword.value })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erreur lors de l'ajout de l'utilisateur");
+    showAlert("Succès", data.message);
+    newUserEmail.value = '';
+    newUserPassword.value = '';
+    loadUsers();
+  } catch (e) {
+    showAlert("Erreur", e.message);
+  }
+};
+
+const handleDeleteUser = async (id, email) => {
+  const confirmed = await showConfirm(
+    "Supprimer l'utilisateur ?",
+    `Êtes-vous sûr de vouloir supprimer ${email} ?`
+  );
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/users/${id}`, {
+      method: 'DELETE',
+      headers: getFetchOptions().headers
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erreur de suppression");
+    showAlert("Succès", "Utilisateur supprimé");
+    loadUsers();
+  } catch (e) {
+    showAlert("Erreur", e.message);
+  }
+};
+
 onMounted(() => {
   loadSettings();
+  loadUsers();
 });
 </script>
 
@@ -89,12 +147,47 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Section Sécurité (Exemple) -->
+        <!-- Section Utilisateurs -->
         <div class="space-y-4 pt-4 mt-4 border-t border-slate-700/50">
           <h3 class="text-lg font-semibold text-slate-200 border-b border-slate-700 pb-2 flex items-center">
-            <span class="mr-2">🔒</span> Sécurité
+            <span class="mr-2">👥</span> Gestion des Utilisateurs
           </h3>
-          <p class="text-sm text-slate-400 italic">Le mot de passe de l'application est géré via la variable d'environnement APP_PASSWORD dans le fichier docker-compose.yml.</p>
+          
+          <div class="bg-slate-900 rounded-xl border border-slate-700 overflow-hidden mb-4">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-slate-800 text-slate-400">
+                <tr>
+                  <th class="px-4 py-3 font-medium">Email</th>
+                  <th class="px-4 py-3 font-medium text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700">
+                <tr v-for="u in users" :key="u.id" class="hover:bg-slate-800/50 transition-colors">
+                  <td class="px-4 py-3">{{ u.email }}</td>
+                  <td class="px-4 py-3 text-right">
+                    <button type="button" @click="handleDeleteUser(u.id, u.email)" class="text-red-400 hover:text-red-300 transition-colors">Supprimer</button>
+                  </td>
+                </tr>
+                <tr v-if="users.length === 0">
+                  <td colspan="2" class="px-4 py-4 text-center text-slate-500">Chargement...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1 w-full">
+              <label class="block text-xs font-medium text-slate-400 mb-1">Nouvel email</label>
+              <input v-model="newUserEmail" type="email" placeholder="admin@domaine.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div class="flex-1 w-full">
+              <label class="block text-xs font-medium text-slate-400 mb-1">Mot de passe</label>
+              <input v-model="newUserPassword" type="password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <button type="button" @click="handleAddUser" class="w-full md:w-auto bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors border border-slate-600 md:h-[42px] whitespace-nowrap">
+              Ajouter
+            </button>
+          </div>
         </div>
 
         <div class="flex justify-end pt-4">

@@ -129,6 +129,32 @@ function verifyToken(token) {
     return jwt.verify(token, JWT_SECRET);
 }
 
+// --- Gestion des utilisateurs par l'admin ---
+async function getUsers() {
+    return await getQuery(`SELECT id, email, created_at FROM users ORDER BY created_at DESC`);
+}
+
+async function addUser(email, password) {
+    // Vérifier si l'email existe déjà
+    const rows = await getQuery(`SELECT id FROM users WHERE email = ?`, [email]);
+    if (rows.length > 0) {
+        throw new Error('Cet email est déjà utilisé.');
+    }
+    const hash = await bcrypt.hash(password, 10);
+    await runQuery(`INSERT INTO users (email, password_hash) VALUES (?, ?)`, [email, hash]);
+    return { success: true, message: 'Utilisateur ajouté avec succès.' };
+}
+
+async function deleteUser(id) {
+    // Éviter de supprimer tous les utilisateurs (garder au moins 1)
+    const countRows = await getQuery(`SELECT COUNT(*) as count FROM users`);
+    if (countRows[0].count <= 1) {
+        throw new Error("Impossible de supprimer le dernier utilisateur.");
+    }
+    await runQuery(`DELETE FROM users WHERE id = ?`, [id]);
+    return { success: true, message: 'Utilisateur supprimé.' };
+}
+
 module.exports = {
     isSetupNeeded,
     setupAccount,
@@ -136,5 +162,8 @@ module.exports = {
     requestPasswordReset,
     resetPassword,
     changePassword,
-    verifyToken
+    verifyToken,
+    getUsers,
+    addUser,
+    deleteUser
 };

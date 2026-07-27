@@ -102,6 +102,35 @@ app.post('/api/auth/change-password', async (req, res) => {
     }
 });
 
+// --- ROUTES GESTION UTILISATEURS ---
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await authService.getUsers();
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const result = await authService.addUser(email, password);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const result = await authService.deleteUser(req.params.id);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 // --- ROUTES UPDATES ---
 app.post('/api/docker/containers/:id/:action', async (req, res) => {
     const { id, action } = req.params;

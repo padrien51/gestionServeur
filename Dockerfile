@@ -11,7 +11,7 @@ FROM node:20-alpine
 WORKDIR /app/backend
 
 # Installer les outils système nécessaires (SQLite, etc.)
-RUN apk add --no-cache sqlite python3 make g++
+RUN apk add --no-cache sqlite python3 make g++ curl
 
 COPY backend/package*.json ./
 # Installer les dépendances backend

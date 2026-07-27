@@ -1,6 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const dockerService = require('./dockerService');
 const { getContainers, startContainer, stopContainer, restartContainer } = require('./dockerService');
 const { getSystemMetrics } = require('./systemService');
@@ -10,8 +13,25 @@ const { db, getQuery, runQuery } = require('./db');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Optimisation : Compression GZIP des réponses
+app.use(compression());
+
+// Sécurité : Configuration des entêtes HTTP
+// On désactive contentSecurityPolicy si le frontend a besoin de ressources externes,
+// mais ici c'est une SPA interne, donc helmet() par défaut est très bien.
+app.use(helmet({
+    contentSecurityPolicy: false // Désactivé pour éviter de bloquer des scripts inline de Vite si présents
+}));
+
 app.use(cors());
 app.use(express.json());
+
+// Sécurité : Limitation de requêtes (Anti-brute force) sur l'auth
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limite chaque IP à 10 requêtes par fenêtre
+    message: { error: "Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes." }
+});
 
 const authService = require('./authService');
 
@@ -35,7 +55,7 @@ app.post('/api/auth/setup', async (req, res) => {
     }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
         const result = await authService.login(email, password);
@@ -45,7 +65,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     try {
         const host = req.get('host');
         const result = await authService.requestPasswordReset(req.body.email, host);

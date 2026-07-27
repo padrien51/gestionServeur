@@ -27,6 +27,10 @@ const authenticate = (req, res, next) => {
 
 app.use(authenticate);
 
+// Servir les fichiers statiques du frontend (dossier public)
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public')));
+
 // --- Routes Système ---
 app.get('/api/system/metrics', async (req, res) => {
     try {
@@ -72,6 +76,11 @@ app.post('/api/docker/containers/:id/restart', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Erreur au redémarrage: ' + error.message });
     }
+});
+
+// Catch-all route pour SPA Vue.js
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(port, () => {

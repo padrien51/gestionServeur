@@ -7,7 +7,7 @@ const containers = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
-const API_BASE = 'http://localhost:3000/api'; // À adapter pour la prod
+const API_BASE = '/api'; // Chemin relatif pour fonctionner avec le backend Express
 
 const fetchMetrics = async () => {
   try {

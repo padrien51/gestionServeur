@@ -78,8 +78,8 @@ app.post('/api/docker/containers/:id/restart', async (req, res) => {
     }
 });
 
-// Catch-all route pour SPA Vue.js
-app.get('*', (req, res) => {
+// Fallback pour SPA Vue.js (remplace app.get('*') qui plante sous Express 5)
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

@@ -229,6 +229,7 @@ app.put('/api/settings', async (req, res) => {
         for (const [key, value] of Object.entries(settings)) {
             await runQuery(`INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, [key, value]);
         }
+        updateService.startUpdateNotifier(); // Recharger le cron si modifié
         res.json({ message: "Paramètres enregistrés" });
     } catch (err) {
         res.status(500).json({ error: err.message });

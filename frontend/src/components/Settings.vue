@@ -15,7 +15,8 @@ const getFetchOptions = () => ({
 });
 
 const form = ref({
-  mattermost_webhook_url: ''
+  mattermost_webhook_url: '',
+  update_cron_schedule: '0 9 * * *'
 });
 
 const isSaving = ref(false);
@@ -178,8 +179,26 @@ onMounted(() => {
                   <span v-else>Tester 🚀</span>
                 </button>
               </div>
-              <p class="text-xs text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde.</p>
+              <p class="text-xs text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde et vérification de MAJ.</p>
             </div>
+        </div>
+
+        <!-- Section Planification -->
+        <div class="space-y-4 pt-4 mt-4 border-t border-slate-700/50">
+          <h3 class="text-lg font-semibold text-slate-200 border-b border-slate-700 pb-2 flex items-center">
+            <span class="mr-2">⏱️</span> Planification
+          </h3>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Vérification automatique des Mises à jour (CRON)</label>
+            <input 
+              v-model="form.update_cron_schedule" 
+              type="text" 
+              placeholder="0 9 * * *" 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
+            />
+            <p class="text-xs text-slate-400 mt-2">Par défaut : <code>0 9 * * *</code> (Tous les jours à 09h00).</p>
+          </div>
         </div>
 
         <!-- Section Utilisateurs -->

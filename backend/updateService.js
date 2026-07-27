@@ -218,12 +218,26 @@ async function checkAndNotifyUpdates() {
     }
 }
 
-function startUpdateNotifier() {
-    // Vérification tous les jours à 09h00
-    cron.schedule('0 9 * * *', () => {
+let updateCronJob = null;
+
+async function startUpdateNotifier() {
+    const cronRow = await getQuery(`SELECT value FROM settings WHERE key = 'update_cron_schedule'`);
+    let schedule = cronRow.length > 0 && cronRow[0].value ? cronRow[0].value : '0 9 * * *';
+    
+    if (!cron.validate(schedule)) {
+        console.warn(`[CRON] L'expression '${schedule}' n'est pas valide. Utilisation par défaut '0 9 * * *'`);
+        schedule = '0 9 * * *';
+    }
+
+    if (updateCronJob) {
+        updateCronJob.stop();
+    }
+
+    updateCronJob = cron.schedule(schedule, () => {
         console.log("[CRON] Démarrage de la vérification des mises à jour...");
         checkAndNotifyUpdates();
     });
+    console.log(`[CRON] Notificateur de MAJ planifié avec l'expression : ${schedule}`);
 }
 
 module.exports = {

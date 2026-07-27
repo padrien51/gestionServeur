@@ -430,4 +430,10 @@ app.use((req, res) => {
 
 app.listen(port, () => {
     console.log(`Serveur démarré sur le port ${port}`);
+    
+    // Initialisation des planificateurs (CRON)
+    const backupOrchestrator = require('./backupOrchestrator');
+    // Le backupOrchestrator est déjà auto-initialisé via initializeScheduler() dans son fichier,
+    // mais on lance le notifieur de mises à jour ici.
+    updateService.startUpdateNotifier();
 });

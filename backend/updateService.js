@@ -176,8 +176,59 @@ async function checkDockerUpdates() {
     return results;
 }
 
+const cron = require('node-cron');
+const { getQuery } = require('./db');
+
+async function checkAndNotifyUpdates() {
+    try {
+        const webhookRow = await getQuery(`SELECT value FROM settings WHERE key = 'mattermost_webhook_url'`);
+        const webhookUrl = webhookRow.length > 0 ? webhookRow[0].value : null;
+        
+        if (!webhookUrl) return; // Pas de webhook configuré
+
+        let message = "";
+        
+        // Check OS updates
+        const osUpdates = await getOSUpdates();
+        if (osUpdates.available) {
+            message += `📦 **Mises à jour OS disponibles !**\n${osUpdates.rawText}\n\n`;
+        }
+        
+        // Check Docker updates
+        const dockerUpdates = await checkDockerUpdates();
+        const availableDockerUpdates = dockerUpdates.filter(u => u.hasUpdate);
+        
+        if (availableDockerUpdates.length > 0) {
+            message += `🐳 **Mises à jour Docker disponibles :**\n`;
+            for (const u of availableDockerUpdates) {
+                message += `- **${u.name}** : \`${u.currentVersion}\` ➡️ \`${u.newVersion}\` ${u.isBreaking ? '⚠️ *(Breaking Change)*' : ''}\n`;
+            }
+        }
+        
+        if (message) {
+            const finalMessage = `🔔 **Rapport de Mises à Jour (Gestion Serveur)**\n\n` + message;
+            await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: finalMessage })
+            });
+        }
+    } catch (err) {
+        console.error("Erreur lors de la notification des mises à jour :", err);
+    }
+}
+
+function startUpdateNotifier() {
+    // Vérification tous les jours à 09h00
+    cron.schedule('0 9 * * *', () => {
+        console.log("[CRON] Démarrage de la vérification des mises à jour...");
+        checkAndNotifyUpdates();
+    });
+}
+
 module.exports = {
     getOSUpdates,
     applyDockerUpdate,
-    checkDockerUpdates
+    checkDockerUpdates,
+    startUpdateNotifier
 };

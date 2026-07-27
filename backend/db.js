@@ -9,16 +9,64 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const dbPath = path.join(dataDir, 'database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Erreur lors de l\'ouverture de la base de données SQLite:', err.message);
-    } else {
-        console.log('Connecté à la base de données SQLite.');
-        initDb();
-    }
-});
+const db = new sqlite3.Database(dbPath);
+
+// L'initialisation est appelée immédiatement, sqlite3 va la mettre en file d'attente
+// garantissant que la création des tables se fait avant toute requête SELECT
+initDb();
+
+function initializeDB() {
+    db.serialize(() => {
+        // Table des conteneurs masqués (existant)
+        db.run(`CREATE TABLE IF NOT EXISTS hidden_containers (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            hidden_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Table des Jobs de Sauvegarde
+        db.run(`CREATE TABLE IF NOT EXISTS backup_jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            containers TEXT NOT NULL,
+            source_path TEXT NOT NULL,
+            dest_path TEXT NOT NULL,
+            cron_schedule TEXT NOT NULL,
+            retention_count INTEGER DEFAULT 15,
+            enabled BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (err) console.error("Erreur création backup_jobs :", err);
+            else console.log("Table backup_jobs vérifiée.");
+        });
+
+        // Table de l'historique des Sauvegardes
+        db.run(`CREATE TABLE IF NOT EXISTS backup_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            message TEXT,
+            reclaimed_space INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(job_id) REFERENCES backup_jobs(id) ON DELETE CASCADE
+        )`, (err) => {
+            if (err) console.error("Erreur création backup_logs :", err);
+            else console.log("Table backup_logs vérifiée.");
+        });
+
+        // Table des Paramètres Globaux
+        db.run(`CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )`, (err) => {
+            if (err) console.error("Erreur création settings :", err);
+            else console.log("Table settings vérifiée.");
+        });
+    });
+};
 
 function initDb() {
+    initializeDB();
     db.serialize(() => {
         // Table pour l'historique des métriques
         db.run(`CREATE TABLE IF NOT EXISTS metrics_history (

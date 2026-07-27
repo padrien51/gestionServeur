@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const dockerService = require('./dockerService');
 const { getContainers, startContainer, stopContainer, restartContainer } = require('./dockerService');
 const { getSystemMetrics } = require('./systemService');
 const updateService = require('./updateService');
@@ -48,6 +49,106 @@ app.post('/api/updates/docker/apply/:name', async (req, res) => {
     try {
         const result = await updateService.applyDockerUpdate(req.params.name);
         res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ROUTES PARAMÈTRES (SETTINGS) ---
+app.get('/api/settings', async (req, res) => {
+    try {
+        const rows = await getQuery(`SELECT * FROM settings`);
+        const settings = {};
+        rows.forEach(r => settings[r.key] = r.value);
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/settings', async (req, res) => {
+    try {
+        const settings = req.body;
+        for (const [key, value] of Object.entries(settings)) {
+            await runQuery(`INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, [key, value]);
+        }
+        res.json({ message: "Paramètres enregistrés" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ROUTE NETTOYAGE DOCKER ---
+app.post('/api/docker/prune', async (req, res) => {
+    try {
+        const result = await dockerService.pruneSystem();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ROUTE APPLICATIONS ---
+app.get('/api/docker/applications', async (req, res) => {
+    try {
+        const apps = await dockerService.getApplications();
+        res.json(apps);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ROUTES SAUVEGARDES ---
+const backupOrchestrator = require('./backupOrchestrator');
+
+// Initialiser le planificateur au démarrage, après un léger délai pour la BDD
+setTimeout(() => {
+    backupOrchestrator.initializeScheduler().catch(console.error);
+}, 2000);
+
+app.get('/api/backups', async (req, res) => {
+    try {
+        res.json(await backupOrchestrator.getJobs());
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/backups', async (req, res) => {
+    try {
+        res.json(await backupOrchestrator.createJob(req.body));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/backups/:id', async (req, res) => {
+    try {
+        res.json(await backupOrchestrator.updateJob(req.params.id, req.body));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/backups/:id', async (req, res) => {
+    try {
+        res.json(await backupOrchestrator.deleteJob(req.params.id));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/backups/:id/trigger', async (req, res) => {
+    try {
+        res.json(await backupOrchestrator.triggerManualBackup(req.params.id));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/backups/logs', async (req, res) => {
+    try {
+        res.json(await backupOrchestrator.getLogs(req.query.jobId));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

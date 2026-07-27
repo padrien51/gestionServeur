@@ -56,13 +56,14 @@ async function applyDockerUpdate(containerName) {
     }
 }
 
+const semver = require('semver');
+
 // Vérifie les mises à jour et les changelogs pour tous les conteneurs
 async function checkDockerUpdates() {
     const containers = await docker.listContainers();
     const results = [];
 
     for (const container of containers) {
-        // Ignorer notre propre conteneur pour éviter l'auto-arrêt (sauf si géré via Watchtower)
         if (container.Names.some(n => n.includes('gestion_serveur'))) continue;
 
         let imageName = container.Image;
@@ -77,48 +78,70 @@ async function checkDockerUpdates() {
             imageName = imageName.split('@')[0];
         }
 
-        // Complète avec 'library/' si l'image n'a pas de namespace (ex: nginx -> library/nginx)
         const repoPath = imageName.includes('/') ? imageName : `library/${imageName}`;
 
         let hasUpdate = false;
-        let currentVersion = container.ImageID.substring(7, 19); // Fallback: short ID
+        let currentVersion = tag !== 'latest' ? tag : container.ImageID.substring(7, 19);
         let newVersion = 'Inconnu';
         let changelog = null;
         let isBreaking = false;
+        let isUpdatableViaUI = true;
 
         try {
-            // 1. Check version via Docker Hub
-            const response = await fetch(`https://hub.docker.com/v2/repositories/${repoPath}/tags/${tag}`);
-            if (response.ok) {
-                const data = await response.json();
+            const imageInfo = await docker.getImage(container.Image).inspect();
+            const localDigests = imageInfo.RepoDigests || [];
+            
+            if (tag === 'latest' || tag === '') {
+                // Logique par Digest pour 'latest'
+                const response = await fetch(`https://hub.docker.com/v2/repositories/${repoPath}/tags/latest`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const remoteDigest = data.digest;
+                    if (remoteDigest) {
+                        newVersion = remoteDigest.substring(7, 19);
+                        if (!localDigests.some(d => d.includes(remoteDigest))) {
+                            hasUpdate = true;
+                        } else {
+                            newVersion = currentVersion;
+                        }
+                    }
+                }
+            } else {
+                // Logique SemVer pour tags fixes (ex: 4.1.2)
+                isUpdatableViaUI = false; // Ne pas permettre la maj via Watchtower si c'est un tag fixe
                 
-                // Récupération des infos locales
-                const imageInfo = await docker.getImage(container.Image).inspect();
-                const localDigests = imageInfo.RepoDigests || [];
-                currentVersion = localDigests.length > 0 ? localDigests[0].split('@')[1].substring(7, 19) : imageInfo.Id.substring(7, 19);
-                
-                const remoteDigest = data.digest;
-                if (remoteDigest) {
-                    newVersion = remoteDigest.substring(7, 19);
-                    // Si aucun digest local ne correspond au digest distant, il y a une maj
-                    if (!localDigests.some(d => d.includes(remoteDigest))) {
-                        hasUpdate = true;
-                    } else {
-                         // Si un digest match, pas de maj
-                         hasUpdate = false;
-                         newVersion = currentVersion;
+                const cleanTag = semver.clean(tag) || semver.coerce(tag);
+                if (cleanTag) {
+                    const response = await fetch(`https://hub.docker.com/v2/repositories/${repoPath}/tags?page_size=100`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        let highestVersion = cleanTag;
+                        let foundNewer = false;
+
+                        for (const t of data.results) {
+                            const parsed = semver.clean(t.name) || semver.coerce(t.name);
+                            if (parsed && semver.gt(parsed, highestVersion)) {
+                                highestVersion = parsed;
+                                foundNewer = true;
+                            }
+                        }
+
+                        if (foundNewer) {
+                            hasUpdate = true;
+                            newVersion = highestVersion.version;
+                        } else {
+                            newVersion = currentVersion;
+                        }
                     }
                 }
             }
 
-            // 2. Fetch Changelog from GitHub si disponible
+            // Fetch Changelog from GitHub
             if (hasUpdate) {
-                const imageInfo = await docker.getImage(container.Image).inspect();
                 const labels = imageInfo.Config.Labels || {};
                 const source = labels['org.opencontainers.image.source'] || labels['org.label-schema.vcs-url'];
                 
                 if (source && source.includes('github.com')) {
-                    // ex: https://github.com/linuxserver/docker-radarr
                     const githubRepo = source.replace('https://github.com/', '').replace('.git', '');
                     const ghRes = await fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, {
                         headers: { 'User-Agent': 'GestionServeur-App' }
@@ -132,7 +155,6 @@ async function checkDockerUpdates() {
                     }
                 }
             }
-
         } catch (err) {
             console.error(`Erreur vérif MAJ pour ${imageName}:`, err.message);
         }
@@ -141,11 +163,13 @@ async function checkDockerUpdates() {
             id: container.Id,
             name: container.Names[0].replace('/', ''),
             image: container.Image,
+            tag,
             hasUpdate,
             currentVersion,
             newVersion,
             changelog,
-            isBreaking
+            isBreaking,
+            isUpdatableViaUI
         });
     }
     

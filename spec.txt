@@ -1,0 +1,113 @@
+<USER_REQUEST>
+Spécification Fonctionnelle et Technique : Gestionnaire de Serveur Docker
+1. Contexte et Objectifs du Projet
+
+Créer une application web légère, conteneurisée (Docker), permettant l'administration centralisée d'un serveur Ubuntu Desktop et de ses applications Docker Compose. L'outil doit unifier la surveillance proactive (OS et conteneurs), la gestion simplifiée des mises à jour, le monitoring des sauvegardes, la consultation des logs et le nettoyage du système.
+
+Contrainte majeure : L'interface utilisateur doit être 100% "Mobile-first" et responsive, conçue pour être utilisée facilement et de manière sécurisée depuis un smartphone.
+2. Architecture et Prérequis Techniques
+
+    Format de déploiement : Un fichier docker-compose.yml.
+
+    Backend : Node.js ou Python (FastAPI/Flask) avec une bibliothèque d'interaction Docker officielle.
+
+    Base de données locale : Intégration de SQLite pour stocker la configuration dynamique de l'application et conserver un historique continu des métriques et événements du serveur.
+
+    Frontend : Framework léger (Vue.js, React ou HTMX + TailwindCSS) optimisé pour l'affichage mobile.
+
+    Sécurité et Réseau : Authentification par mot de passe pour protéger l'accès. L'application doit être conçue pour fonctionner derrière un reverse proxy (lecture des en-têtes X-Forwarded-For, etc.).
+
+3. Fonctionnalités Détaillées (User Stories)
+
+Module 1 : Tableau de bord et Monitoring des Ressources
+
+    Statut global de l'hôte : Affichage en temps réel de l'utilisation CPU, de la charge RAM, et de l'espace disque de la partition principale du serveur Ubuntu. Historisation de ces données en base.
+
+    Vue des conteneurs : Liste des conteneurs actifs/inactifs avec un code couleur (Vert = Up, Rouge = Down).
+
+    Gestion d'état (Actions) : Boutons d'action rapide pour chaque conteneur : Démarrer, Arrêter, Redémarrer.
+
+Module 2 : Veille et Mises à jour (Système & Docker)
+
+    Surveillance Ubuntu : Affichage du nombre de paquets Linux en attente de mise à jour.
+
+    Surveillance Docker : Vérification des nouvelles images disponibles sur le registre pour les conteneurs locaux.
+
+    Analyse des Changelogs : Récupération et affichage d'un résumé des changements (via API GitHub ou Docker Hub), avec mise en évidence des Breaking Changes.
+
+Module 3 : Action de Mise à jour en 1-clic
+
+    Déclencheur unifié : Un bouton "Mettre à jour" par application qui exécute séquentiellement : docker compose down, pull, puis up -d.
+
+    Vérification de post-lancement : Le système vérifie le statut du conteneur 30 secondes après le démarrage. Levée d'alerte si le statut n'est pas "Running".
+
+Module 4 : Visualisation des Logs en direct
+
+    Consultation rapide : En cliquant sur un conteneur, affichage des 100 dernières lignes de log en direct.
+
+    Filtre d'erreurs : Possibilité de filtrer visuellement la vue des logs (ERROR, FATAL, WARN).
+
+Module 5 : Gestion des Sauvegardes
+
+    Intégration du script existant : Lecture des logs/résultats générés par le script bash de sauvegarde externe. L'historique continu des succès/échecs est enregistré en base.
+
+    Affichage des métriques : Statut, date, volume et nombre de sauvegardes conservées.
+
+    Contrôle manuel : Bouton pour déclencher le script de sauvegarde.
+
+Module 6 : Nettoyage et Optimisation (Prune Avancé)
+
+    Actions de nettoyage ciblées : Boutons pour nettoyer les images non utilisées (prune -a), les volumes orphelins et les réseaux inutilisés, avec estimation de l'espace récupérable.
+
+Module 7 : Alerting et Intégrations Externes
+
+    Notifications Mattermost : Envoi de webhooks automatiques (plantage de conteneur, erreur critique dans les logs, échec de sauvegarde, espace disque inférieur au seuil).
+
+    API Domotique : Endpoints d'API ou MQTT pour intégrer l'état du serveur sous forme de capteurs domotiques.
+
+4. Interface Utilisateur (Ergonomie Téléphone)
+
+    Navigation : Barre de navigation inférieure (Bottom Tab Bar) avec 4 onglets : Dashboard, Mises à jour, Sauvegardes, Paramètres.
+
+    Onglet Paramètres (Admin Panel) : Interface sécurisée permettant de configurer dynamiquement l'application (URL du Webhook Mattermost, chemins des scripts, seuils d'alerte). Ces données sont sauvegardées dans SQLite.
+
+    Modales/Tiroirs : Affichage des logs et changelogs dans un tiroir glissant depuis le bas (Bottom Sheet).
+
+    Sécurité des actions : Les boutons critiques nécessitent une confirmation (type "Glisser pour valider") pour éviter les erreurs.
+
+5. Implémentation Technique & Architecture (Directives pour l'IA)
+
+    Interaction Docker : Monter /var/run/docker.sock:/var/run/docker.sock. Utiliser l'API native. Pour Compose, inclure docker-cli et utiliser des appels système (exec/subprocess).
+
+    Métriques Ubuntu : Monter le système de fichiers de l'hôte (-v /:/hostOS:ro) et configurer la librairie de monitoring pour pointer vers ce montage.
+
+    Script de Sauvegarde : Exécution via connexion SSH locale depuis le conteneur vers l'hôte, ou exécution directe si le script est monté en volume.
+
+    Configuration de Base : Les variables d'environnement (dans le fichier compose) doivent se limiter au strict nécessaire pour démarrer l'application (ex: port web, mot de passe de connexion). Toute la configuration métier se fait via l'UI et SQLite.
+
+6. Dépôt Git, Méthodologie et Règles de Développement (Directives Strictes pour l'IA)
+
+Dépôt cible : L'intégralité du code et de la documentation générés devra être versionnée sur le dépôt : [https://github.com/padrien51/gestionServeur.git](https://github.com/padrien51/gestionServeur.git)
+
+Règles de comportement que tu (l'IA) dois scrupuleusement respecter :
+
+    Workflow de démarrage : Lors de ta première réponse, fournis les commandes Bash exactes pour initialiser le projet localement, créer un .gitignore pertinent, faire le commit initial et lier le dépôt distant (git remote add origin).
+
+    Stratégie de Branches (Feature Branching) : Ne code jamais de nouvelles fonctionnalités directement sur la branche principale (main). Pour chaque nouvelle étape, fournis la commande pour créer et basculer sur une nouvelle branche (ex: git checkout -b feature/dashboard).
+
+    Validation Humaine Obligatoire (Gateways) : Tu ne dois jamais avancer à l'étape suivante sans avoir obtenu ma validation explicite. On corrige les bugs sur la branche en cours jusqu'à ce que tout fonctionne.
+
+    Merge après Test Exclusif : Une fois la fonctionnalité validée sur sa branche dédiée, fournis la procédure complète pour fusionner vers la branche principale (git checkout main, git merge feature/xxx, git push) et supprimer la branche locale.
+
+    Documentation Continue : Maintiens un fichier README.md (architecture, installation, utilisation) et un fichier CHANGELOG.md. Mets-les à jour à chaque fusion validée.
+
+    Développement Itératif (Pas de Big Bang) : Découpe le projet en petites étapes logiques. Chaque bloc de code doit être isolé, testable et accompagné de sa commande git commit -m "..." suivant la norme Conventional Commits.
+
+    Robustesse (Fail-safe) : Systématise les blocs try/catch. Gère proprement les erreurs de parsing ou d'indisponibilité du démon Docker. Ajoute de brefs commentaires en français sur les fonctions complexes.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-07-27T10:43:03+02:00.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.1 Pro (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

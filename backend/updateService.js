@@ -43,7 +43,6 @@ async function applyDockerUpdate(containerName) {
         });
         
         const output = data[0];
-        const container = data[1];
         
         console.log(`Watchtower terminé avec le code : ${output.StatusCode}`);
         if (output.StatusCode !== 0) {
@@ -57,7 +56,104 @@ async function applyDockerUpdate(containerName) {
     }
 }
 
+// Vérifie les mises à jour et les changelogs pour tous les conteneurs
+async function checkDockerUpdates() {
+    const containers = await docker.listContainers();
+    const results = [];
+
+    for (const container of containers) {
+        // Ignorer notre propre conteneur pour éviter l'auto-arrêt (sauf si géré via Watchtower)
+        if (container.Names.some(n => n.includes('gestion_serveur'))) continue;
+
+        let imageName = container.Image;
+        let tag = 'latest';
+        
+        if (imageName.includes(':')) {
+            const parts = imageName.split(':');
+            imageName = parts[0];
+            tag = parts[1];
+        }
+        if (imageName.includes('@')) {
+            imageName = imageName.split('@')[0];
+        }
+
+        // Complète avec 'library/' si l'image n'a pas de namespace (ex: nginx -> library/nginx)
+        const repoPath = imageName.includes('/') ? imageName : `library/${imageName}`;
+
+        let hasUpdate = false;
+        let currentVersion = container.ImageID.substring(7, 19); // Fallback: short ID
+        let newVersion = 'Inconnu';
+        let changelog = null;
+        let isBreaking = false;
+
+        try {
+            // 1. Check version via Docker Hub
+            const response = await fetch(`https://hub.docker.com/v2/repositories/${repoPath}/tags/${tag}`);
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Récupération des infos locales
+                const imageInfo = await docker.getImage(container.Image).inspect();
+                const localDigests = imageInfo.RepoDigests || [];
+                currentVersion = localDigests.length > 0 ? localDigests[0].split('@')[1].substring(7, 19) : imageInfo.Id.substring(7, 19);
+                
+                const remoteDigest = data.digest;
+                if (remoteDigest) {
+                    newVersion = remoteDigest.substring(7, 19);
+                    // Si aucun digest local ne correspond au digest distant, il y a une maj
+                    if (!localDigests.some(d => d.includes(remoteDigest))) {
+                        hasUpdate = true;
+                    } else {
+                         // Si un digest match, pas de maj
+                         hasUpdate = false;
+                         newVersion = currentVersion;
+                    }
+                }
+            }
+
+            // 2. Fetch Changelog from GitHub si disponible
+            if (hasUpdate) {
+                const imageInfo = await docker.getImage(container.Image).inspect();
+                const labels = imageInfo.Config.Labels || {};
+                const source = labels['org.opencontainers.image.source'] || labels['org.label-schema.vcs-url'];
+                
+                if (source && source.includes('github.com')) {
+                    // ex: https://github.com/linuxserver/docker-radarr
+                    const githubRepo = source.replace('https://github.com/', '').replace('.git', '');
+                    const ghRes = await fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, {
+                        headers: { 'User-Agent': 'GestionServeur-App' }
+                    });
+                    if (ghRes.ok) {
+                        const ghData = await ghRes.json();
+                        changelog = ghData.body;
+                        if (changelog && (changelog.includes('BREAKING') || changelog.includes('Breaking') || changelog.includes('MAJOR'))) {
+                            isBreaking = true;
+                        }
+                    }
+                }
+            }
+
+        } catch (err) {
+            console.error(`Erreur vérif MAJ pour ${imageName}:`, err.message);
+        }
+
+        results.push({
+            id: container.Id,
+            name: container.Names[0].replace('/', ''),
+            image: container.Image,
+            hasUpdate,
+            currentVersion,
+            newVersion,
+            changelog,
+            isBreaking
+        });
+    }
+    
+    return results;
+}
+
 module.exports = {
     getOSUpdates,
-    applyDockerUpdate
+    applyDockerUpdate,
+    checkDockerUpdates
 };

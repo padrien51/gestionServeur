@@ -35,6 +35,15 @@ app.get('/api/updates/os', async (req, res) => {
     res.json(info);
 });
 
+app.get('/api/updates/docker/check', async (req, res) => {
+    try {
+        const results = await updateService.checkDockerUpdates();
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/updates/docker/apply/:name', async (req, res) => {
     try {
         const result = await updateService.applyDockerUpdate(req.params.name);

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: gestion_serveur
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_PASSWORD=${APP_PASSWORD:-admin}
+      - NODE_ENV=production
+    volumes:
+      # Montage pour la configuration dynamique SQLite
+      - ./data:/app/data
+      # Montage pour l'accès à Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Montage (en lecture seule) pour lire les infos système de l'hôte
+      - /:/hostOS:ro

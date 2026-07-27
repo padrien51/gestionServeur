@@ -5,7 +5,7 @@ const dockerService = require('./dockerService');
 const { getContainers, startContainer, stopContainer, restartContainer } = require('./dockerService');
 const { getSystemMetrics } = require('./systemService');
 const updateService = require('./updateService');
-require('./db'); // Initialise DB
+const { db, getQuery, runQuery } = require('./db');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,22 +13,94 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Middleware d'authentification basique
-const authenticate = (req, res, next) => {
-    // Lecture dans l'en-tête, ou en querystring (pour Server-Sent Events car EventSource ne gère pas les headers)
-    const clientPwd = req.headers['x-api-password'] || req.query.pwd;
-    console.log(`[AUTH] req to ${req.path} | received: "${clientPwd}" | expected: "${process.env.APP_PASSWORD}"`);
-    if (process.env.APP_PASSWORD && clientPwd !== process.env.APP_PASSWORD) {
-        // En développement local sans mdp, on peut laisser passer
-        if (process.env.NODE_ENV === 'production') {
-            return res.status(401).json({ error: 'Non autorisé' });
-        }
+const authService = require('./authService');
+
+// --- ROUTES AUTH PUBLIQUES ---
+app.get('/api/auth/status', async (req, res) => {
+    try {
+        const needed = await authService.isSetupNeeded();
+        res.json({ setupNeeded: needed });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    next();
+});
+
+app.post('/api/auth/setup', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const result = await authService.setupAccount(email, password);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const result = await authService.login(email, password);
+        res.json(result);
+    } catch (err) {
+        res.status(401).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+        const host = req.get('host');
+        const result = await authService.requestPasswordReset(req.body.email, host);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        const result = await authService.resetPassword(token, newPassword);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// Middleware d'authentification JWT pour les autres routes
+const authenticate = (req, res, next) => {
+    // Lecture dans l'en-tête (Bearer token) ou querystring (pour SSE)
+    const authHeader = req.headers['authorization'];
+    let token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        token = req.query.token;
+    }
+
+    if (!token) {
+        return res.status(401).json({ error: 'Non autorisé: Token manquant' });
+    }
+
+    try {
+        const user = authService.verifyToken(token);
+        req.user = user;
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Non autorisé: Token invalide ou expiré' });
+    }
 };
 
-// Appliquer l'authentification uniquement sur les routes de l'API
+// Appliquer l'authentification uniquement sur les routes de l'API (après les routes publiques)
 app.use('/api', authenticate);
+
+// --- ROUTES AUTH PROTÉGÉES ---
+app.post('/api/auth/change-password', async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
 
 // --- ROUTES UPDATES ---
 app.post('/api/docker/containers/:id/:action', async (req, res) => {

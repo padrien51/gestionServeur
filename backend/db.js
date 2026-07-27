@@ -62,6 +62,29 @@ function initializeDB() {
             if (err) console.error("Erreur création settings :", err);
             else console.log("Table settings vérifiée.");
         });
+
+        // Table des utilisateurs
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (err) console.error("Erreur création users :", err);
+            else console.log("Table users vérifiée.");
+        });
+
+        // Table de réinitialisation de mot de passe
+        db.run(`CREATE TABLE IF NOT EXISTS password_resets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token TEXT NOT NULL,
+            expires_at DATETIME NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`, (err) => {
+            if (err) console.error("Erreur création password_resets :", err);
+            else console.log("Table password_resets vérifiée.");
+        });
     });
 };
 
@@ -87,4 +110,22 @@ function initDb() {
     });
 }
 
-module.exports = db;
+const runQuery = (query, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.run(query, params, function (err) {
+            if (err) reject(err);
+            else resolve(this);
+        });
+    });
+};
+
+const getQuery = (query, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.all(query, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
+};
+
+module.exports = { db, runQuery, getQuery };

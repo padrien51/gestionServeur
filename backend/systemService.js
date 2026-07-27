@@ -1,5 +1,5 @@
 const si = require('systeminformation');
-const db = require('./db');
+const { db } = require('./db');
 
 // En prod (dans docker), le système hôte est monté en read-only
 // systeminformation gère cela de manière relativement transparente,

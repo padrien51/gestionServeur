@@ -7,7 +7,7 @@ const { showConfirm, showAlert } = useModal();
 const API_BASE = '/api';
 
 const getFetchOptions = () => ({
-  headers: { 'x-api-password': localStorage.getItem('app_pwd') || '' }
+  headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` }
 });
 
 const osUpdates = ref({ available: false, rawText: '', supported: true });

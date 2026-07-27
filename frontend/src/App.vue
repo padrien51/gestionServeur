@@ -6,51 +6,93 @@ import Backups from './components/Backups.vue';
 import Settings from './components/Settings.vue';
 import AppModal from './components/AppModal.vue';
 
-const currentTab = ref('dashboard');
-const isAuth = ref(false);
-const pwdInput = ref('');
+// Vues d'authentification
+import Setup from './components/auth/Setup.vue';
+import Login from './components/auth/Login.vue';
+import ForgotPassword from './components/auth/ForgotPassword.vue';
+import ResetPassword from './components/auth/ResetPassword.vue';
 
-onMounted(() => {
-  if (localStorage.getItem('app_pwd')) {
-    isAuth.value = true;
+const currentTab = ref('dashboard');
+const authState = ref('loading'); // 'loading', 'setup', 'login', 'forgot', 'reset', 'authenticated'
+const resetToken = ref('');
+
+const API_BASE = '/api';
+
+onMounted(async () => {
+  // Check url parameters for reset token
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('reset')) {
+    resetToken.value = urlParams.get('reset');
+    authState.value = 'reset';
+    return;
   }
+
+  // Si on a déjà un token, on suppose qu'on est connecté (s'il est invalide, les API renverront 401)
+  if (localStorage.getItem('auth_token')) {
+    authState.value = 'authenticated';
+    return;
+  }
+
+  // Vérifier si le système a besoin d'être initialisé (aucun compte)
+  try {
+    const res = await fetch(`${API_BASE}/auth/status`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.setupNeeded) {
+        authState.value = 'setup';
+        return;
+      }
+    }
+  } catch (e) {
+    console.error("Impossible de vérifier le statut de configuration", e);
+  }
+
+  authState.value = 'login';
 });
 
-const login = () => {
-  if (pwdInput.value) {
-    localStorage.setItem('app_pwd', pwdInput.value);
-    isAuth.value = true;
-    window.location.reload();
-  }
+const onLoginSuccess = () => {
+  authState.value = 'authenticated';
+  window.history.replaceState({}, document.title, "/"); // Nettoyer l'URL
+};
+
+const onSetupComplete = () => {
+  authState.value = 'login';
 };
 
 const logout = () => {
-  localStorage.removeItem('app_pwd');
-  isAuth.value = false;
+  localStorage.removeItem('auth_token');
+  authState.value = 'login';
 };
 </script>
 
 <template>
-  <div v-if="!isAuth" class="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
-      <h1 class="text-2xl font-bold text-slate-100 mb-6 text-center flex items-center justify-center">
-        <span class="mr-3 text-3xl">🛡️</span> Accès Restreint
-      </h1>
-      <form @submit.prevent="login" class="space-y-4">
-        <div>
-          <input 
-            v-model="pwdInput" 
-            type="password" 
-            placeholder="Mot de passe système" 
-            class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
-            required
-          >
-        </div>
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg transition-colors shadow-lg shadow-blue-900/20">
-          Déverrouiller l'accès
-        </button>
-      </form>
+  <div v-if="authState !== 'authenticated'" class="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    <div v-if="authState === 'loading'" class="text-slate-400 animate-pulse text-lg">
+      Chargement...
     </div>
+    
+    <Setup 
+      v-else-if="authState === 'setup'" 
+      @setup-complete="onSetupComplete"
+    />
+    
+    <Login 
+      v-else-if="authState === 'login'" 
+      @login-success="onLoginSuccess"
+      @go-forgot-password="authState = 'forgot'"
+    />
+    
+    <ForgotPassword 
+      v-else-if="authState === 'forgot'"
+      @go-login="authState = 'login'"
+    />
+    
+    <ResetPassword 
+      v-else-if="authState === 'reset'"
+      :token="resetToken"
+      @reset-success="authState = 'login'"
+      @go-login="authState = 'login'"
+    />
   </div>
 
   <div v-else class="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">

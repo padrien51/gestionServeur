@@ -10,7 +10,7 @@ const API_BASE = '/api';
 const getFetchOptions = () => ({
   headers: {
     'Content-Type': 'application/json',
-    'x-api-password': localStorage.getItem('app_pwd') || ''
+    'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
   }
 });
 

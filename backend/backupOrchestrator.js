@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const path = require('path');
 const { docker, startContainer, stopContainer } = require('./dockerService');
-const db = require('./db');
+const { db } = require('./db');
 
 const activeCronJobs = {};
 

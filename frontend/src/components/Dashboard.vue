@@ -42,7 +42,7 @@ const openLogs = (container) => {
 const API_BASE = '/api'; // Chemin relatif pour fonctionner avec le backend Express
 
 const getFetchOptions = () => ({
-  headers: { 'x-api-password': localStorage.getItem('app_pwd') || '' }
+  headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` }
 });
 
 const handleUnauthorized = () => {

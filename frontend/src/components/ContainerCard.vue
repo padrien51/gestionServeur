@@ -49,7 +49,12 @@ const handleAction = async (action) => {
       </div>
       
       <!-- Actions -->
-      <div class="flex space-x-2">
+      <div class="flex items-center space-x-2">
+        <!-- Badge MAJ -->
+        <span v-if="container.hasUpdate" class="text-[10px] font-bold px-2 py-1 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center shadow-sm animate-pulse mr-1" title="Mise à jour disponible">
+          ⬆️ v.{{ container.newVersion }}
+        </span>
+        
         <button @click="$emit('view-logs', container)" class="p-2 rounded-lg bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 transition-colors" title="Voir les logs">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
         </button>

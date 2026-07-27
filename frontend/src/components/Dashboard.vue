@@ -142,9 +142,72 @@ const pruneDocker = async () => {
   }
 };
 
+const checkingUpdates = ref(false);
+const isUpdating = ref(null);
+
+const fetchUpdates = async () => {
+  checkingUpdates.value = true;
+  try {
+    const res = await fetch(`${API_BASE}/updates/docker/check`, getFetchOptions());
+    if (res.ok) {
+      const updateData = await res.json();
+      for (const u of updateData) {
+        const c = containers.value.find(c => c.id === u.id);
+        if (c) {
+          c.hasUpdate = u.hasUpdate;
+          c.currentVersion = u.currentVersion;
+          c.newVersion = u.newVersion;
+          c.hasBreakingChanges = u.isBreaking;
+          c.isUpdatableViaUI = u.isUpdatableViaUI;
+        }
+      }
+    }
+  } catch(e) {
+    console.error(e);
+  } finally {
+    checkingUpdates.value = false;
+  }
+};
+
+const appHasUpdates = (app) => app.containers.some(c => c.hasUpdate && c.isUpdatableViaUI);
+
+const updateApplication = async (app) => {
+  const containersToUpdate = app.containers.filter(c => c.hasUpdate && c.isUpdatableViaUI);
+  const breakingCount = containersToUpdate.filter(c => c.hasBreakingChanges).length;
+  
+  let msg = `Voulez-vous mettre à jour ${containersToUpdate.length} conteneur(s) de l'application ${app.name} ?`;
+  if (breakingCount > 0) {
+    msg = `⚠️ ATTENTION : ${breakingCount} conteneur(s) ont des Breaking Changes potentiels.\nVeuillez vérifier les changelogs dans l'onglet Mises à jour avant de continuer.\n\n` + msg;
+  }
+  
+  const confirmed = await showConfirm("Mise à jour de l'application", msg);
+  if (!confirmed) return;
+  
+  isUpdating.value = app.name;
+  let successCount = 0;
+  
+  for (const c of containersToUpdate) {
+    try {
+      console.log(`Mise à jour de ${c.name}...`);
+      const res = await fetch(`${API_BASE}/updates/docker/apply/${c.name}`, { method: 'POST', ...getFetchOptions() });
+      if (!res.ok) throw new Error(`Échec pour ${c.name}`);
+      successCount++;
+    } catch (e) {
+      console.error(e);
+      await showAlert("Erreur", e.message);
+    }
+  }
+  
+  await showAlert("Mise à jour terminée", `L'application ${app.name} a été mise à jour (${successCount}/${containersToUpdate.length} conteneurs).`);
+  isUpdating.value = null;
+  refreshData();
+  fetchUpdates();
+};
+
 let intervalId;
 onMounted(() => {
   refreshData();
+  fetchUpdates();
   intervalId = setInterval(refreshData, 5000); // Auto refresh toutes les 5s
 });
 
@@ -291,16 +354,22 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                 </span>
                 
                 <!-- Boutons d'actions pour le projet entier -->
-                <div class="flex bg-slate-900 border border-slate-700 rounded-md overflow-hidden" v-if="app.name !== 'gestion_serveur'">
-                  <button @click="handleProjectAction(app.name, 'start')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-emerald-400 transition-colors" title="Démarrer l'application">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="flex items-center space-x-2">
+                  <button v-if="appHasUpdates(app)" @click="updateApplication(app)" class="text-xs bg-orange-600 hover:bg-orange-500 text-white px-2.5 py-1.5 rounded-md border border-orange-500 shadow-lg shadow-orange-900/50 flex items-center transition-all animate-pulse" title="Mettre à jour l'application">
+                    <span class="mr-1">⬆️</span> MAJ dispo
                   </button>
-                  <button @click="handleProjectAction(app.name, 'restart')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-blue-400 transition-colors border-l border-slate-700" title="Redémarrer l'application">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                  </button>
-                  <button @click="handleProjectAction(app.name, 'stop')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-red-400 transition-colors border-l border-slate-700" title="Arrêter l'application">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
-                  </button>
+
+                  <div class="flex bg-slate-900 border border-slate-700 rounded-md overflow-hidden" v-if="app.name !== 'gestion_serveur'">
+                    <button @click="handleProjectAction(app.name, 'start')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-emerald-400 transition-colors" title="Démarrer l'application">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+                    <button @click="handleProjectAction(app.name, 'restart')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-blue-400 transition-colors border-l border-slate-700" title="Redémarrer l'application">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    </button>
+                    <button @click="handleProjectAction(app.name, 'stop')" class="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-red-400 transition-colors border-l border-slate-700" title="Arrêter l'application">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

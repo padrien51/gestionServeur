@@ -175,20 +175,20 @@ const formatDate = (dateStr) => {
 <template>
   <div class="p-4 space-y-6">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-slate-100 flex items-center">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">💾</span> Orchestrateur de Sauvegardes
       </h2>
-      <div class="flex space-x-2 bg-slate-800 p-1 rounded-lg">
+      <div class="flex space-x-2 bg-white dark:bg-slate-800 p-1 rounded-lg">
         <button 
           @click="activeTab = 'jobs'; fetchJobs()" 
-          :class="activeTab === 'jobs' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+          :class="activeTab === 'jobs' ? 'bg-slate-200 dark:bg-slate-700 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'"
           class="px-4 py-2 text-sm font-medium rounded-md transition-all"
         >
           Jobs de Sauvegarde
         </button>
         <button 
           @click="activeTab = 'logs'; fetchLogs()" 
-          :class="activeTab === 'logs' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+          :class="activeTab === 'logs' ? 'bg-slate-200 dark:bg-slate-700 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'"
           class="px-4 py-2 text-sm font-medium rounded-md transition-all"
         >
           Historique (Logs)
@@ -206,48 +206,48 @@ const formatDate = (dateStr) => {
 
       <!-- Formulaire Ajout/Modif -->
       <transition name="fade">
-        <div v-if="showForm" class="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-8 shadow-xl">
-          <h3 class="text-xl font-bold text-slate-100 mb-6 flex items-center">
+        <div v-if="showForm" class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 mb-8 shadow-xl">
+          <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center">
             <span class="mr-2">⚙️</span> {{ editingId ? 'Modifier la sauvegarde' : 'Configurer une Sauvegarde' }}
           </h3>
           <form @submit.prevent="saveJob" class="space-y-6">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Nom de la sauvegarde</label>
-                <input v-model="form.name" required placeholder="Ex: Apps Principales" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Nom de la sauvegarde</label>
+                <input v-model="form.name" required placeholder="Ex: Apps Principales" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Fréquence (Format Cron)</label>
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Fréquence (Format Cron)</label>
                 <div class="relative">
-                  <input v-model="form.cron_schedule" required type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                  <input v-model="form.cron_schedule" required type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
                   <span class="absolute right-3 top-3 text-slate-500 text-xs">Ex: 0 3 * * 0</span>
                 </div>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Dossier Racine (Cible)</label>
-                <input v-model="form.dest_path" required placeholder="/mnt/Backup_serveur/sauvegardes" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
-                <p class="text-[11px] text-slate-400 mt-2">Un sous-dossier sera créé automatiquement pour chaque application.</p>
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Dossier Racine (Cible)</label>
+                <input v-model="form.dest_path" required placeholder="/mnt/Backup_serveur/sauvegardes" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">Un sous-dossier sera créé automatiquement pour chaque application.</p>
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Rétention (Nombre de backups à conserver)</label>
-                <input v-model="form.retention_count" required type="number" min="1" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Rétention (Nombre de backups à conserver)</label>
+                <input v-model="form.retention_count" required type="number" min="1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
               </div>
             </div>
 
             <!-- Sélection des applications -->
-            <div class="pt-4 border-t border-slate-700">
-              <label class="block text-sm font-medium text-slate-300 mb-3">Applications à sauvegarder</label>
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+              <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-3">Applications à sauvegarder</label>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div 
                   v-for="app in applications" 
                   :key="app.name"
                   @click="toggleAppSelection(app.name)"
                   class="cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200"
-                  :class="form.containers.includes(app.name) ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800'"
+                  :class="form.containers.includes(app.name) ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
                 >
                   <div class="text-2xl mb-1">{{ form.containers.includes(app.name) ? '✅' : '📦' }}</div>
                   <div class="font-bold text-sm truncate w-full">{{ app.name }}</div>
@@ -255,13 +255,13 @@ const formatDate = (dateStr) => {
                 </div>
               </div>
               <p v-if="applications.length === 0" class="text-sm text-slate-500 italic">Aucune application Docker Compose détectée.</p>
-              <p class="text-xs text-slate-400 mt-3 flex items-center">
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 flex items-center">
                 <span class="mr-1">💡</span> Le dossier source sera automatiquement détecté depuis le projet Compose.
               </p>
             </div>
 
-            <div class="flex justify-end space-x-3 pt-6 border-t border-slate-700">
-              <button type="button" @click="showForm = false" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-sm font-medium transition-colors">Annuler</button>
+            <div class="flex justify-end space-x-3 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <button type="button" @click="showForm = false" class="px-6 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-sm font-medium transition-colors">Annuler</button>
               <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-900/50 transition-all">Sauvegarder ce Job</button>
             </div>
           </form>
@@ -270,25 +270,25 @@ const formatDate = (dateStr) => {
 
       <!-- Liste des Jobs -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div v-for="job in jobs" :key="job.id" class="bg-slate-800/80 backdrop-blur rounded-2xl p-6 border border-slate-700 shadow-xl relative overflow-hidden transition-all hover:border-slate-600">
+        <div v-for="job in jobs" :key="job.id" class="bg-white dark:bg-slate-800/80 backdrop-blur rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl relative overflow-hidden transition-all hover:border-slate-600">
           <!-- Indicateur on/off -->
-          <div class="absolute top-0 right-0 w-1.5 h-full transition-colors" :class="job.enabled ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-600'"></div>
+          <div class="absolute top-0 right-0 w-1.5 h-full transition-colors" :class="job.enabled ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-600'"></div>
           
           <div class="flex justify-between items-start mb-4">
             <div>
-              <h3 class="text-xl font-bold text-slate-100 flex items-center">
+              <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
                 {{ job.name }}
               </h3>
             </div>
-            <span class="text-xs font-mono bg-slate-900 px-3 py-1.5 rounded-lg text-slate-300 border border-slate-700 flex items-center shadow-inner">
+            <span class="text-xs font-mono bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center shadow-inner">
               <span class="mr-1">⏱️</span> {{ job.cron_schedule }}
             </span>
           </div>
           
-          <div class="text-sm text-slate-400 space-y-3 mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+          <div class="text-sm text-slate-500 dark:text-slate-400 space-y-3 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
             <div class="flex items-center">
               <span class="w-24 text-slate-500 text-xs uppercase tracking-wider">Cible</span>
-              <span class="text-slate-200 font-mono text-xs">{{ job.dest_path }}</span>
+              <span class="text-slate-800 dark:text-slate-200 font-mono text-xs">{{ job.dest_path }}</span>
             </div>
             <div class="flex items-start">
               <span class="w-24 text-slate-500 text-xs uppercase tracking-wider mt-0.5">Applications</span>
@@ -301,7 +301,7 @@ const formatDate = (dateStr) => {
             </div>
             <div class="flex items-center">
               <span class="w-24 text-slate-500 text-xs uppercase tracking-wider">Rétention</span>
-              <span class="text-slate-300">{{ job.retention_count }} backups</span>
+              <span class="text-slate-600 dark:text-slate-300">{{ job.retention_count }} backups</span>
             </div>
           </div>
           
@@ -310,33 +310,33 @@ const formatDate = (dateStr) => {
               <button @click="triggerJob(job.id)" class="text-xs text-blue-100 hover:text-white font-medium bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors shadow-lg shadow-blue-900/30">
                 ▶️ Lancer
               </button>
-              <button @click="openForm(job)" class="text-xs text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-colors">
+              <button @click="openForm(job)" class="text-xs text-slate-600 dark:text-slate-300 hover:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 px-4 py-2 rounded-lg transition-colors">
                 ✏️ Éditer
               </button>
               <button @click="deleteJob(job.id)" class="text-xs text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 px-3 py-2 rounded-lg transition-colors border border-transparent hover:border-red-900/50">
                 🗑️
               </button>
             </div>
-            <button @click="toggleJob(job)" class="text-sm font-bold flex items-center px-3 py-1.5 rounded-lg transition-colors" :class="job.enabled ? 'text-emerald-400 bg-emerald-900/20 hover:bg-emerald-900/40' : 'text-slate-400 bg-slate-800 hover:bg-slate-700'">
+            <button @click="toggleJob(job)" class="text-sm font-bold flex items-center px-3 py-1.5 rounded-lg transition-colors" :class="job.enabled ? 'text-emerald-400 bg-emerald-900/20 hover:bg-emerald-900/40' : 'text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'">
               <span class="mr-1.5 text-lg">{{ job.enabled ? '🟢' : '⚪' }}</span>
               {{ job.enabled ? 'Actif' : 'Inactif' }}
             </button>
           </div>
         </div>
         
-        <div v-if="jobs.length === 0" class="col-span-1 lg:col-span-2 text-center py-16 text-slate-500 bg-slate-800/30 rounded-2xl border-2 border-slate-700 border-dashed">
+        <div v-if="jobs.length === 0" class="col-span-1 lg:col-span-2 text-center py-16 text-slate-500 bg-white dark:bg-slate-800/30 rounded-2xl border-2 border-slate-200 dark:border-slate-700 border-dashed">
           <div class="text-4xl mb-4">📭</div>
-          <p class="text-lg font-medium text-slate-400">Aucun Job de sauvegarde configuré.</p>
+          <p class="text-lg font-medium text-slate-500 dark:text-slate-400">Aucun Job de sauvegarde configuré.</p>
           <p class="text-sm mt-2">Cliquez sur "+ Nouvelle Sauvegarde" pour commencer.</p>
         </div>
       </div>
     </div>
 
     <!-- VUE DES LOGS -->
-    <div v-if="activeTab === 'logs'" class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+    <div v-if="activeTab === 'logs'" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-slate-700 backdrop-blur">
+        <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+          <thead class="bg-slate-50 dark:bg-slate-900/80 text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 backdrop-blur">
             <tr>
               <th class="px-6 py-4 font-semibold tracking-wider">Date</th>
               <th class="px-6 py-4 font-semibold tracking-wider">Job</th>
@@ -344,10 +344,10 @@ const formatDate = (dateStr) => {
               <th class="px-6 py-4 font-semibold tracking-wider">Détails</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700/50">
-            <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-700/20 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-slate-400">{{ formatDate(log.created_at) }}</td>
-              <td class="px-6 py-4 font-medium text-slate-200">{{ log.job_name || 'Job Supprimé' }}</td>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-700/50">
+            <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-200 dark:hover:bg-slate-700/20 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ formatDate(log.created_at) }}</td>
+              <td class="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{{ log.job_name || 'Job Supprimé' }}</td>
               <td class="px-6 py-4">
                 <span v-if="log.status === 'SUCCESS'" class="inline-flex items-center px-2.5 py-1 bg-emerald-900/30 text-emerald-400 rounded-full text-xs font-medium border border-emerald-800/50">
                   <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1.5"></span> Succès
@@ -359,10 +359,10 @@ const formatDate = (dateStr) => {
                   <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-1.5 animate-pulse"></span> En cours
                 </span>
               </td>
-              <td class="px-6 py-4 text-xs max-w-md truncate text-slate-400" :title="log.message">{{ log.message }}</td>
+              <td class="px-6 py-4 text-xs max-w-md truncate text-slate-500 dark:text-slate-400" :title="log.message">{{ log.message }}</td>
             </tr>
             <tr v-if="logs.length === 0">
-              <td colspan="4" class="px-6 py-12 text-center text-slate-500 italic bg-slate-900/20">Aucun historique de sauvegarde pour le moment.</td>
+              <td colspan="4" class="px-6 py-12 text-center text-slate-500 italic bg-slate-50 dark:bg-slate-900/20">Aucun historique de sauvegarde pour le moment.</td>
             </tr>
           </tbody>
         </table>

@@ -46,11 +46,11 @@ const handleReset = async () => {
 </script>
 
 <template>
-  <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
-    <h1 class="text-2xl font-bold text-slate-100 mb-2 text-center flex items-center justify-center">
+  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 text-center flex items-center justify-center">
       <span class="mr-2">🔑</span> Nouveau mot de passe
     </h1>
-    <p class="text-slate-400 text-sm text-center mb-6">Définissez votre nouveau mot de passe administrateur.</p>
+    <p class="text-slate-500 dark:text-slate-400 text-sm text-center mb-6">Définissez votre nouveau mot de passe administrateur.</p>
     
     <div v-if="error" class="mb-4 bg-red-900/50 text-red-200 p-3 rounded-lg border border-red-700 text-sm">
       {{ error }}
@@ -58,21 +58,21 @@ const handleReset = async () => {
 
     <form @submit.prevent="handleReset" class="space-y-4">
       <div>
-        <label class="block text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Nouveau mot de passe</label>
+        <label class="block text-slate-500 dark:text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Nouveau mot de passe</label>
         <input 
           v-model="password" 
           type="password" 
-          class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
           minlength="6"
         >
       </div>
       <div>
-        <label class="block text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Confirmer le mot de passe</label>
+        <label class="block text-slate-500 dark:text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Confirmer le mot de passe</label>
         <input 
           v-model="confirmPassword" 
           type="password" 
-          class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
           minlength="6"
         >
@@ -84,7 +84,7 @@ const handleReset = async () => {
     </form>
     
     <div class="mt-6 text-center">
-      <a href="#" @click.prevent="$emit('go-login')" class="text-sm text-slate-400 hover:text-slate-200 transition-colors">
+      <a href="#" @click.prevent="$emit('go-login')" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-200 transition-colors">
         ← Retour à la connexion
       </a>
     </div>

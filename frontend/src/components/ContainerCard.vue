@@ -34,17 +34,17 @@ const handleAction = async (action) => {
 </script>
 
 <template>
-  <div class="bg-slate-800 rounded-xl p-4 mb-3 border border-slate-700/50 shadow-lg relative overflow-hidden group">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-3 border border-slate-200 dark:border-slate-700/50 shadow-lg relative overflow-hidden group">
     <!-- Ligne colorée indicatrice sur la gauche -->
     <div class="absolute left-0 top-0 bottom-0 w-1" :class="isUp ? 'bg-emerald-500' : 'bg-red-500'"></div>
     
     <div class="flex justify-between items-start ml-2">
       <div class="truncate pr-2 flex-1">
-        <h3 class="text-base font-semibold text-slate-100 truncate flex items-center gap-2">
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 truncate flex items-center gap-2">
           {{ container.name }}
           <span class="h-2.5 w-2.5 rounded-full inline-block" :class="statusColor"></span>
         </h3>
-        <p class="text-xs text-slate-400 mt-1 truncate">{{ container.image }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{{ container.image }}</p>
         <p class="text-xs font-mono text-slate-500 mt-0.5">{{ container.status }}</p>
       </div>
       

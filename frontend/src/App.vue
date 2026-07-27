@@ -13,13 +13,19 @@ import Login from './components/auth/Login.vue';
 import ForgotPassword from './components/auth/ForgotPassword.vue';
 import ResetPassword from './components/auth/ResetPassword.vue';
 
+import { useTheme } from './composables/useTheme';
+
 const currentTab = ref('dashboard');
 const authState = ref('loading'); // 'loading', 'setup', 'login', 'forgot', 'reset', 'authenticated'
 const resetToken = ref('');
 
 const API_BASE = '/api';
 
+const { isDarkMode, toggleTheme, initTheme } = useTheme();
+
 onMounted(async () => {
+  initTheme();
+  
   // Check url parameters for reset token
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('reset')) {
@@ -67,8 +73,8 @@ const logout = () => {
 </script>
 
 <template>
-  <div v-if="authState !== 'authenticated'" class="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-    <div v-if="authState === 'loading'" class="text-slate-400 animate-pulse text-lg">
+  <div v-if="authState !== 'authenticated'" class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+    <div v-if="authState === 'loading'" class="text-slate-500 dark:text-slate-400 animate-pulse text-lg">
       Chargement...
     </div>
     
@@ -96,23 +102,31 @@ const logout = () => {
     />
   </div>
 
-  <div v-else class="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">
+  <div v-else class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 flex flex-col font-sans">
     <!-- En-tête -->
-    <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-10 shadow-sm">
+    <header class="bg-slate-50 dark:bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-10 shadow-sm">
       <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 flex items-center">
           <span class="mr-2 text-2xl">🎛️</span> Gestion Serveur
         </h1>
         
         <!-- Navigation -->
-        <nav class="flex space-x-1 bg-slate-800 p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
-          <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
-          <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
-          <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
-          <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Paramètres</button>
+        <nav class="flex space-x-1 bg-white dark:bg-slate-800 p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
+          <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
+          <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
+          <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
+          <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap">Paramètres</button>
           
-          <div class="flex items-center ml-auto sm:ml-2 pl-2 sm:pl-2 border-l border-slate-700">
-            <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'" class="p-2 mr-1 rounded-md text-sm transition-all" title="Mon Compte">
+          <div class="flex items-center ml-auto sm:ml-2 pl-2 sm:pl-2 border-l border-slate-200 dark:border-slate-700">
+            <button @click="toggleTheme" class="p-2 mr-1 rounded-md text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all" title="Changer de thème">
+              <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 4.22a1 1 0 011.415 0l.707.707a1 1 0 01-1.414 1.414l-.708-.707a1 1 0 010-1.414zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-4.22 4.22a1 1 0 010 1.415l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.22-4.22a1 1 0 01-1.415 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm4.22-4.22a1 1 0 010-1.415l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM10 5a5 5 0 100 10 5 5 0 000-10z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'" class="p-2 mr-1 rounded-md text-sm transition-all" title="Mon Compte">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
               </svg>

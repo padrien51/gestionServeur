@@ -41,11 +41,11 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
     <!-- Déco -->
     <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-emerald-500"></div>
 
-    <h1 class="text-2xl font-bold text-slate-100 mb-6 text-center flex items-center justify-center">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 text-center flex items-center justify-center">
       <span class="mr-3 text-3xl">🛡️</span> Accès Restreint
     </h1>
     
@@ -55,25 +55,25 @@ const handleLogin = async () => {
 
     <form @submit.prevent="handleLogin" class="space-y-4">
       <div>
-        <label class="block text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Adresse Email</label>
+        <label class="block text-slate-500 dark:text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Adresse Email</label>
         <input 
           v-model="email" 
           type="email" 
           placeholder="admin@domaine.com"
-          class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
         >
       </div>
       <div>
         <div class="flex justify-between items-center mb-1">
-          <label class="block text-slate-400 text-xs font-medium uppercase tracking-wide">Mot de passe</label>
+          <label class="block text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide">Mot de passe</label>
           <a href="#" @click.prevent="$emit('go-forgot-password')" class="text-xs text-blue-400 hover:text-blue-300 transition-colors">Oublié ?</a>
         </div>
         <input 
           v-model="password" 
           type="password" 
           placeholder="••••••••"
-          class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
         >
       </div>

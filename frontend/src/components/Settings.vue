@@ -145,78 +145,78 @@ onMounted(() => {
 <template>
   <div class="p-4 space-y-6">
     <div class="mb-6">
-      <h2 class="text-2xl font-bold text-slate-100 flex items-center">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">⚙️</span> Paramètres Généraux
       </h2>
-      <p class="text-slate-400 text-sm mt-1">Configurez le comportement global de l'application.</p>
+      <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Configurez le comportement global de l'application.</p>
     </div>
 
-    <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl p-6">
       <form @submit.prevent="saveSettings" class="space-y-6">
         
         <!-- Section Notifications -->
         <div class="space-y-4">
-          <h3 class="text-lg font-semibold text-slate-200 border-b border-slate-700 pb-2 flex items-center">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
             <span class="mr-2">💬</span> Notifications
           </h3>
           
           <div>
-              <label class="block text-sm font-medium text-slate-300 mb-2">URL du Webhook Mattermost</label>
+              <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">URL du Webhook Mattermost</label>
               <div class="flex flex-col sm:flex-row gap-3">
                 <input 
                   v-model="form.mattermost_webhook_url" 
                   type="url" 
                   placeholder="https://mattermost.mon-domaine.com/hooks/xyz..." 
-                  class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
+                  class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
                 />
                 <button 
                   @click="testWebhook" 
                   type="button"
                   :disabled="isTestingWebhook || !form.mattermost_webhook_url"
-                  class="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-all whitespace-nowrap"
+                  class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-all whitespace-nowrap"
                 >
                   <span v-if="isTestingWebhook" class="animate-pulse">Test en cours...</span>
                   <span v-else>Tester 🚀</span>
                 </button>
               </div>
-              <p class="text-xs text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde et vérification de MAJ.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde et vérification de MAJ.</p>
             </div>
         </div>
 
         <!-- Section Planification -->
-        <div class="space-y-4 pt-4 mt-4 border-t border-slate-700/50">
-          <h3 class="text-lg font-semibold text-slate-200 border-b border-slate-700 pb-2 flex items-center">
+        <div class="space-y-4 pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
             <span class="mr-2">⏱️</span> Planification
           </h3>
           
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Vérification automatique des Mises à jour (CRON)</label>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Vérification automatique des Mises à jour (CRON)</label>
             <input 
               v-model="form.update_cron_schedule" 
               type="text" 
               placeholder="0 9 * * *" 
-              class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
             />
-            <p class="text-xs text-slate-400 mt-2">Par défaut : <code>0 9 * * *</code> (Tous les jours à 09h00).</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Par défaut : <code>0 9 * * *</code> (Tous les jours à 09h00).</p>
           </div>
         </div>
 
         <!-- Section Utilisateurs -->
-        <div class="space-y-4 pt-4 mt-4 border-t border-slate-700/50">
-          <h3 class="text-lg font-semibold text-slate-200 border-b border-slate-700 pb-2 flex items-center">
+        <div class="space-y-4 pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
             <span class="mr-2">👥</span> Gestion des Utilisateurs
           </h3>
           
-          <div class="bg-slate-900 rounded-xl border border-slate-700 overflow-hidden mb-4">
-            <table class="w-full text-left text-sm text-slate-300">
-              <thead class="bg-slate-800 text-slate-400">
+          <div class="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-4">
+            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+              <thead class="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                 <tr>
                   <th class="px-4 py-3 font-medium">Email</th>
                   <th class="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-700">
-                <tr v-for="u in users" :key="u.id" class="hover:bg-slate-800/50 transition-colors">
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                <tr v-for="u in users" :key="u.id" class="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
                   <td class="px-4 py-3">{{ u.email }}</td>
                   <td class="px-4 py-3 text-right">
                     <button type="button" @click="handleDeleteUser(u.id, u.email)" class="text-red-400 hover:text-red-300 transition-colors">Supprimer</button>
@@ -229,16 +229,16 @@ onMounted(() => {
             </table>
           </div>
 
-          <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-end">
+          <div class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-end">
             <div class="flex-1 w-full">
-              <label class="block text-xs font-medium text-slate-400 mb-1">Nouvel email</label>
-              <input v-model="newUserEmail" type="email" placeholder="admin@domaine.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nouvel email</label>
+              <input v-model="newUserEmail" type="email" placeholder="admin@domaine.com" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div class="flex-1 w-full">
-              <label class="block text-xs font-medium text-slate-400 mb-1">Mot de passe</label>
-              <input v-model="newUserPassword" type="password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Mot de passe</label>
+              <input v-model="newUserPassword" type="password" placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
             </div>
-            <button type="button" @click="handleAddUser" class="w-full md:w-auto bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors border border-slate-600 md:h-[42px] whitespace-nowrap">
+            <button type="button" @click="handleAddUser" class="w-full md:w-auto bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors border border-slate-300 dark:border-slate-600 md:h-[42px] whitespace-nowrap">
               Ajouter
             </button>
           </div>

@@ -89,14 +89,14 @@ onMounted(async () => {
 <template>
   <div class="p-4 space-y-6">
     <section>
-      <h2 class="text-xl font-bold mb-4 text-slate-100 flex items-center">
+      <h2 class="text-xl font-bold mb-4 text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">🐧</span> Mises à jour Système (Ubuntu)
       </h2>
-      <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-lg">
-        <div v-if="osUpdates.supported && osUpdates.available" class="text-slate-300 font-mono text-sm whitespace-pre-wrap bg-[#0d1117] p-4 rounded-lg">
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-lg">
+        <div v-if="osUpdates.supported && osUpdates.available" class="text-slate-600 dark:text-slate-300 font-mono text-sm whitespace-pre-wrap bg-[#0d1117] p-4 rounded-lg">
           {{ osUpdates.rawText }}
         </div>
-        <div v-else class="text-slate-400 text-sm">
+        <div v-else class="text-slate-500 dark:text-slate-400 text-sm">
           {{ osUpdates.rawText || "Aucune mise à jour détectée ou fichier de suivi non monté." }}
         </div>
       </div>
@@ -104,10 +104,10 @@ onMounted(async () => {
 
     <section>
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-slate-100 flex items-center">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
           <span class="mr-2">🐳</span> Conteneurs Docker
         </h2>
-        <button @click="checkDockerUpdates" class="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded">
+        <button @click="checkDockerUpdates" class="text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1 rounded">
           Rafraîchir
         </button>
       </div>
@@ -118,27 +118,27 @@ onMounted(async () => {
       </div>
 
       <div v-if="loading" class="animate-pulse space-y-3">
-        <div class="h-20 bg-slate-800 rounded-xl"></div>
-        <div class="h-20 bg-slate-800 rounded-xl"></div>
+        <div class="h-20 bg-white dark:bg-slate-800 rounded-xl"></div>
+        <div class="h-20 bg-white dark:bg-slate-800 rounded-xl"></div>
       </div>
       <div v-else class="space-y-4">
         <div v-for="container in containers" :key="container.id" 
-             class="bg-slate-800 rounded-xl border shadow-md transition-all overflow-hidden"
-             :class="container.hasUpdate ? (container.isBreaking ? 'border-red-500/50' : 'border-blue-500/50') : 'border-slate-700'">
+             class="bg-white dark:bg-slate-800 rounded-xl border shadow-md transition-all overflow-hidden"
+             :class="container.hasUpdate ? (container.isBreaking ? 'border-red-500/50' : 'border-blue-500/50') : 'border-slate-200 dark:border-slate-700'">
           
           <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex-1 min-w-0">
-              <h3 class="text-base font-semibold text-slate-100 flex items-center gap-2">
+              <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 {{ container.name }}
                 <span v-if="container.hasUpdate" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full" 
                       :class="container.isBreaking ? 'bg-red-900/80 text-red-300' : 'bg-blue-900/80 text-blue-300'">
                   Maj dispo
                 </span>
-                <span v-else class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">
+                <span v-else class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                   À jour
                 </span>
               </h3>
-              <div class="text-xs text-slate-400 mt-2 flex flex-col gap-1">
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex flex-col gap-1">
                 <span><span class="opacity-70">Image:</span> {{ container.image }}</span>
                 <span><span class="opacity-70">Actuel:</span> {{ container.currentVersion }}</span>
                 <span v-if="container.hasUpdate" class="text-blue-300"><span class="opacity-70">Nouveau:</span> {{ container.newVersion }}</span>
@@ -162,15 +162,15 @@ onMounted(async () => {
           </div>
 
           <!-- Section Changelog (si mise à jour dispo) -->
-          <div v-if="container.hasUpdate" class="border-t border-slate-700 bg-slate-900/50 p-4">
+          <div v-if="container.hasUpdate" class="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
             <div v-if="container.isBreaking" class="mb-3 text-xs font-bold text-red-400 flex items-center bg-red-950/30 p-2 rounded border border-red-900/50">
               ⚠️ BREAKING CHANGES DÉTECTÉS
             </div>
-            <div v-if="!container.isUpdatableViaUI" class="mb-3 text-xs text-slate-300">
+            <div v-if="!container.isUpdatableViaUI" class="mb-3 text-xs text-slate-600 dark:text-slate-300">
               ℹ️ Ce conteneur utilise un tag fixe (<code>{{ container.tag }}</code>). Pour le mettre à jour vers <code>{{ container.newVersion }}</code>, vous devez modifier manuellement votre fichier <code>docker-compose.yml</code> et relancer le conteneur.
             </div>
-            <details class="text-xs text-slate-300">
-              <summary class="cursor-pointer font-medium text-slate-400 hover:text-slate-200">Voir les notes de mise à jour (Changelog)</summary>
+            <details class="text-xs text-slate-600 dark:text-slate-300">
+              <summary class="cursor-pointer font-medium text-slate-500 dark:text-slate-400 hover:text-slate-200">Voir les notes de mise à jour (Changelog)</summary>
               <div v-if="container.changelog" class="mt-2 p-3 bg-slate-950 rounded overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">
                 {{ container.changelog }}
               </div>
@@ -181,7 +181,7 @@ onMounted(async () => {
           </div>
         </div>
         
-        <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-700 border-dashed">
+        <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 border-dashed">
           Aucun conteneur trouvé.
         </div>
       </div>

@@ -188,6 +188,20 @@ app.post('/api/docker/projects/:name/:action', async (req, res) => {
     }
 });
 
+app.post('/api/docker/projects/:name/compose/:action', async (req, res) => {
+    const { name, action } = req.params;
+    try {
+        if (!['pull', 'down', 'kill', 'up'].includes(action)) {
+            return res.status(400).json({ error: "Action compose inconnue" });
+        }
+        await dockerService.runComposeAction(name, action);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 app.get('/api/updates/os', async (req, res) => {
     const info = await updateService.getOSUpdates();
     res.json(info);

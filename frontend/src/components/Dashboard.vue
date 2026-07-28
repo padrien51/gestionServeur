@@ -21,8 +21,17 @@ const toggleViewMode = (mode) => {
 
 import { computed } from 'vue';
 
+const knownProjects = ref([]);
+
 const groupedApps = computed(() => {
   const map = {};
+  
+  // 1. Initialiser avec tous les projets connus (même ceux arrêtés)
+  for (const app of knownProjects.value) {
+    map[app.name] = { name: app.name, containers: [] };
+  }
+
+  // 2. Ajouter les conteneurs actifs
   for (const c of containers.value) {
     if (!map[c.project]) {
       map[c.project] = { name: c.project, containers: [] };
@@ -88,8 +97,20 @@ const fetchContainers = async () => {
   }
 };
 
+const fetchApplications = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/docker/applications`, getFetchOptions());
+    if (res.status === 401) return handleUnauthorized();
+    if (res.ok) {
+      knownProjects.value = await res.json();
+    }
+  } catch (err) {
+    console.error("Erreur lors de la récupération des applications", err);
+  }
+};
+
 const refreshData = async () => {
-  await Promise.all([fetchMetrics(), fetchContainers()]);
+  await Promise.all([fetchMetrics(), fetchContainers(), fetchApplications()]);
   loading.value = false;
 };
 
@@ -123,6 +144,55 @@ const handleProjectAction = async (projectName, action) => {
     setTimeout(refreshData, 1500);
   } catch (err) {
     showAlert("Erreur", err.message);
+  }
+};
+
+const composeLoading = ref({});
+
+const handleComposeAction = async (projectName, action) => {
+  // Confirmations pour les actions destructives
+  if (action === 'kill') {
+    const confirmed = await showConfirm(
+      "🧨 DESTRUCTION TOTALE (Kill)",
+      `ATTENTION DANGER !\n\nVoulez-vous vraiment DÉTRUIRE l'application ${projectName} ?\n\nCela va :\n1. Supprimer tous les conteneurs et réseaux\n2. Supprimer tous les volumes de données gérés par Docker (perte de données)\n3. SUPPRIMER DÉFINITIVEMENT LE DOSSIER SOURCE du projet sur votre disque dur !\n\nCette action est IRRÉVERSIBLE.`
+    );
+    if (!confirmed) return;
+  } else if (action === 'down') {
+    const confirmed = await showConfirm(
+      "Arrêt complet (Down)",
+      `Voulez-vous vraiment arrêter et supprimer les conteneurs et réseaux de l'application ${projectName} ?\n(Les volumes de données seront conservés)`
+    );
+    if (!confirmed) return;
+  } else if (action === 'up') {
+    const confirmed = await showConfirm(
+      "Lancement (Up)",
+      `Voulez-vous lancer l'application ${projectName} en utilisant sa configuration actuelle (docker-compose up -d) ?`
+    );
+    if (!confirmed) return;
+  } else if (action === 'pull') {
+    // Pas de confirmation pour le pull, mais on prévient que ça peut être long
+  }
+
+  composeLoading.value = { ...composeLoading.value, [projectName]: action };
+  try {
+    const res = await fetch(`${API_BASE}/docker/projects/${projectName}/compose/${action}`, { 
+      method: 'POST',
+      ...getFetchOptions()
+    });
+    if (res.status === 401) return handleUnauthorized();
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Erreur lors de l'exécution de docker compose ${action}`);
+    
+    if (action === 'pull') {
+      showAlert("Succès", `Le pull de l'application ${projectName} est terminé.`);
+    }
+    
+    setTimeout(refreshData, 1500);
+  } catch (err) {
+    showAlert("Erreur Compose", err.message);
+  } finally {
+    composeLoading.value = { ...composeLoading.value, [projectName]: null };
   }
 };
 
@@ -364,8 +434,11 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
               </h3>
               
               <div class="flex items-center gap-2">
-                <span class="text-xs bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 hidden sm:inline-block">
+                <span v-if="app.containers.length > 0" class="text-xs bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 hidden sm:inline-block">
                   {{ app.containers.length }} conteneur(s)
+                </span>
+                <span v-else class="text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-md border border-red-200 dark:border-red-800/50 hidden sm:inline-block font-medium">
+                  Hors ligne (Down)
                 </span>
                 
                 <!-- Boutons d'actions pour le projet entier -->
@@ -374,16 +447,38 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                     <span class="mr-1">⬆️</span> MAJ dispo
                   </button>
 
-                  <div class="flex bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md overflow-hidden" v-if="app.name !== 'gestion_serveur'">
-                    <button @click="handleProjectAction(app.name, 'start')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-emerald-400 transition-colors" title="Démarrer l'application">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </button>
-                    <button @click="handleProjectAction(app.name, 'restart')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-400 transition-colors border-l border-slate-200 dark:border-slate-700" title="Redémarrer l'application">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    </button>
-                    <button @click="handleProjectAction(app.name, 'stop')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-400 transition-colors border-l border-slate-200 dark:border-slate-700" title="Arrêter l'application">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
-                    </button>
+                  <div class="flex items-center space-x-2">
+                    <div class="flex bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md overflow-hidden" v-if="app.name !== 'gestion_serveur'">
+                      <button @click="handleComposeAction(app.name, 'pull')" :disabled="composeLoading[app.name]" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-purple-400 transition-colors disabled:opacity-50" title="Pull les images (docker compose pull)">
+                        <svg v-if="composeLoading[app.name] === 'pull'" class="animate-spin w-4 h-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                      </button>
+                      <button v-if="app.containers.length > 0" @click="handleComposeAction(app.name, 'down')" :disabled="composeLoading[app.name]" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-orange-500 transition-colors border-l border-slate-200 dark:border-slate-700 disabled:opacity-50" title="Détruire les conteneurs (docker compose down)">
+                        <svg v-if="composeLoading[app.name] === 'down'" class="animate-spin w-4 h-4 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      </button>
+                      <button @click="handleComposeAction(app.name, 'kill')" :disabled="composeLoading[app.name]" class="p-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors border-l border-slate-200 dark:border-slate-700 disabled:opacity-50" title="Destruction TOTALE et effacement des fichiers hôte (DANGER !)">
+                        <svg v-if="composeLoading[app.name] === 'kill'" class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                      </button>
+                      <button @click="handleComposeAction(app.name, 'up')" :disabled="composeLoading[app.name]" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition-colors border-l border-slate-200 dark:border-slate-700 disabled:opacity-50" title="Créer/Mettre à jour le projet (docker compose up -d)">
+                        <svg v-if="composeLoading[app.name] === 'up'" class="animate-spin w-4 h-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                      </button>
+                    </div>
+
+                    <!-- Boutons Classiques (Start, Restart, Stop) -->
+                    <div class="flex bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md overflow-hidden" v-if="app.name !== 'gestion_serveur' && app.containers.length > 0">
+                      <button @click="handleProjectAction(app.name, 'start')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-emerald-400 transition-colors" title="Démarrer les conteneurs (start)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      </button>
+                      <button @click="handleProjectAction(app.name, 'restart')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-400 transition-colors border-l border-slate-200 dark:border-slate-700" title="Redémarrer les conteneurs (restart)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                      </button>
+                      <button @click="handleProjectAction(app.name, 'stop')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-400 transition-colors border-l border-slate-200 dark:border-slate-700" title="Arrêter les conteneurs (stop)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

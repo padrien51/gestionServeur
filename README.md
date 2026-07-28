@@ -17,7 +17,8 @@
 ## 🚀 Fonctionnalités Principales
 
 - 📊 **Monitoring Système & Docker** : Visualisation en temps réel de l'état du serveur (CPU, RAM, Disque, Températures) et des conteneurs.
-- 📦 **Gestion des Conteneurs** : Démarrer, arrêter, redémarrer et nettoyer les conteneurs (via l'intégration native de l'API Docker).
+- 📦 **Gestion des Conteneurs et Projets Compose** : Démarrer, arrêter, redémarrer les conteneurs individuellement, ou gérer des projets entiers via Docker Compose (Pull, Up, Down).
+- 🧹 **Nettoyage Avancé & Destruction (Kill)** : Possibilité de détruire intégralement un projet obsolète depuis l'interface (conteneurs, volumes de données, et suppression du dossier source sur l'hôte). Les projets sont mémorisés en base de données et auto-nettoyés s'ils sont supprimés manuellement.
 - 💾 **Orchestrateur de Sauvegardes (CRON)** : Planification intelligente des sauvegardes avec gestion de la rétention (ex: garder les 5 dernières archives).
 - 🔔 **Notifications Webhook** : Intégration **Mattermost / Slack** pour recevoir des alertes de statut de sauvegarde et des rapports de mise à jour quotidienne.
 - 🔄 **Veille de Mises à Jour** : Vérification automatique des mises à jour (OS et images Docker) avec détection des *Breaking Changes*.

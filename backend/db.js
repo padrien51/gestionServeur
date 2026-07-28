@@ -85,6 +85,17 @@ function initializeDB() {
             if (err) console.error("Erreur création password_resets :", err);
             else console.log("Table password_resets vérifiée.");
         });
+        
+        // Table des projets Compose mémorisés
+        db.run(`CREATE TABLE IF NOT EXISTS compose_projects (
+            name TEXT PRIMARY KEY,
+            working_dir TEXT NOT NULL,
+            config_files TEXT,
+            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (err) console.error("Erreur création compose_projects :", err);
+            else console.log("Table compose_projects vérifiée.");
+        });
     });
 };
 

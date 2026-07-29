@@ -148,24 +148,26 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 space-y-6">
-    <div class="mb-6">
+  <!-- pb-28 pour éviter que le contenu soit caché par la sticky bar de sauvegarde + la nav mobile -->
+  <div class="p-4 space-y-8 pb-32">
+    <div>
       <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">⚙️</span> Paramètres Généraux
       </h2>
       <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Configurez le comportement global de l'application.</p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl p-6">
-      <form @submit.prevent="saveSettings" class="space-y-6">
+    <form @submit.prevent="saveSettings">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Section Notifications -->
-        <div class="space-y-4">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 flex flex-col">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center">
             <span class="mr-2">💬</span> Notifications
           </h3>
           
-          <div>
+          <div class="flex-1 space-y-4">
+            <div>
               <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">URL du Webhook Mattermost</label>
               <div class="flex flex-col sm:flex-row gap-3">
                 <input 
@@ -178,7 +180,7 @@ onMounted(() => {
                   @click="testWebhook" 
                   type="button"
                   :disabled="isTestingWebhook || !form.mattermost_webhook_url"
-                  class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-all whitespace-nowrap"
+                  class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 text-slate-800 dark:text-white font-medium py-3 px-6 rounded-xl transition-all whitespace-nowrap"
                 >
                   <span v-if="isTestingWebhook" class="animate-pulse">Test en cours...</span>
                   <span v-else>Tester 🚀</span>
@@ -186,119 +188,136 @@ onMounted(() => {
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde et vérification de MAJ.</p>
             </div>
+          </div>
         </div>
 
         <!-- Section Planification -->
-        <div class="space-y-4 pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 flex flex-col">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center">
             <span class="mr-2">⏱️</span> Planification
           </h3>
           
-          <div>
-            <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Vérification automatique des Mises à jour (CRON)</label>
-            <input 
-              v-model="form.update_cron_schedule" 
-              type="text" 
-              placeholder="0 9 * * *" 
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
-            />
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Par défaut : <code>0 9 * * *</code> (Tous les jours à 09h00).</p>
+          <div class="flex-1 space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Vérification automatique des Mises à jour (CRON)</label>
+              <input 
+                v-model="form.update_cron_schedule" 
+                type="text" 
+                placeholder="0 9 * * *" 
+                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
+              />
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Par défaut : <code>0 9 * * *</code> (Tous les jours à 09h00).</p>
+            </div>
           </div>
         </div>
 
         <!-- Section IA (AIOps) -->
-        <div class="space-y-4 pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 lg:col-span-2">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center">
             <span class="mr-2">🤖</span> Intelligence Artificielle (AIOps)
           </h3>
-          <div class="space-y-4">
-            <div class="flex items-center bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
-              <input type="checkbox" id="ai_enabled" v-model="form.ai_enabled" true-value="true" false-value="false" class="mr-3 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
-              <label for="ai_enabled" class="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer">Activer la surveillance et l'analyse des logs d'erreurs par l'IA</label>
+          
+          <div class="space-y-6">
+            <div class="flex items-center bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40">
+              <input type="checkbox" id="ai_enabled" v-model="form.ai_enabled" true-value="true" false-value="false" class="mr-4 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+              <label for="ai_enabled" class="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer select-none">Activer la surveillance et l'analyse des logs d'erreurs par l'IA</label>
             </div>
             
-            <div v-if="form.ai_enabled === 'true'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-if="form.ai_enabled === 'true'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <div>
-                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Moteur IA</label>
-                <select v-model="form.ai_engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none">
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">Moteur IA</label>
+                <select v-model="form.ai_engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none">
                   <option value="ollama">Ollama (Local)</option>
                   <option value="openai">OpenAI (Cloud)</option>
                 </select>
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">URL (Ollama/Custom)</label>
-                <input v-model="form.ai_url" type="url" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
-                <p class="text-[10px] text-slate-400 mt-1">Défaut Docker: http://host.docker.internal:11434</p>
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">Modèle</label>
+                <input v-model="form.ai_model" type="text" placeholder="mistral" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Modèle</label>
-                <input v-model="form.ai_model" type="text" placeholder="mistral" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">URL (Ollama/Custom)</label>
+                <input v-model="form.ai_url" type="url" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                <p class="text-[10px] text-slate-400 mt-1">Défaut Docker: http://host.docker.internal:11434</p>
               </div>
 
-              <div v-if="form.ai_engine === 'openai'">
-                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Clé API (OpenAI)</label>
-                <input v-model="form.ai_api_key" type="password" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+              <div v-if="form.ai_engine === 'openai'" class="md:col-span-2 lg:col-span-3">
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">Clé API (OpenAI)</label>
+                <input v-model="form.ai_api_key" type="password" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Section Utilisateurs -->
-        <div class="space-y-4 pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
-            <span class="mr-2">👥</span> Gestion des Utilisateurs
-          </h3>
-          
-          <div class="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-4">
-            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-              <thead class="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                <tr>
-                  <th class="px-4 py-3 font-medium">Email</th>
-                  <th class="px-4 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                <tr v-for="u in users" :key="u.id" class="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
-                  <td class="px-4 py-3">{{ u.email }}</td>
-                  <td class="px-4 py-3 text-right">
-                    <button type="button" @click="handleDeleteUser(u.id, u.email)" class="text-red-400 hover:text-red-300 transition-colors">Supprimer</button>
-                  </td>
-                </tr>
-                <tr v-if="users.length === 0">
-                  <td colspan="2" class="px-4 py-4 text-center text-slate-500">Chargement...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+      </div>
 
-          <div class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-end">
-            <div class="flex-1 w-full">
-              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nouvel email</label>
-              <input v-model="newUserEmail" type="email" placeholder="admin@domaine.com" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <div class="flex-1 w-full">
-              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Mot de passe</label>
-              <input v-model="newUserPassword" type="password" placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <button type="button" @click="handleAddUser" class="w-full md:w-auto bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors border border-slate-300 dark:border-slate-600 md:h-[42px] whitespace-nowrap">
-              Ajouter
-            </button>
-          </div>
+      <!-- STICKY ACTION BAR -->
+      <div class="fixed bottom-14 sm:bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div class="max-w-6xl mx-auto flex justify-end">
+          <button 
+            type="submit" 
+            :disabled="isSaving"
+            class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-2.5 px-8 rounded-xl transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
+          >
+            <svg v-if="!isSaving" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            <span v-if="isSaving" class="animate-pulse">Sauvegarde en cours...</span>
+            <span v-else>Enregistrer les paramètres globaux</span>
+          </button>
         </div>
+      </div>
+    </form>
 
-        <div class="flex flex-col gap-4">
-        <button 
-          @click="saveSettings" 
-          :disabled="isSaving"
-          class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-900/20"
-        >
-          <span v-if="isSaving" class="animate-pulse">Sauvegarde en cours...</span>
-          <span v-else>Enregistrer les paramètres globaux</span>
+    <div class="mt-12 mb-6">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+        <span class="mr-2">👥</span> Gestion des Utilisateurs
+      </h2>
+      <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Gérez les accès à l'interface d'administration.</p>
+    </div>
+
+    <!-- Section Utilisateurs -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6">
+      <div class="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+        <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+          <thead class="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+            <tr>
+              <th class="px-5 py-3.5 font-medium">Email</th>
+              <th class="px-5 py-3.5 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            <tr v-for="u in users" :key="u.id" class="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+              <td class="px-5 py-3.5">{{ u.email }}</td>
+              <td class="px-5 py-3.5 text-right">
+                <button type="button" @click="handleDeleteUser(u.id, u.email)" class="text-red-500 hover:text-red-400 font-medium transition-colors">Supprimer</button>
+              </td>
+            </tr>
+            <tr v-if="users.length === 0">
+              <td colspan="2" class="px-5 py-6 text-center text-slate-500">Chargement des utilisateurs...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col md:flex-row gap-5 items-end">
+        <div class="flex-1 w-full">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Nouvel email</label>
+          <input v-model="newUserEmail" type="email" placeholder="admin@domaine.com" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div class="flex-1 w-full">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Mot de passe</label>
+          <input v-model="newUserPassword" type="password" placeholder="••••••••" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <button type="button" @click="handleAddUser" class="w-full md:w-auto bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium py-3 px-6 rounded-xl transition-colors md:h-[46px] whitespace-nowrap flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
+          Ajouter
         </button>
       </div>
-      </form>
     </div>
   </div>
 </template>

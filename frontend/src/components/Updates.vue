@@ -155,7 +155,7 @@ onMounted(async () => {
               >
                 {{ updatingContainer === container.name ? 'En cours...' : 'Mettre à jour' }}
               </button>
-              <div v-else-if="container.hasUpdate && !container.isUpdatableViaUI" class="text-xs text-orange-400 bg-orange-950/40 p-2 rounded border border-orange-900/50 text-center">
+              <div v-else-if="container.hasUpdate && !container.isUpdatableViaUI" class="text-xs text-orange-700 bg-orange-100 border border-orange-200 dark:text-orange-400 dark:bg-orange-950/40 p-2 rounded dark:border-orange-900/50 text-center">
                 Action requise :<br>Modifiez le <code>docker-compose.yml</code>
               </div>
             </div>
@@ -163,15 +163,15 @@ onMounted(async () => {
 
           <!-- Section Changelog (si mise à jour dispo) -->
           <div v-if="container.hasUpdate" class="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
-            <div v-if="container.isBreaking" class="mb-3 text-xs font-bold text-red-400 flex items-center bg-red-950/30 p-2 rounded border border-red-900/50">
+            <div v-if="container.isBreaking" class="mb-3 text-xs font-bold text-red-700 bg-red-100 border border-red-200 dark:text-red-400 flex items-center dark:bg-red-950/30 p-2 rounded dark:border-red-900/50">
               ⚠️ BREAKING CHANGES DÉTECTÉS
             </div>
             <div v-if="!container.isUpdatableViaUI" class="mb-3 text-xs text-slate-600 dark:text-slate-300">
               ℹ️ Ce conteneur utilise un tag fixe (<code>{{ container.tag }}</code>). Pour le mettre à jour vers <code>{{ container.newVersion }}</code>, vous devez modifier manuellement votre fichier <code>docker-compose.yml</code> et relancer le conteneur.
             </div>
             <details class="text-xs text-slate-600 dark:text-slate-300">
-              <summary class="cursor-pointer font-medium text-slate-500 dark:text-slate-400 hover:text-slate-200">Voir les notes de mise à jour (Changelog)</summary>
-              <div v-if="container.changelog" class="mt-2 p-3 bg-slate-950 rounded overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">
+              <summary class="cursor-pointer font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Voir les notes de mise à jour (Changelog)</summary>
+              <div v-if="container.changelog" class="mt-2 p-3 bg-slate-200 dark:bg-slate-950 text-slate-700 dark:text-slate-300 rounded overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">
                 {{ container.changelog }}
               </div>
               <div v-else class="mt-2 text-slate-500 italic">

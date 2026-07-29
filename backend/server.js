@@ -263,11 +263,236 @@ app.post('/api/settings/test-webhook', async (req, res) => {
             })
         });
 
+        const result = await authService.requestPasswordReset(req.body.email, host);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        const result = await authService.resetPassword(token, newPassword);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// Middleware d'authentification JWT pour les autres routes
+const authenticate = (req, res, next) => {
+    // Lecture dans l'en-tête (Bearer token) ou querystring (pour SSE)
+    const authHeader = req.headers['authorization'];
+    let token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        token = req.query.token;
+    }
+
+    if (!token) {
+        return res.status(401).json({ error: 'Non autorisé: Token manquant' });
+    }
+
+    try {
+        const user = authService.verifyToken(token);
+        req.user = user;
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Non autorisé: Token invalide ou expiré' });
+    }
+};
+
+// Appliquer l'authentification uniquement sur les routes de l'API (après les routes publiques)
+app.use('/api', authenticate);
+
+// --- ROUTES AUTH PROTÉGÉES ---
+app.post('/api/auth/change-password', async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/change-email', async (req, res) => {
+    try {
+        const { newEmail } = req.body;
+        const result = await authService.changeEmail(req.user.id, newEmail);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// --- ROUTES GESTION UTILISATEURS ---
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await authService.getUsers();
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const result = await authService.addUser(email, password);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const result = await authService.deleteUser(req.params.id);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// --- ROUTES UPDATES ---
+app.post('/api/docker/containers/:id/:action', async (req, res) => {
+    const { id, action } = req.params;
+    try {
+        if (action === 'start') await dockerService.startContainer(id);
+        else if (action === 'stop') await dockerService.stopContainer(id);
+        else if (action === 'restart') await dockerService.restartContainer(id);
+        else return res.status(400).json({ error: "Action inconnue" });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/docker/projects/:name/:action', async (req, res) => {
+    const { name, action } = req.params;
+    try {
+        if (!['start', 'stop', 'restart'].includes(action)) {
+            return res.status(400).json({ error: "Action inconnue" });
+        }
+        await dockerService.handleProjectAction(name, action);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/docker/projects/:name/compose/:action', async (req, res) => {
+    const { name, action } = req.params;
+    try {
+        if (!['pull', 'down', 'kill', 'up'].includes(action)) {
+            return res.status(400).json({ error: "Action compose inconnue" });
+        }
+        await dockerService.runComposeAction(name, action);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+app.get('/api/updates/os', async (req, res) => {
+    const info = await updateService.getOSUpdates();
+    res.json(info);
+});
+
+app.get('/api/updates/docker/check', async (req, res) => {
+    try {
+        const results = await updateService.checkDockerUpdates();
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/updates/docker/apply/:name', async (req, res) => {
+    try {
+        const result = await updateService.applyDockerUpdate(req.params.name);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ROUTES PARAMÈTRES (SETTINGS) ---
+app.get('/api/settings', async (req, res) => {
+    try {
+        const rows = await getQuery(`SELECT * FROM settings`);
+        const settings = {};
+        rows.forEach(r => settings[r.key] = r.value);
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/settings', async (req, res) => {
+    try {
+        const settings = req.body;
+        for (const [key, value] of Object.entries(settings)) {
+            await runQuery(`INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, [key, value]);
+        }
+        updateService.startUpdateNotifier(); // Recharger le cron si modifié
+        res.json({ message: "Paramètres enregistrés" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/settings/test-webhook', async (req, res) => {
+    try {
+        const { webhookUrl } = req.body;
+        if (!webhookUrl) return res.status(400).json({ error: "L'URL du Webhook est manquante." });
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: "🚀 **Gestion Serveur** - Test de configuration du webhook Mattermost réussi !"
+            })
+        });
+
         if (!response.ok) {
             throw new Error(`Mattermost a répondu avec l'erreur HTTP ${response.status}`);
         }
         
         res.json({ success: true, message: "Le webhook de test a été envoyé avec succès !" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ROUTES AIOPS ---
+const { startLogMonitor } = require('./logMonitor');
+
+app.get('/api/ai/insights', async (req, res) => {
+    try {
+        const rows = await getQuery(`SELECT * FROM ai_insights WHERE status = 'active' ORDER BY created_at DESC`);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/ai/insights/:id/resolve', async (req, res) => {
+    try {
+        await runQuery(`UPDATE ai_insights SET status = 'resolved' WHERE id = ?`, [req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/ai/insights/:id/ignore', async (req, res) => {
+    try {
+        await runQuery(`UPDATE ai_insights SET status = 'ignored' WHERE id = ?`, [req.params.id]);
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -451,4 +676,9 @@ app.listen(port, () => {
     // Le backupOrchestrator est déjà auto-initialisé via initializeScheduler() dans son fichier,
     // mais on lance le notifieur de mises à jour ici.
     updateService.startUpdateNotifier();
+
+    // Démarrage du moniteur de logs IA avec un léger délai
+    setTimeout(() => {
+        startLogMonitor();
+    }, 3000);
 });

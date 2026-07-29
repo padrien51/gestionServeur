@@ -16,7 +16,12 @@ const getFetchOptions = () => ({
 
 const form = ref({
   mattermost_webhook_url: '',
-  update_cron_schedule: '0 9 * * *'
+  update_cron_schedule: '0 9 * * *',
+  ai_enabled: 'false',
+  ai_engine: 'ollama',
+  ai_url: 'http://host.docker.internal:11434',
+  ai_api_key: '',
+  ai_model: 'mistral'
 });
 
 const isSaving = ref(false);
@@ -198,6 +203,45 @@ onMounted(() => {
               class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
             />
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Par défaut : <code>0 9 * * *</code> (Tous les jours à 09h00).</p>
+          </div>
+        </div>
+
+        <!-- Section IA (AIOps) -->
+        <div class="space-y-4 pt-4 mt-4 border-t border-slate-200 dark:border-slate-700/50">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center">
+            <span class="mr-2">🤖</span> Intelligence Artificielle (AIOps)
+          </h3>
+          <div class="space-y-4">
+            <div class="flex items-center bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
+              <input type="checkbox" id="ai_enabled" v-model="form.ai_enabled" true-value="true" false-value="false" class="mr-3 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+              <label for="ai_enabled" class="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer">Activer la surveillance et l'analyse des logs d'erreurs par l'IA</label>
+            </div>
+            
+            <div v-if="form.ai_enabled === 'true'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Moteur IA</label>
+                <select v-model="form.ai_engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none">
+                  <option value="ollama">Ollama (Local)</option>
+                  <option value="openai">OpenAI (Cloud)</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">URL (Ollama/Custom)</label>
+                <input v-model="form.ai_url" type="url" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                <p class="text-[10px] text-slate-400 mt-1">Défaut Docker: http://host.docker.internal:11434</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Modèle</label>
+                <input v-model="form.ai_model" type="text" placeholder="mistral" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+              </div>
+
+              <div v-if="form.ai_engine === 'openai'">
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Clé API (OpenAI)</label>
+                <input v-model="form.ai_api_key" type="password" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+              </div>
+            </div>
           </div>
         </div>
 

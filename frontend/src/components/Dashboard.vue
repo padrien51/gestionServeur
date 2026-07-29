@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import ContainerCard from './ContainerCard.vue';
 import LogViewer from './LogViewer.vue';
+import AIDrawer from './AIDrawer.vue';
 import { useModal } from '../composables/useModal';
 
 const { showConfirm, showAlert } = useModal();
@@ -11,6 +12,25 @@ const containers = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const activeLogContainer = ref(null);
+const aiInsights = ref([]);
+const isAIDrawerOpen = ref(false);
+
+const fetchInsights = async () => {
+  try {
+    const res = await fetch(`/api/ai/insights`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` }
+    });
+    if (res.ok) {
+      aiInsights.value = await res.json();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const appHasAIAlert = (projectName) => {
+    return aiInsights.value.filter(i => i.project_name === projectName).length;
+};
 
 const viewMode = ref(localStorage.getItem('dashboard_view_mode') || 'apps');
 
@@ -110,7 +130,7 @@ const fetchApplications = async () => {
 };
 
 const refreshData = async () => {
-  await Promise.all([fetchMetrics(), fetchContainers(), fetchApplications()]);
+  await Promise.all([fetchMetrics(), fetchContainers(), fetchApplications(), fetchInsights()]);
   loading.value = false;
 };
 
@@ -443,6 +463,9 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                 
                 <!-- Boutons d'actions pour le projet entier -->
                 <div class="flex items-center space-x-2">
+                  <button v-if="appHasAIAlert(app.name) > 0" @click="isAIDrawerOpen = true" class="text-xs bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-md border border-rose-500 shadow-lg shadow-rose-900/50 flex items-center transition-all animate-pulse" title="Voir les alertes IA">
+                    <span class="mr-1">🤖</span> {{ appHasAIAlert(app.name) }} Alerte(s) IA
+                  </button>
                   <button v-if="appHasUpdates(app)" @click="updateApplication(app)" class="text-xs bg-orange-600 hover:bg-orange-500 text-white px-2.5 py-1.5 rounded-md border border-orange-500 shadow-lg shadow-orange-900/50 flex items-center transition-all animate-pulse" title="Mettre à jour l'application">
                     <span class="mr-1">⬆️</span> MAJ dispo
                   </button>
@@ -522,6 +545,13 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
       :container-id="activeLogContainer?.id"
       :container-name="activeLogContainer?.name"
       @close="activeLogContainer = null"
+    />
+
+    <AIDrawer 
+      :is-open="isAIDrawerOpen" 
+      :insights="aiInsights" 
+      @close="isAIDrawerOpen = false" 
+      @refresh="fetchInsights" 
     />
   </div>
 </template>

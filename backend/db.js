@@ -96,6 +96,21 @@ function initializeDB() {
             if (err) console.error("Erreur création compose_projects :", err);
             else console.log("Table compose_projects vérifiée.");
         });
+
+        // Table des alertes IA (AIOps)
+        db.run(`CREATE TABLE IF NOT EXISTS ai_insights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_name TEXT NOT NULL,
+            container_name TEXT NOT NULL,
+            log_context TEXT NOT NULL,
+            diagnosis TEXT,
+            solution TEXT,
+            status TEXT DEFAULT 'active', -- 'active', 'resolved', 'ignored'
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (err) console.error("Erreur création ai_insights :", err);
+            else console.log("Table ai_insights vérifiée.");
+        });
     });
 };
 

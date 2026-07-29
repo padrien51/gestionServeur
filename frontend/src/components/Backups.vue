@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 
 const API_BASE = '/api';
 
@@ -26,6 +26,49 @@ const form = ref({
   retention_count: 15,
   containers: [] // Stockera les noms d'applications
 });
+
+const cronMode = ref('simple');
+const cronTime = ref('03:00');
+const cronDays = ref([]); 
+
+const parseCronToUI = (cronStr) => {
+  try {
+    const parts = (cronStr || '0 3 * * 0').split(' ').filter(Boolean);
+    if (parts.length === 5 && parts[2] === '*' && parts[3] === '*') {
+      const min = parts[0] === '*' ? '00' : parts[0].padStart(2, '0');
+      const hr = parts[1] === '*' ? '00' : parts[1].padStart(2, '0');
+      if (!isNaN(min) && !isNaN(hr)) {
+        cronTime.value = `${hr}:${min}`;
+        if (parts[4] === '*') {
+          cronDays.value = [];
+        } else {
+          cronDays.value = parts[4].split(',').map(Number);
+        }
+        cronMode.value = 'simple';
+        return;
+      }
+    }
+  } catch(e) {}
+  cronMode.value = 'advanced';
+};
+
+watch([cronTime, cronDays], () => {
+  if (cronMode.value === 'simple') {
+    const [hr, min] = (cronTime.value || '03:00').split(':');
+    const d = (cronDays.value.length === 0 || cronDays.value.length === 7) ? '*' : [...cronDays.value].sort().join(',');
+    form.value.cron_schedule = `${parseInt(min||0)} ${parseInt(hr||0)} * * ${d}`;
+  }
+}, { deep: true });
+
+const toggleDay = (v) => {
+  if (cronDays.value.length === 0) {
+    cronDays.value = [v];
+  } else {
+    const idx = cronDays.value.indexOf(v);
+    if (idx >= 0) cronDays.value.splice(idx, 1);
+    else cronDays.value.push(v);
+  }
+};
 
 const fetchApplications = async () => {
   try {
@@ -74,6 +117,7 @@ const openForm = (job = null) => {
       containers: []
     };
   }
+  parseCronToUI(form.value.cron_schedule);
   showForm.value = true;
 };
 
@@ -217,12 +261,46 @@ const formatDate = (dateStr) => {
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Nom de la sauvegarde</label>
                 <input v-model="form.name" required placeholder="Ex: Apps Principales" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
               </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Fréquence (Format Cron)</label>
-                <div class="relative">
-                  <input v-model="form.cron_schedule" required type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
-                  <span class="absolute right-3 top-3 text-slate-500 text-xs">Ex: 0 3 * * 0</span>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Fréquence d'exécution</label>
+                <div class="flex flex-col space-y-4">
+                  <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg w-max">
+                    <button type="button" @click="cronMode = 'simple'" :class="cronMode === 'simple' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Interface Simple</button>
+                    <button type="button" @click="cronMode = 'advanced'" :class="cronMode === 'advanced' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Mode Avancé (CRON)</button>
+                  </div>
+
+                  <div v-if="cronMode === 'simple'" class="space-y-5 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Heure d'exécution</label>
+                        <input type="time" v-model="cronTime" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Jours d'exécution</label>
+                        <div class="flex flex-wrap gap-2">
+                          <button type="button" @click="cronDays = []" class="px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium" :class="cronDays.length === 0 ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                            Tous les jours
+                          </button>
+                          <button type="button" v-for="day in [{v:1,l:'Lun'},{v:2,l:'Mar'},{v:3,l:'Mer'},{v:4,l:'Jeu'},{v:5,l:'Ven'},{v:6,l:'Sam'},{v:0,l:'Dim'}]" :key="day.v" 
+                                @click="toggleDay(day.v)"
+                                class="cursor-pointer select-none px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium"
+                                :class="cronDays.length > 0 && cronDays.includes(day.v) ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700 shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                            {{ day.l }}
+                          </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 font-mono">Expression finale : <code>{{ form.cron_schedule }}</code></p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else class="space-y-4">
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Expression CRON personnalisée</label>
+                    <div class="relative">
+                      <input v-model="form.cron_schedule" required type="text" placeholder="0 3 * * 0" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                      <span class="absolute right-3 top-3 text-slate-500 text-xs">Ex: 0 3 * * 0</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Permet d'utiliser des formats complexes (ex: tous les 1er du mois).</p>
+                  </div>
                 </div>
               </div>
 

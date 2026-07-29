@@ -238,7 +238,7 @@ onMounted(() => {
         <!-- Section Mises à jour -->
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 flex flex-col">
           <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center">
-            <span class="mr-2">🔄</span> Mises à jour automatiques
+            <span class="mr-2">🔄</span> Vérification des mises à jour
           </h3>
           
           <div class="flex-1 space-y-4">

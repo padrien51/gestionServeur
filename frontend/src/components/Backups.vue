@@ -174,22 +174,22 @@ const formatDate = (dateStr) => {
 
 <template>
   <div class="p-4 space-y-6">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">💾</span> Orchestrateur de Sauvegardes
       </h2>
-      <div class="flex space-x-2 bg-white dark:bg-slate-800 p-1 rounded-lg">
+      <div class="flex bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-300 dark:border-slate-700 w-full sm:w-auto">
         <button 
           @click="activeTab = 'jobs'; fetchJobs()" 
-          :class="activeTab === 'jobs' ? 'bg-slate-200 dark:bg-slate-700 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'"
-          class="px-4 py-2 text-sm font-medium rounded-md transition-all"
+          :class="activeTab === 'jobs' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
         >
           Jobs de Sauvegarde
         </button>
         <button 
           @click="activeTab = 'logs'; fetchLogs()" 
-          :class="activeTab === 'logs' ? 'bg-slate-200 dark:bg-slate-700 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:text-slate-200'"
-          class="px-4 py-2 text-sm font-medium rounded-md transition-all"
+          :class="activeTab === 'logs' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
         >
           Historique (Logs)
         </button>

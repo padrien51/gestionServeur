@@ -17,6 +17,7 @@
 ## 🚀 Fonctionnalités Principales
 
 - 📊 **Monitoring Système & Docker** : Visualisation en temps réel de l'état du serveur (CPU, RAM, Disque, Températures) et des conteneurs.
+- 🤖 **AIOps & Analyse de Logs IA** : Surveillance automatique des logs d'erreurs de tous les conteneurs en tâche de fond. Les logs critiques sont analysés par une intelligence artificielle (compatible avec Ollama) pour générer un diagnostic instantané et des solutions correctives via un tiroir interactif d'alertes.
 - 📦 **Gestion des Conteneurs et Projets Compose** : Démarrer, arrêter, redémarrer les conteneurs individuellement, ou gérer des projets entiers via Docker Compose (Pull, Up, Down).
 - 🧹 **Nettoyage Avancé & Destruction (Kill)** : Possibilité de détruire intégralement un projet obsolète depuis l'interface (conteneurs, volumes de données, et suppression du dossier source sur l'hôte). Les projets sont mémorisés en base de données et auto-nettoyés s'ils sont supprimés manuellement.
 - 💾 **Orchestrateur de Sauvegardes (CRON)** : Planification intelligente des sauvegardes avec gestion de la rétention (ex: garder les 5 dernières archives).

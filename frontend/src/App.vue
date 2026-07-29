@@ -26,6 +26,16 @@ const { isDarkMode, toggleTheme, initTheme } = useTheme();
 onMounted(async () => {
   initTheme();
   
+  // Intercepteur global Fetch pour gérer l'expiration de session (401)
+  const originalFetch = window.fetch;
+  window.fetch = async (...args) => {
+    const response = await originalFetch(...args);
+    if (response.status === 401 && authState.value === 'authenticated') {
+      logout();
+    }
+    return response;
+  };
+
   // Check url parameters for reset token
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('reset')) {
@@ -34,10 +44,26 @@ onMounted(async () => {
     return;
   }
 
-  // Si on a déjà un token, on suppose qu'on est connecté (s'il est invalide, les API renverront 401)
-  if (localStorage.getItem('auth_token')) {
-    authState.value = 'authenticated';
-    return;
+  // Si on a déjà un token, on le valide auprès de l'API
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    try {
+      const res = await fetch(`${API_BASE}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        authState.value = 'authenticated';
+        return;
+      } else {
+        // Token invalide ou expiré (le backend a renvoyé 401)
+        localStorage.removeItem('auth_token');
+      }
+    } catch (e) {
+      console.warn("Erreur réseau lors de la validation du token", e);
+      // En cas de coupure réseau temporaire, on garde l'état connecté
+      authState.value = 'authenticated';
+      return;
+    }
   }
 
   // Vérifier si le système a besoin d'être initialisé (aucun compte)

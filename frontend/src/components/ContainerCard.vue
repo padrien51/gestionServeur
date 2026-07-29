@@ -34,7 +34,7 @@ const handleAction = async (action) => {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-3 border border-slate-200 dark:border-slate-700/50 shadow-lg relative overflow-hidden group">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-3 border border-slate-300 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
     <!-- Ligne colorée indicatrice sur la gauche -->
     <div class="absolute left-0 top-0 bottom-0 w-1" :class="isUp ? 'bg-emerald-500' : 'bg-red-500'"></div>
     
@@ -55,16 +55,16 @@ const handleAction = async (action) => {
           ⬆️ v.{{ container.newVersion }}
         </span>
         
-        <button @click="$emit('view-logs', container)" class="p-2 rounded-lg bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 transition-colors" title="Voir les logs">
+        <button @click="$emit('view-logs', container)" class="p-2 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20 transition-colors" title="Voir les logs">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
         </button>
-        <button v-if="!isUp" @click="handleAction('start')" class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors" title="Démarrer">
+        <button v-if="!isUp" @click="handleAction('start')" class="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors" title="Démarrer">
           ▶️
         </button>
-        <button v-if="isUp" @click="handleAction('restart')" class="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors" title="Redémarrer">
+        <button v-if="isUp" @click="handleAction('restart')" class="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors" title="Redémarrer">
           🔄
         </button>
-        <button v-if="isUp" @click="handleAction('stop')" class="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors" title="Arrêter">
+        <button v-if="isUp" @click="handleAction('stop')" class="p-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors" title="Arrêter">
           ⏹️
         </button>
       </div>

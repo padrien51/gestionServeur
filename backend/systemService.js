@@ -14,8 +14,11 @@ async function getSystemMetrics() {
             si.fsSize()
         ]);
 
-        // Sélectionner la partition principale (souvent /)
-        const mainDisk = fsSize.find(fs => fs.mount === '/' || fs.mount === '/hostOS') || fsSize[0];
+        // Sous Windows (Docker Desktop), le disque principal de l'hôte est souvent monté via /hostOS
+        // On essaie de cibler le C:\ en priorité, sinon on retombe sur / (le disque virtuel WSL2)
+        const mainDisk = fsSize.find(fs => fs.fs === 'C:\\' || fs.mount.endsWith('/mnt/host/c')) 
+                      || fsSize.find(fs => fs.mount === '/' || fs.mount === '/hostOS') 
+                      || fsSize[0];
 
         const metrics = {
             cpuLoad: cpu.currentLoad,

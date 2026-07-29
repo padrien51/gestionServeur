@@ -14,13 +14,9 @@ async function getSystemMetrics() {
             si.fsSize()
         ]);
 
-        // Sous Windows (Docker Desktop), le disque principal de l'hôte est souvent monté via /hostOS
-        // L'utilisateur a ses données Docker sur le lecteur D: (119 Go), donc on le cible en priorité.
-        // On retombe sur C:\ puis sur / (le disque virtuel WSL2 de 1 To) en cas d'absence.
-        const mainDisk = fsSize.find(fs => fs.fs === 'D:\\' || fs.mount.endsWith('/mnt/host/d'))
-                      || fsSize.find(fs => fs.fs === 'C:\\' || fs.mount.endsWith('/mnt/host/c')) 
-                      || fsSize.find(fs => fs.mount === '/' || fs.mount === '/hostOS') 
-                      || fsSize[0];
+        // En production (serveur Linux réel), le disque principal de l'hôte est / (ou /hostOS s'il est monté)
+        // En développement (Docker Desktop Windows), cela retournera la taille du disque virtuel (souvent 1To)
+        const mainDisk = fsSize.find(fs => fs.mount === '/' || fs.mount === '/hostOS') || fsSize[0];
 
         const metrics = {
             cpuLoad: cpu.currentLoad,

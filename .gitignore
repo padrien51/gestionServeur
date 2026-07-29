@@ -7,3 +7,4 @@ data/
 *.db
 *.db3
 .DS_Store
+backend/public/

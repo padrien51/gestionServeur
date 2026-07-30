@@ -25,6 +25,8 @@ const activeEditorProject = ref(null);
 
 const onEditorSaved = (projectName) => {
   activeEditorProject.value = null;
+  // Déclenche un `docker compose up -d` pour appliquer les modifications du docker-compose.yml
+  handleComposeAction(projectName, 'up');
 };
 
 const fetchInsights = async () => {

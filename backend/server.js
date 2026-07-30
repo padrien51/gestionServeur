@@ -65,6 +65,16 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 });
 
+app.post('/api/auth/login-2fa', authLimiter, async (req, res) => {
+    try {
+        const { tempToken, tokenCode } = req.body;
+        const result = await authService.login2FA(tempToken, tokenCode);
+        res.json(result);
+    } catch (err) {
+        res.status(401).json({ error: err.message });
+    }
+});
+
 app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     try {
         const host = req.get('host');
@@ -112,6 +122,44 @@ const authenticate = (req, res, next) => {
 app.use('/api', authenticate);
 
 // --- ROUTES AUTH PROTÉGÉES ---
+app.get('/api/auth/2fa/status', async (req, res) => {
+    try {
+        const result = await authService.get2FAStatus(req.user.id);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/2fa/generate', async (req, res) => {
+    try {
+        const result = await authService.generate2FA(req.user.id, req.user.email);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/2fa/verify', async (req, res) => {
+    try {
+        const { tokenCode } = req.body;
+        const result = await authService.verifyAndEnable2FA(req.user.id, tokenCode);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/auth/2fa/disable', async (req, res) => {
+    try {
+        const { password } = req.body;
+        const result = await authService.disable2FA(req.user.id, password);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 app.post('/api/auth/change-password', async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;

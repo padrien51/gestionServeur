@@ -68,10 +68,19 @@ function initializeDB() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
+            totp_secret TEXT,
+            is_2fa_enabled BOOLEAN DEFAULT 0,
+            backup_codes TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => {
             if (err) console.error("Erreur création users :", err);
-            else console.log("Table users vérifiée.");
+            else {
+                console.log("Table users vérifiée.");
+                // Migrations (ignorées silencieusement si la colonne existe déjà)
+                db.run(`ALTER TABLE users ADD COLUMN totp_secret TEXT`, () => {});
+                db.run(`ALTER TABLE users ADD COLUMN is_2fa_enabled BOOLEAN DEFAULT 0`, () => {});
+                db.run(`ALTER TABLE users ADD COLUMN backup_codes TEXT`, () => {});
+            }
         });
 
         // Table de réinitialisation de mot de passe

@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const { authenticator } = require('otplib');
+const QRCode = require('qrcode');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-default-key-change-it-in-production';
 const JWT_EXPIRES_IN = '24h';
@@ -44,9 +46,53 @@ async function login(email, password) {
         throw new Error('Email ou mot de passe incorrect.');
     }
 
+    if (user.is_2fa_enabled) {
+        // Renvoie un token temporaire valable 5 minutes juste pour la validation 2FA
+        const tempToken = jwt.sign({ id: user.id, email: user.email, isTemp: true }, JWT_SECRET, { expiresIn: '5m' });
+        return { success: true, requires2FA: true, tempToken, email: user.email };
+    }
+
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     return { success: true, token, email: user.email };
 }
+
+async function login2FA(tempToken, tokenCode) {
+    try {
+        const decoded = jwt.verify(tempToken, JWT_SECRET);
+        if (!decoded.isTemp) throw new Error('Token invalide.');
+        
+        const rows = await getQuery(`SELECT * FROM users WHERE id = ?`, [decoded.id]);
+        if (rows.length === 0) throw new Error('Utilisateur introuvable.');
+        
+        const user = rows[0];
+        if (!user.is_2fa_enabled || !user.totp_secret) {
+            throw new Error('2FA non activée pour ce compte.');
+        }
+
+        const isValid = authenticator.verify({ token: tokenCode, secret: user.totp_secret });
+        
+        let backupCodes = [];
+        try { backupCodes = JSON.parse(user.backup_codes || '[]'); } catch(e) {}
+        
+        let isBackupCode = false;
+        if (!isValid && backupCodes.includes(tokenCode)) {
+            isBackupCode = true;
+            // Retirer le code de secours utilisé
+            backupCodes = backupCodes.filter(c => c !== tokenCode);
+            await runQuery(`UPDATE users SET backup_codes = ? WHERE id = ?`, [JSON.stringify(backupCodes), user.id]);
+        }
+
+        if (!isValid && !isBackupCode) {
+            throw new Error('Code incorrect.');
+        }
+
+        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        return { success: true, token, email: user.email };
+    } catch (err) {
+        throw new Error('Échec de validation 2FA: ' + err.message);
+    }
+}
+
 
 // Demande de réinitialisation de mot de passe (oublié)
 async function requestPasswordReset(email, host) {
@@ -126,7 +172,61 @@ async function changePassword(userId, currentPassword, newPassword) {
 }
 
 function verifyToken(token) {
-    return jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.isTemp) throw new Error('Token temporaire non autorisé ici.');
+    return decoded;
+}
+
+// --- Gestion de la 2FA ---
+async function generate2FA(userId, email) {
+    const secret = authenticator.generateSecret();
+    const otpauthUrl = authenticator.keyuri(email, 'GestionServeur', secret);
+    const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+    
+    // On sauvegarde le secret dans la base mais is_2fa_enabled reste à 0
+    await runQuery(`UPDATE users SET totp_secret = ? WHERE id = ?`, [secret, userId]);
+    
+    return { secret, qrCode: qrCodeDataUrl };
+}
+
+async function verifyAndEnable2FA(userId, tokenCode) {
+    const rows = await getQuery(`SELECT * FROM users WHERE id = ?`, [userId]);
+    if (rows.length === 0) throw new Error('Utilisateur introuvable.');
+    const user = rows[0];
+    
+    if (!user.totp_secret) throw new Error('Aucun secret 2FA généré.');
+    
+    const isValid = authenticator.verify({ token: tokenCode, secret: user.totp_secret });
+    if (!isValid) {
+        throw new Error('Code incorrect.');
+    }
+    
+    // Générer 10 codes de secours
+    const backupCodes = Array.from({ length: 10 }, () => crypto.randomBytes(4).toString('hex').toUpperCase());
+    
+    await runQuery(`UPDATE users SET is_2fa_enabled = 1, backup_codes = ? WHERE id = ?`, [JSON.stringify(backupCodes), userId]);
+    
+    return { success: true, backupCodes };
+}
+
+async function disable2FA(userId, password) {
+    const rows = await getQuery(`SELECT * FROM users WHERE id = ?`, [userId]);
+    if (rows.length === 0) throw new Error('Utilisateur introuvable.');
+    const user = rows[0];
+    
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+        throw new Error('Mot de passe incorrect.');
+    }
+    
+    await runQuery(`UPDATE users SET is_2fa_enabled = 0, totp_secret = NULL, backup_codes = NULL WHERE id = ?`, [userId]);
+    return { success: true };
+}
+
+async function get2FAStatus(userId) {
+    const rows = await getQuery(`SELECT is_2fa_enabled FROM users WHERE id = ?`, [userId]);
+    if (rows.length === 0) throw new Error('Utilisateur introuvable.');
+    return { isEnabled: !!rows[0].is_2fa_enabled };
 }
 
 // --- Gestion des utilisateurs par l'admin ---
@@ -176,5 +276,10 @@ module.exports = {
     verifyToken,
     getUsers,
     addUser,
-    deleteUser
+    deleteUser,
+    login2FA,
+    generate2FA,
+    verifyAndEnable2FA,
+    disable2FA,
+    get2FAStatus
 };

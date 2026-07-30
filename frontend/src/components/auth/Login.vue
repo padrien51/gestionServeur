@@ -7,6 +7,10 @@ const password = ref('');
 const error = ref('');
 const loading = ref(false);
 
+const requires2FA = ref(false);
+const tempToken = ref('');
+const twoFACode = ref('');
+
 const API_BASE = '/api';
 
 const handleLogin = async () => {
@@ -26,6 +30,12 @@ const handleLogin = async () => {
       throw new Error(data.error || "Identifiants incorrects");
     }
     
+    if (data.requires2FA) {
+      requires2FA.value = true;
+      tempToken.value = data.tempToken;
+      return;
+    }
+    
     // On sauvegarde le token JWT
     localStorage.setItem('auth_token', data.token);
     // On conserve également app_pwd vide si jamais du vieux code s'en sert, mais il vaut mieux l'enlever
@@ -33,6 +43,29 @@ const handleLogin = async () => {
     
     emit('login-success');
   } catch (err) {
+    error.value = err.message;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handle2FALogin = async () => {
+  error.value = '';
+  loading.value = true;
+  
+  try {
+    const res = await fetch(`${API_BASE}/auth/login-2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tempToken: tempToken.value, tokenCode: twoFACode.value })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Code incorrect");
+    
+    localStorage.setItem('auth_token', data.token);
+    emit('login-success');
+  } catch(err) {
     error.value = err.message;
   } finally {
     loading.value = false;
@@ -53,7 +86,7 @@ const handleLogin = async () => {
       {{ error }}
     </div>
 
-    <form @submit.prevent="handleLogin" class="space-y-4">
+    <form v-if="!requires2FA" @submit.prevent="handleLogin" class="space-y-4">
       <div>
         <label class="block text-slate-500 dark:text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Adresse Email</label>
         <input 
@@ -81,6 +114,29 @@ const handleLogin = async () => {
         <span v-if="loading">Vérification...</span>
         <span v-else>Déverrouiller l'accès</span>
       </button>
+    </form>
+    
+    <form v-else @submit.prevent="handle2FALogin" class="space-y-4">
+      <div class="text-center mb-4 text-sm text-slate-600 dark:text-slate-400">
+        La double authentification est activée sur ce compte.
+      </div>
+      <div>
+        <label class="block text-slate-500 dark:text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide text-center">Code de sécurité (A2F)</label>
+        <input 
+          v-model="twoFACode" 
+          type="text" 
+          placeholder="123456"
+          class="w-full bg-white dark:bg-slate-800 text-center text-3xl tracking-widest text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-4 focus:outline-none focus:border-blue-500 transition-colors"
+          required
+        >
+      </div>
+      <button type="submit" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg transition-colors shadow-lg shadow-blue-900/20 mt-2">
+        <span v-if="loading">Vérification...</span>
+        <span v-else>Valider</span>
+      </button>
+      <div class="text-center mt-4">
+        <button type="button" @click="requires2FA = false; twoFACode = ''" class="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">Annuler</button>
+      </div>
     </form>
   </div>
 </template>

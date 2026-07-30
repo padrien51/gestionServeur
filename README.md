@@ -20,10 +20,10 @@
 - 🤖 **AIOps & Analyse de Logs IA** : Surveillance automatique des logs d'erreurs de tous les conteneurs en tâche de fond. Les logs critiques sont analysés par une intelligence artificielle (compatible avec Ollama) pour générer un diagnostic instantané et des solutions correctives via un tiroir interactif d'alertes.
 - 📦 **Gestion des Conteneurs et Projets Compose** : Démarrer, arrêter, redémarrer les conteneurs individuellement, ou gérer des projets entiers via Docker Compose (Pull, Up, Down).
 - 🧹 **Nettoyage Avancé & Destruction (Kill)** : Possibilité de détruire intégralement un projet obsolète depuis l'interface (conteneurs, volumes de données, et suppression du dossier source sur l'hôte). Les projets sont mémorisés en base de données et auto-nettoyés s'ils sont supprimés manuellement.
-- 💾 **Orchestrateur de Sauvegardes (CRON)** : Planification intelligente des sauvegardes avec gestion de la rétention (ex: garder les 5 dernières archives).
+- 💾 **Orchestrateur de Sauvegardes (CRON)** : Planification intuitive des sauvegardes via une interface simplifiée (jours/heures) avec gestion de la rétention (ex: garder les 5 dernières archives).
 - 🔔 **Notifications Webhook** : Intégration **Mattermost / Slack** pour recevoir des alertes de statut de sauvegarde et des rapports de mise à jour quotidienne.
-- 🔄 **Veille de Mises à Jour** : Vérification automatique des mises à jour (OS et images Docker) avec détection des *Breaking Changes*.
-- 🔐 **Sécurité Avancée** : Authentification par JWT, gestion multi-utilisateurs, protection Anti-Brute Force (Rate Limiting), Headers HTTP sécurisés (Helmet) et requêtes SQL préparées.
+- 🔄 **Veille de Mises à Jour** : Vérification automatique des mises à jour (OS et images Docker) via planification.
+- 🔐 **Sécurité Avancée & A2F** : Authentification par JWT, **Double Authentification (A2F / TOTP)** compatible avec Google Authenticator et Codes de Secours, protection Anti-Brute Force, Headers HTTP sécurisés (Helmet) et requêtes SQL préparées.
 - 📱 **100% Mobile-First** : Interface Vue.js fluide, moderne et réactive (Dark Mode intégré par défaut).
 
 ## 🛠️ Architecture

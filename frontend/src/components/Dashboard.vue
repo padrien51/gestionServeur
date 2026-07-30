@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import ContainerCard from './ContainerCard.vue';
 import LogViewer from './LogViewer.vue';
+import WebTerminal from './WebTerminal.vue';
+import LiveLogs from './LiveLogs.vue';
 import AIDrawer from './AIDrawer.vue';
 import { useModal } from '../composables/useModal';
 
@@ -14,6 +16,9 @@ const error = ref(null);
 const activeLogContainer = ref(null);
 const aiInsights = ref([]);
 const isAIDrawerOpen = ref(false);
+
+const activeTerminalContainerId = ref(null);
+const activeLiveLogContainer = ref(null);
 
 const fetchInsights = async () => {
   try {
@@ -132,6 +137,24 @@ const fetchApplications = async () => {
 const refreshData = async () => {
   await Promise.all([fetchMetrics(), fetchContainers(), fetchApplications(), fetchInsights()]);
   loading.value = false;
+};
+
+const closeLogs = () => {
+  activeLogContainer.value = null;
+};
+
+const openTerminal = (container) => {
+  activeTerminalContainerId.value = container.id;
+};
+const closeTerminal = () => {
+  activeTerminalContainerId.value = null;
+};
+
+const openLiveLogs = (container) => {
+  activeLiveLogContainer.value = { id: container.id, name: container.name };
+};
+const closeLiveLogs = () => {
+  activeLiveLogContainer.value = null;
 };
 
 const handleContainerAction = async ({ id, action }) => {
@@ -522,6 +545,8 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                 :container="container"
                 @action="handleContainerAction"
                 @view-logs="openLogs"
+                @open-terminal="openTerminal"
+                @live-logs="openLiveLogs"
               />
             </div>
           </div>
@@ -539,6 +564,8 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
             :container="container"
             @action="handleContainerAction"
             @view-logs="openLogs"
+            @open-terminal="openTerminal"
+            @live-logs="openLiveLogs"
           />
           <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 border-dashed">
             Aucun conteneur trouvé.
@@ -550,9 +577,23 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
 
     <!-- Composant des logs en direct -->
     <LogViewer 
-      :container-id="activeLogContainer?.id"
-      :container-name="activeLogContainer?.name"
-      @close="activeLogContainer = null"
+      v-if="activeLogContainer" 
+      :containerId="activeLogContainer.id" 
+      :containerName="activeLogContainer.name" 
+      @close="closeLogs" 
+    />
+    
+    <WebTerminal 
+      v-if="activeTerminalContainerId" 
+      :containerId="activeTerminalContainerId" 
+      @close="closeTerminal" 
+    />
+
+    <LiveLogs 
+      v-if="activeLiveLogContainer" 
+      :containerId="activeLiveLogContainer.id" 
+      :containerName="activeLiveLogContainer.name" 
+      @close="closeLiveLogs" 
     />
 
     <AIDrawer 

@@ -9,9 +9,19 @@ const { getContainers, startContainer, stopContainer, restartContainer } = requi
 const { getSystemMetrics } = require('./systemService');
 const updateService = require('./updateService');
 const { db, getQuery, runQuery } = require('./db');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: '*' }
+});
+
+// Initialisation du service WebSocket
+require('./websocketService')(io);
 
 // Optimisation : Compression GZIP des réponses
 app.use(compression());
@@ -209,7 +219,16 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 });
 
-// --- ROUTES UPDATES ---
+// --- ROUTES DOCKER ---
+app.post('/api/docker/prune', async (req, res) => {
+    try {
+        const result = await dockerService.pruneSystem();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/docker/containers/:id/:action', async (req, res) => {
     const { id, action } = req.params;
     try {
@@ -631,7 +650,7 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Serveur démarré sur le port ${port}`);
     
     // Initialisation des planificateurs (CRON)

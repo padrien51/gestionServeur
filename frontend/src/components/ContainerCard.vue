@@ -12,7 +12,7 @@ import { useModal } from '../composables/useModal';
 
 const { showConfirm } = useModal();
 
-const emit = defineEmits(['action', 'view-logs']);
+const emit = defineEmits(['action', 'view-logs', 'live-logs', 'open-terminal']);
 
 const isUp = computed(() => props.container.state === 'running');
 
@@ -55,7 +55,13 @@ const handleAction = async (action) => {
           ⬆️ v.{{ container.newVersion }}
         </span>
         
-        <button @click="$emit('view-logs', container)" class="p-2 rounded-lg bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 hover:bg-teal-200 dark:hover:bg-teal-500/20 transition-colors" title="Voir les logs">
+        <button v-if="isUp" @click="$emit('open-terminal', container)" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" title="Ouvrir le Terminal (Shell)">
+          📟
+        </button>
+        <button @click="$emit('live-logs', container)" class="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-500/20 transition-colors" title="Logs en Direct">
+          📡
+        </button>
+        <button @click="$emit('view-logs', container)" class="p-2 rounded-lg bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 hover:bg-teal-200 dark:hover:bg-teal-500/20 transition-colors" title="Analyse Historique & IA">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
         </button>
         <button v-if="!isUp" @click="handleAction('start')" class="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/20 transition-colors" title="Démarrer">

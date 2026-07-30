@@ -281,6 +281,25 @@ async function runComposeAction(projectName, action) {
     }
 }
 
+async function pruneSystem() {
+    try {
+        const imagePrune = await docker.pruneImages({ filters: { dangling: ["false"] } });
+        const containerPrune = await docker.pruneContainers();
+        const networkPrune = await docker.pruneNetworks();
+        const volumePrune = await docker.pruneVolumes();
+
+        let reclaimed = 0;
+        if (imagePrune.SpaceReclaimed) reclaimed += imagePrune.SpaceReclaimed;
+        if (containerPrune.SpaceReclaimed) reclaimed += containerPrune.SpaceReclaimed;
+        if (volumePrune.SpaceReclaimed) reclaimed += volumePrune.SpaceReclaimed;
+
+        return { success: true, reclaimedSpace: reclaimed };
+    } catch (error) {
+        console.error("Erreur lors du prune Docker:", error);
+        throw new Error("Impossible d'exécuter le nettoyage.");
+    }
+}
+
 module.exports = {
     docker,
     getContainers,

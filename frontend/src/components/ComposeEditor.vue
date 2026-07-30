@@ -97,7 +97,7 @@ const isSaving = ref(false);
 const API_BASE = '/api';
 
 const getFetchOptions = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   return {
     headers: {
       'Content-Type': 'application/json',

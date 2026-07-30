@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -148,7 +148,7 @@ const chartOptions = computed(() => {
 
 const fetchHistory = async () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     const res = await fetch(`${API_BASE}/system/metrics/history`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -162,8 +162,13 @@ const fetchHistory = async () => {
   }
 };
 
+let intervalId;
 onMounted(() => {
   fetchHistory();
-  setInterval(fetchHistory, 120000);
+  intervalId = setInterval(fetchHistory, 120000);
+});
+
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId);
 });
 </script>

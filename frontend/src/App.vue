@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard.vue';
 import Updates from './components/Updates.vue';
 import Backups from './components/Backups.vue';
 import Settings from './components/Settings.vue';
+import Optimization from './components/Optimization.vue';
 import Profile from './components/Profile.vue';
 import AppModal from './components/AppModal.vue';
 
@@ -139,6 +140,7 @@ const logout = () => {
         <!-- Navigation Desktop -->
         <nav class="hidden sm:flex space-x-1 bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
           <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
+          <button @click="currentTab = 'optimization'" :class="currentTab === 'optimization' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Optimisation</button>
           <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
           <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
           <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Paramètres</button>
@@ -172,6 +174,7 @@ const logout = () => {
     <main class="flex-1 max-w-6xl mx-auto w-full p-2 sm:p-6 pb-20">
       <transition name="fade" mode="out-in">
         <Dashboard v-if="currentTab === 'dashboard'" />
+        <Optimization v-else-if="currentTab === 'optimization'" />
         <Updates v-else-if="currentTab === 'updates'" />
         <Backups v-else-if="currentTab === 'backups'" />
         <Settings v-else-if="currentTab === 'settings'" />
@@ -189,6 +192,11 @@ const logout = () => {
         <span class="text-[10px] font-medium">Tableau</span>
       </button>
       
+      <button @click="currentTab = 'optimization'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'optimization' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
+        <svg class="w-6 h-6 mb-1" :class="currentTab === 'optimization' ? 'stroke-2' : 'stroke-[1.5]'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+        <span class="text-[10px] font-medium">Opti</span>
+      </button>
+
       <button @click="currentTab = 'updates'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'updates' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
         <svg class="w-6 h-6 mb-1" :class="currentTab === 'updates' ? 'stroke-2' : 'stroke-[1.5]'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         <span class="text-[10px] font-medium">MAJ</span>

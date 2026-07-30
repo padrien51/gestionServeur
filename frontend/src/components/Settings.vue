@@ -102,31 +102,6 @@ const saveSettings = async () => {
 };
 
 const isTestingWebhook = ref(false);
-const isPruning = ref(false);
-
-const handlePrune = async () => {
-  const confirmed = await showConfirm(
-    "Nettoyage Docker",
-    "Cette action va supprimer tous les conteneurs arrêtés, les réseaux non utilisés, les images fantômes et les volumes orphelins. Êtes-vous sûr ?"
-  );
-  if (!confirmed) return;
-  
-  isPruning.value = true;
-  try {
-    const res = await fetch(`${API_BASE}/docker/prune`, {
-      method: 'POST',
-      headers: getFetchOptions().headers
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Erreur lors du nettoyage");
-    const mb = (data.reclaimedSpace / (1024 * 1024)).toFixed(2);
-    showAlert("Nettoyage Terminé", `Le nettoyage a libéré ${mb} Mo d'espace disque.`);
-  } catch (e) {
-    showAlert("Erreur", e.message);
-  } finally {
-    isPruning.value = false;
-  }
-};
 
 const testWebhook = async () => {
   if (!form.value.mattermost_webhook_url) {
@@ -305,32 +280,6 @@ onMounted(() => {
               />
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Permet d'utiliser des formats complexes (ex: tous les 1er du mois).</p>
             </div>
-          </div>
-        </div>
-
-        <!-- Section Optimisation & Nettoyage (Prune) -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 lg:col-span-2 flex flex-col">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center justify-between">
-            <span class="flex items-center"><span class="mr-2">🧹</span> Optimisation Docker</span>
-            <span class="text-xs font-normal text-slate-500">Prune Système</span>
-          </h3>
-          
-          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div class="space-y-1 max-w-2xl">
-              <p class="text-sm text-slate-700 dark:text-slate-300 font-medium">Nettoyage profond (Prune)</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Cette action supprime tous les conteneurs arrêtés, les réseaux non utilisés, les images sans tag et les volumes de données orphelins. <strong>Idéal pour libérer de l'espace disque.</strong></p>
-            </div>
-            
-            <button 
-              @click="handlePrune" 
-              type="button"
-              :disabled="isPruning"
-              class="flex-shrink-0 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-medium py-2.5 px-6 rounded-xl transition-all shadow-sm shadow-red-500/30 flex items-center space-x-2"
-            >
-              <svg v-if="isPruning" class="animate-spin w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-              <span v-else>🧹</span>
-              <span>{{ isPruning ? 'Nettoyage en cours...' : 'Lancer le nettoyage' }}</span>
-            </button>
           </div>
         </div>
 

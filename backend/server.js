@@ -220,6 +220,15 @@ app.delete('/api/users/:id', async (req, res) => {
 });
 
 // --- ROUTES DOCKER ---
+app.get('/api/docker/system-df', async (req, res) => {
+    try {
+        const info = await dockerService.getSystemDf();
+        res.json(info);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/docker/prune', async (req, res) => {
     try {
         const result = await dockerService.pruneSystem();

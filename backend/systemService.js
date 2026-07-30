@@ -46,9 +46,21 @@ function recordMetrics() {
     }).catch(err => console.error(err));
 }
 
-// Lancer l'enregistrement toutes les 5 minutes (300000 ms)
-setInterval(recordMetrics, 300000);
+// Lancer l'enregistrement toutes les 2 minutes (120000 ms)
+setInterval(recordMetrics, 120000);
+
+async function getMetricsHistory() {
+    // Récupérer les données des 24 dernières heures
+    const { getQuery } = require('./db');
+    return await getQuery(
+        `SELECT timestamp, cpu_load as cpuLoad, mem_used as memUsed, mem_total as memTotal, disk_used as diskUsed, disk_total as diskTotal
+         FROM metrics_history
+         WHERE timestamp >= datetime('now', '-24 hours')
+         ORDER BY timestamp ASC`
+    );
+}
 
 module.exports = {
-    getSystemMetrics
+    getSystemMetrics,
+    getMetricsHistory
 };

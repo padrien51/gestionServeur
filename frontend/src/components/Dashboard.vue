@@ -4,6 +4,8 @@ import ContainerCard from './ContainerCard.vue';
 import LogViewer from './LogViewer.vue';
 import WebTerminal from './WebTerminal.vue';
 import LiveLogs from './LiveLogs.vue';
+import ComposeEditor from './ComposeEditor.vue';
+import MetricsChart from './MetricsChart.vue';
 import AIDrawer from './AIDrawer.vue';
 import { useModal } from '../composables/useModal';
 
@@ -19,6 +21,11 @@ const isAIDrawerOpen = ref(false);
 
 const activeTerminalContainerId = ref(null);
 const activeLiveLogContainer = ref(null);
+const activeEditorProject = ref(null);
+
+const onEditorSaved = (projectName) => {
+  activeEditorProject.value = null;
+};
 
 const fetchInsights = async () => {
   try {
@@ -409,10 +416,13 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
       </div>
       
       <!-- Détails en texte sous les jauges -->
-      <div class="mt-3 text-xs text-slate-500 dark:text-slate-400 flex justify-between px-1">
+      <div class="mt-3 text-xs text-slate-500 dark:text-slate-400 flex justify-between px-1 mb-6">
         <span>RAM: {{ formatBytes(metrics.memUsed) }} / {{ formatBytes(metrics.memTotal) }}</span>
         <span>SSD: {{ formatBytes(metrics.diskUsed) }} / {{ formatBytes(metrics.diskTotal) }}</span>
       </div>
+
+      <!-- Graphique d'historique -->
+      <MetricsChart />
     </section>
 
     <!-- Section Nettoyage Docker -->
@@ -500,7 +510,10 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
 
                   <div class="flex items-center space-x-2">
                     <div class="flex bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md overflow-hidden" v-if="app.name !== 'gestion_serveur'">
-                      <button @click="handleComposeAction(app.name, 'pull')" :disabled="composeLoading[app.name]" class="p-1.5 bg-white hover:bg-slate-50 dark:bg-transparent dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors disabled:opacity-50" title="Pull les images (docker compose pull)">
+                      <button @click="activeEditorProject = app.name" class="p-1.5 bg-white hover:bg-slate-50 dark:bg-transparent dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title="Éditer la configuration (Web IDE)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                      </button>
+                      <button @click="handleComposeAction(app.name, 'pull')" :disabled="composeLoading[app.name]" class="p-1.5 bg-white hover:bg-slate-50 dark:bg-transparent dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors disabled:opacity-50 border-l border-slate-300 dark:border-slate-700" title="Pull les images (docker compose pull)">
                         <svg v-if="composeLoading[app.name] === 'pull'" class="animate-spin w-4 h-4 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                         <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                       </button>
@@ -601,6 +614,14 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
       :insights="aiInsights" 
       @close="isAIDrawerOpen = false" 
       @refresh="fetchInsights" 
+    />
+    
+    <!-- Compose Web IDE -->
+    <ComposeEditor 
+      v-if="activeEditorProject" 
+      :projectName="activeEditorProject" 
+      @close="activeEditorProject = null" 
+      @saved="onEditorSaved(activeEditorProject)" 
     />
   </div>
 </template>

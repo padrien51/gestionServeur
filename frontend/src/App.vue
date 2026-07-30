@@ -5,6 +5,7 @@ import Updates from './components/Updates.vue';
 import Backups from './components/Backups.vue';
 import Settings from './components/Settings.vue';
 import Optimization from './components/Optimization.vue';
+import Networks from './components/Networks.vue';
 import Profile from './components/Profile.vue';
 import AppModal from './components/AppModal.vue';
 
@@ -140,6 +141,7 @@ const logout = () => {
         <!-- Navigation Desktop -->
         <nav class="hidden sm:flex space-x-1 bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
           <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
+          <button @click="currentTab = 'networks'" :class="currentTab === 'networks' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Réseaux</button>
           <button @click="currentTab = 'optimization'" :class="currentTab === 'optimization' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Optimisation</button>
           <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
           <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
@@ -171,16 +173,17 @@ const logout = () => {
     </header>
 
     <!-- Contenu Principal -->
-    <main class="flex-1 max-w-6xl mx-auto w-full p-2 sm:p-6 pb-20">
-      <transition name="fade" mode="out-in">
+      <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 flex-grow w-full h-full relative">
+        <transition name="fade" mode="out-in">
         <Dashboard v-if="currentTab === 'dashboard'" />
-        <Optimization v-else-if="currentTab === 'optimization'" />
+        <Networks v-if="currentTab === 'networks'" />
+        <Optimization v-if="currentTab === 'optimization'" />
         <Updates v-else-if="currentTab === 'updates'" />
         <Backups v-else-if="currentTab === 'backups'" />
         <Settings v-else-if="currentTab === 'settings'" />
         <Profile v-else-if="currentTab === 'profile'" />
       </transition>
-    </main>
+      </main>
     
     <!-- Modale Globale -->
     <AppModal />

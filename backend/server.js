@@ -5,8 +5,8 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const dockerService = require('./dockerService');
-const { getContainers, startContainer, stopContainer, restartContainer } = require('./dockerService');
-const { getSystemMetrics } = require('./systemService');
+const { getContainers, startContainer, stopContainer, restartContainer, getNetworks } = require('./dockerService');
+const { getSystemMetrics, getMetricsHistory } = require('./systemService');
 const updateService = require('./updateService');
 const { db, getQuery, runQuery } = require('./db');
 const http = require('http');
@@ -277,6 +277,36 @@ app.post('/api/docker/projects/:name/compose/:action', async (req, res) => {
     }
 });
 
+app.get('/api/docker/projects/:name/files', async (req, res) => {
+    try {
+        const files = await dockerService.getProjectFiles(req.params.name);
+        res.json({ files });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/docker/projects/:name/file', async (req, res) => {
+    try {
+        const content = await dockerService.readProjectFile(req.params.name, req.query.file);
+        res.json({ content });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/docker/projects/:name/file', async (req, res) => {
+    try {
+        const { file, content } = req.body;
+        if (!file || typeof content !== 'string') {
+            return res.status(400).json({ error: "Paramètres manquants" });
+        }
+        await dockerService.updateProjectFile(req.params.name, file, content);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.get('/api/updates/os', async (req, res) => {
     const info = await updateService.getOSUpdates();
@@ -579,11 +609,29 @@ app.get('/api/system/metrics', async (req, res) => {
     }
 });
 
+app.get('/api/system/metrics/history', async (req, res) => {
+    try {
+        const history = await getMetricsHistory();
+        res.json(history);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- Routes Docker ---
 app.get('/api/docker/containers', async (req, res) => {
     try {
         const containers = await getContainers();
         res.json(containers);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/docker/networks', async (req, res) => {
+    try {
+        const networks = await getNetworks();
+        res.json(networks);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

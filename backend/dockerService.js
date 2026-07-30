@@ -1,6 +1,7 @@
 const Docker = require('dockerode');
 const { runQuery, getQuery } = require('./db');
 const fs = require('fs');
+const path = require('path');
 
 // On monte le socket docker via docker-compose
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -19,6 +20,24 @@ async function getContainers() {
     } catch (error) {
         console.error("Erreur lors de la récupération des conteneurs:", error);
         throw new Error("Impossible de communiquer avec le démon Docker.");
+    }
+}
+
+async function getNetworks() {
+    try {
+        const networks = await docker.listNetworks();
+        return networks.map(n => ({
+            id: n.Id,
+            name: n.Name,
+            driver: n.Driver,
+            scope: n.Scope,
+            subnet: (n.IPAM && n.IPAM.Config && n.IPAM.Config.length > 0) ? n.IPAM.Config[0].Subnet : 'N/A',
+            gateway: (n.IPAM && n.IPAM.Config && n.IPAM.Config.length > 0) ? n.IPAM.Config[0].Gateway : 'N/A',
+            containers: n.Containers ? Object.keys(n.Containers).length : 0
+        }));
+    } catch (error) {
+        console.error("Erreur lors de la récupération des réseaux:", error);
+        throw new Error("Impossible de récupérer les réseaux Docker.");
     }
 }
 
@@ -304,6 +323,61 @@ async function getSystemDf() {
     return await docker.df();
 }
 
+async function getProjectFiles(projectName) {
+    const apps = await getApplications();
+    const app = apps.find(a => a.name === projectName);
+    if (!app) throw new Error("Projet non trouvé.");
+    
+    const vmPath = '/hostOS' + translateToVMPath(app.working_dir);
+    if (!fs.existsSync(vmPath)) throw new Error("Dossier projet introuvable.");
+
+    const files = fs.readdirSync(vmPath);
+    return files.filter(f => f.endsWith('.yml') || f.endsWith('.yaml') || f.endsWith('.env'));
+}
+
+async function readProjectFile(projectName, fileName) {
+    if (fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) {
+        throw new Error("Nom de fichier invalide.");
+    }
+
+    const apps = await getApplications();
+    const app = apps.find(a => a.name === projectName);
+    if (!app) throw new Error("Projet non trouvé.");
+    
+    const vmPath = path.join('/hostOS' + translateToVMPath(app.working_dir), fileName);
+    if (!fs.existsSync(vmPath)) throw new Error("Fichier introuvable.");
+
+    return fs.readFileSync(vmPath, 'utf8');
+}
+
+async function updateProjectFile(projectName, fileName, content) {
+    if (fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) {
+        throw new Error("Nom de fichier invalide.");
+    }
+    
+    const apps = await getApplications();
+    const app = apps.find(a => a.name === projectName);
+    if (!app) throw new Error("Projet non trouvé.");
+    
+    const translatedWorkingDir = translateToVMPath(app.working_dir);
+    const hostFilePath = path.posix.join(translatedWorkingDir, fileName);
+    
+    const base64Content = Buffer.from(content).toString('base64');
+    
+    const writerContainer = await docker.createContainer({
+        Image: 'alpine',
+        Cmd: ['sh', '-c', `echo "${base64Content}" | base64 -d > "/host${hostFilePath}"`],
+        HostConfig: { Binds: [ '/:/host' ] }
+    });
+    
+    await writerContainer.start();
+    const status = await writerContainer.wait();
+    await writerContainer.remove();
+    
+    if (status.StatusCode !== 0) throw new Error(`Erreur lors de la sauvegarde (Code ${status.StatusCode})`);
+    return { success: true };
+}
+
 module.exports = {
     docker,
     getContainers,
@@ -314,5 +388,9 @@ module.exports = {
     getApplications,
     handleProjectAction,
     runComposeAction,
-    getSystemDf
+    getSystemDf,
+    getProjectFiles,
+    readProjectFile,
+    updateProjectFile,
+    getNetworks
 };

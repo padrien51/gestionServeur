@@ -334,7 +334,59 @@ async function pruneSystem() {
 }
 
 async function getSystemDf() {
-    return await docker.df();
+    const res = await docker.df();
+    
+    let totalSize = 0;
+    let reclaimable = 0;
+    
+    // Images
+    const images = res.Images || [];
+    images.forEach(img => {
+        // Some properties differ across docker versions, prefer Size or VirtualSize
+        const size = img.Size || img.VirtualSize || 0;
+        totalSize += size;
+        if (img.Containers === 0) {
+            reclaimable += size;
+        }
+    });
+    
+    // Containers
+    const containers = res.Containers || [];
+    containers.forEach(c => {
+        const size = c.SizeRw || 0;
+        totalSize += size;
+        if (c.State !== 'running') {
+            reclaimable += size;
+        }
+    });
+    
+    // Volumes
+    const volumes = res.Volumes || [];
+    volumes.forEach(v => {
+        if (v.UsageData) {
+            const size = v.UsageData.Size || 0;
+            totalSize += size;
+            if (v.UsageData.RefCount === 0) {
+                reclaimable += size;
+            }
+        }
+    });
+    
+    // BuildCache
+    const caches = res.BuildCache || [];
+    caches.forEach(c => {
+        const size = c.Size || 0;
+        totalSize += size;
+        if (c.InUse === false) {
+            reclaimable += size;
+        }
+    });
+    
+    return {
+        TotalSize: totalSize,
+        Reclaimable: reclaimable,
+        raw: res // on garde la réponse brute au cas où
+    };
 }
 
 async function getProjectFiles(projectName) {

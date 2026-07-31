@@ -63,8 +63,7 @@ const applyUpdate = async (container) => {
       ...getFetchOptions()
     });
     
-    if (res.status === 401) {
-      localStorage.removeItem('app_pwd');
+    if (res.status === 401 || res.status === 403) {
       window.location.reload();
       return;
     }

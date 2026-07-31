@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import ContainerCard from './ContainerCard.vue';
-import LogViewer from './LogViewer.vue';
 import WebTerminal from './WebTerminal.vue';
 import LiveLogs from './LiveLogs.vue';
 import ComposeEditor from './ComposeEditor.vue';
@@ -15,7 +14,6 @@ const metrics = ref({ cpuLoad: 0, memUsed: 0, memTotal: 1, diskUsed: 0, diskTota
 const containers = ref([]);
 const loading = ref(true);
 const error = ref(null);
-const activeLogContainer = ref(null);
 const aiInsights = ref([]);
 const isAIDrawerOpen = ref(false);
 
@@ -75,13 +73,6 @@ const groupedApps = computed(() => {
   return Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const openLogs = (container) => {
-  activeLogContainer.value = {
-    id: container.id,
-    name: container.name
-  };
-};
-
 const API_BASE = '/api'; // Chemin relatif pour fonctionner avec le backend Express
 
 const getFetchOptions = () => ({
@@ -89,7 +80,6 @@ const getFetchOptions = () => ({
 });
 
 const handleUnauthorized = () => {
-  localStorage.removeItem('app_pwd');
   window.location.reload();
 };
 
@@ -146,10 +136,6 @@ const fetchApplications = async () => {
 const refreshData = async () => {
   await Promise.all([fetchMetrics(), fetchContainers(), fetchApplications(), fetchInsights()]);
   loading.value = false;
-};
-
-const closeLogs = () => {
-  activeLogContainer.value = null;
 };
 
 const openTerminal = (container) => {
@@ -559,7 +545,6 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                 :key="container.id" 
                 :container="container"
                 @action="handleContainerAction"
-                @view-logs="openLogs"
                 @open-terminal="openTerminal"
                 @live-logs="openLiveLogs"
               />
@@ -590,14 +575,6 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
       </div>
     </section>
 
-    <!-- Composant des logs en direct -->
-    <LogViewer 
-      v-if="activeLogContainer" 
-      :containerId="activeLogContainer.id" 
-      :containerName="activeLogContainer.name" 
-      @close="closeLogs" 
-    />
-    
     <WebTerminal 
       v-if="activeTerminalContainerId" 
       :containerId="activeTerminalContainerId" 

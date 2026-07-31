@@ -38,8 +38,6 @@ const handleLogin = async () => {
     
     // On sauvegarde le token JWT
     localStorage.setItem('auth_token', data.token);
-    // On conserve également app_pwd vide si jamais du vieux code s'en sert, mais il vaut mieux l'enlever
-    localStorage.removeItem('app_pwd');
     
     emit('login-success');
   } catch (err) {

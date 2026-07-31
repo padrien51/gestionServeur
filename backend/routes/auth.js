@@ -69,7 +69,11 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+const authenticate = require('../middleware/auth');
+
 // --- ROUTES PROTÉGÉES (nécessitent authenticate middleware appliqué en amont) ---
+router.use(authenticate);
+
 router.get('/2fa/status', async (req, res) => {
     try {
         const result = await authService.get2FAStatus(req.user.id);

@@ -62,30 +62,13 @@ app.use('/api/auth', authRoutes);
 // MIDDLEWARE D'AUTHENTIFICATION JWT
 // (appliqué à toutes les routes /api définies APRÈS ce point)
 // ===================================================================
-const authService = require('./authService');
-
-const authenticate = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ error: 'Non autorisé: Token manquant' });
-    }
-    try {
-        const user = authService.verifyToken(token);
-        req.user = user;
-        next();
-    } catch (err) {
-        return res.status(401).json({ error: 'Non autorisé: Token invalide ou expiré' });
-    }
-};
+const authenticate = require('./middleware/auth');
 
 app.use('/api', authenticate);
 
 // ===================================================================
 // ROUTES PROTÉGÉES (authentification requise)
 // ===================================================================
-app.use('/api/auth', require('./routes/auth'));        // Routes auth protégées (2FA, change-pwd...)
 app.use('/api/users', require('./routes/users'));
 app.use('/api/docker', require('./routes/docker'));
 app.use('/api/updates', require('./routes/updates'));

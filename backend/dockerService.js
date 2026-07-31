@@ -278,14 +278,28 @@ async function runComposeAction(projectName, action) {
     if (action === 'kill') {
         console.log(`Destruction totale du projet ${projectName}. Suppression du dossier ${rawWorkingDir}`);
         
+        // Sécurité : Vérifier que le chemin est bien un sous-dossier d'un répertoire autorisé
+        // pour éviter qu'un chemin malformé ne détruise des fichiers système critiques
+        const normalizedPath = path.posix.normalize(translatedWorkingDir);
+        const isSafeProjectPath = normalizedPath.startsWith('/home/') ||
+                                   normalizedPath.startsWith('/opt/') ||
+                                   normalizedPath.startsWith('/srv/') ||
+                                   normalizedPath.startsWith('/data/') ||
+                                   normalizedPath.startsWith('/mnt/') ||
+                                   normalizedPath.startsWith('/run/desktop/mnt/host/');
+        
+        if (!isSafeProjectPath) {
+            throw new Error(`Refus de suppression : le chemin "${rawWorkingDir}" n'est pas dans un répertoire de projet autorisé.`);
+        }
+        
         // Délai de 2 secondes pour s'assurer que Docker Desktop a bien relâché les verrous Windows
-        // sur le dossier qu'il venait de monter dans le conteneur précédent.
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         // On lance un micro-conteneur éphémère alpine avec les droits root pour supprimer le dossier sur l'hôte
         const rmContainer = await docker.createContainer({
             Image: 'alpine',
-            Cmd: ['sh', '-c', `rm -rf "/host${translatedWorkingDir}"`],
+            Cmd: ['sh', '-c', 'rm -rf "/host$TARGET_PATH"'],
+            Env: [`TARGET_PATH=${normalizedPath}`],
             HostConfig: {
                 Binds: [ '/:/host' ]
             }
@@ -364,9 +378,15 @@ async function updateProjectFile(projectName, fileName, content) {
     
     const base64Content = Buffer.from(content).toString('base64');
     
+    // Sécurité : Le contenu est passé via une variable d'environnement au lieu d'être
+    // interpôlé dans la commande shell, ce qui évite toute injection de commande (RCE).
     const writerContainer = await docker.createContainer({
         Image: 'alpine',
-        Cmd: ['sh', '-c', `echo "${base64Content}" | base64 -d > "/host${hostFilePath}"`],
+        Cmd: ['sh', '-c', 'printf "%s" "$FILE_CONTENT" | base64 -d > "/host$FILE_PATH"'],
+        Env: [
+            `FILE_CONTENT=${base64Content}`,
+            `FILE_PATH=${hostFilePath}`
+        ],
         HostConfig: { Binds: [ '/:/host' ] }
     });
     

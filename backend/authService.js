@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const { authenticator } = require('otplib');
 const QRCode = require('qrcode');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-default-key-change-it-in-production';
+const JWT_SECRET = process.env.JWT_SECRET; // Garanti non-null par le guard dans server.js
 const JWT_EXPIRES_IN = '24h';
 
 // Initialisation de Nodemailer
@@ -28,6 +28,9 @@ async function isSetupNeeded() {
 async function setupAccount(email, password) {
     if (!(await isSetupNeeded())) {
         throw new Error('Un compte administrateur existe déjà.');
+    }
+    if (!password || password.length < 8) {
+        throw new Error('Le mot de passe doit contenir au moins 8 caractères.');
     }
     const hash = await bcrypt.hash(password, 10);
     await runQuery(`INSERT INTO users (email, password_hash) VALUES (?, ?)`, [email, hash]);
@@ -158,6 +161,9 @@ async function resetPassword(token, newPassword) {
 
 // Changement de mot de passe (pour utilisateur connecté)
 async function changePassword(userId, currentPassword, newPassword) {
+    if (!newPassword || newPassword.length < 8) {
+        throw new Error('Le nouveau mot de passe doit contenir au moins 8 caractères.');
+    }
     const rows = await getQuery(`SELECT * FROM users WHERE id = ?`, [userId]);
     if (rows.length === 0) throw new Error('Utilisateur introuvable.');
     

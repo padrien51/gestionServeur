@@ -1,7 +1,7 @@
 const Docker = require('dockerode');
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-default-key-change-it-in-production';
+const JWT_SECRET = process.env.JWT_SECRET; // Garanti non-null par le guard dans server.js
 const { PassThrough } = require('stream');
 
 module.exports = function(io) {

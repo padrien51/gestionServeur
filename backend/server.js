@@ -12,12 +12,25 @@ const { db, getQuery, runQuery } = require('./db');
 const http = require('http');
 const { Server } = require('socket.io');
 
+// ===================================================================
+// SECURITY GUARD : Refuse to start if critical env vars are missing
+// ===================================================================
+if (!process.env.JWT_SECRET) {
+    console.error('\n[FATAL] JWT_SECRET is not defined in your .env file.');
+    console.error('[FATAL] The server will NOT start without a strong secret.');
+    console.error('[FATAL] Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+    process.exit(1);
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Restreindre les origines Socket.IO à l'application elle-même
+const allowedOrigin = process.env.APP_URL || `http://localhost:${process.env.HOST_PORT || 8183}`;
+
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: '*' }
+    cors: { origin: allowedOrigin, methods: ['GET', 'POST'] }
 });
 
 // Initialisation du service WebSocket
@@ -26,15 +39,22 @@ require('./websocketService')(io);
 // Optimisation : Compression GZIP des réponses
 app.use(compression());
 
-// Sécurité : Configuration des entêtes HTTP
-// On désactive contentSecurityPolicy si le frontend a besoin de ressources externes,
-// mais ici c'est une SPA interne, donc helmet() par défaut est très bien.
+// Sécurité : En-têtes HTTP avec CSP adaptée à une SPA Vue.js
 app.use(helmet({
-    contentSecurityPolicy: false // Désactivé pour éviter de bloquer des scripts inline de Vite si présents
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline nécessaire pour Vite en prod
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            connectSrc: ["'self'", "ws:", "wss:"],
+            imgSrc: ["'self'", "data:"],
+            fontSrc: ["'self'", "data:"],
+        }
+    }
 }));
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' })); // Limite la taille des body pour éviter les attaques par saturation
 
 // Sécurité : Limitation de requêtes (Anti-brute force) sur l'auth
 const authLimiter = rateLimit({
@@ -377,117 +397,6 @@ app.post('/api/settings/test-webhook', async (req, res) => {
 });
 
 
-// --- ROUTES UPDATES ---
-app.post('/api/docker/containers/:id/:action', async (req, res) => {
-    const { id, action } = req.params;
-    try {
-        if (action === 'start') await dockerService.startContainer(id);
-        else if (action === 'stop') await dockerService.stopContainer(id);
-        else if (action === 'restart') await dockerService.restartContainer(id);
-        else return res.status(400).json({ error: "Action inconnue" });
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/docker/projects/:name/:action', async (req, res) => {
-    const { name, action } = req.params;
-    try {
-        if (!['start', 'stop', 'restart'].includes(action)) {
-            return res.status(400).json({ error: "Action inconnue" });
-        }
-        await dockerService.handleProjectAction(name, action);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/docker/projects/:name/compose/:action', async (req, res) => {
-    const { name, action } = req.params;
-    try {
-        if (!['pull', 'down', 'kill', 'up'].includes(action)) {
-            return res.status(400).json({ error: "Action compose inconnue" });
-        }
-        await dockerService.runComposeAction(name, action);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
-app.get('/api/updates/os', async (req, res) => {
-    const info = await updateService.getOSUpdates();
-    res.json(info);
-});
-
-app.get('/api/updates/docker/check', async (req, res) => {
-    try {
-        const results = await updateService.checkDockerUpdates();
-        res.json(results);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/updates/docker/apply/:name', async (req, res) => {
-    try {
-        const result = await updateService.applyDockerUpdate(req.params.name);
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// --- ROUTES PARAMÈTRES (SETTINGS) ---
-app.get('/api/settings', async (req, res) => {
-    try {
-        const rows = await getQuery(`SELECT * FROM settings`);
-        const settings = {};
-        rows.forEach(r => settings[r.key] = r.value);
-        res.json(settings);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/settings', async (req, res) => {
-    try {
-        const settings = req.body;
-        for (const [key, value] of Object.entries(settings)) {
-            await runQuery(`INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, [key, value]);
-        }
-        updateService.startUpdateNotifier(); // Recharger le cron si modifié
-        res.json({ message: "Paramètres enregistrés" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/settings/test-webhook', async (req, res) => {
-    try {
-        const { webhookUrl } = req.body;
-        if (!webhookUrl) return res.status(400).json({ error: "L'URL du Webhook est manquante." });
-        
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: "🚀 **Gestion Serveur** - Test de configuration du webhook Mattermost réussi !"
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Mattermost a répondu avec l'erreur HTTP ${response.status}`);
-        }
-        
-        res.json({ success: true, message: "Le webhook de test a été envoyé avec succès !" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // --- ROUTES AIOPS ---
 const { startLogMonitor } = require('./logMonitor');

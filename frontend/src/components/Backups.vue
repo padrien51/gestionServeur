@@ -74,7 +74,12 @@ const fetchApplications = async () => {
   try {
     const res = await fetch(`${API_BASE}/docker/applications`, { headers: getFetchOptions().headers });
     if (res.ok) {
-      applications.value = await res.json();
+      const data = await res.json();
+      // On exclut l'application elle-même pour éviter de s'auto-stopper
+      applications.value = data.filter(app => 
+        app.name.toLowerCase() !== 'gestionserveur' && 
+        app.name.toLowerCase() !== 'gestion_serveur'
+      );
     }
   } catch (e) {
     console.error(e);

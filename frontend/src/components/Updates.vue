@@ -93,7 +93,7 @@ onMounted(async () => {
         <span class="mr-2">🐧</span> Mises à jour Système (Ubuntu)
       </h2>
       <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-lg">
-        <div v-if="osUpdates.supported && osUpdates.available" class="text-slate-600 dark:text-slate-300 font-mono text-sm whitespace-pre-wrap bg-[#0d1117] p-4 rounded-lg">
+        <div v-if="osUpdates.supported && osUpdates.available" class="text-slate-800 dark:text-slate-300 font-mono text-sm whitespace-pre-wrap bg-slate-100 dark:bg-[#0d1117] p-4 rounded-lg">
           {{ osUpdates.rawText }}
         </div>
         <div v-else class="text-slate-500 dark:text-slate-400 text-sm">
@@ -131,7 +131,7 @@ onMounted(async () => {
               <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 {{ container.name }}
                 <span v-if="container.hasUpdate" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full" 
-                      :class="container.isBreaking ? 'bg-red-900/80 text-red-300' : 'bg-blue-900/80 text-blue-300'">
+                      :class="container.isBreaking ? 'bg-red-200 text-red-700 dark:bg-red-900/80 dark:text-red-300' : 'bg-blue-200 text-blue-700 dark:bg-blue-900/80 dark:text-blue-300'">
                   Maj dispo
                 </span>
                 <span v-else class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
@@ -141,7 +141,7 @@ onMounted(async () => {
               <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex flex-col gap-1">
                 <span><span class="opacity-70">Image:</span> {{ container.image }}</span>
                 <span><span class="opacity-70">Actuel:</span> {{ container.currentVersion }}</span>
-                <span v-if="container.hasUpdate" class="text-blue-300"><span class="opacity-70">Nouveau:</span> {{ container.newVersion }}</span>
+                <span v-if="container.hasUpdate" class="text-blue-600 dark:text-blue-300"><span class="opacity-70">Nouveau:</span> {{ container.newVersion }}</span>
               </div>
             </div>
             

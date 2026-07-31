@@ -384,7 +384,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         <div class="bg-white dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner">
           <div class="relative w-16 h-16 flex items-center justify-center">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path class="text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+              <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
               <path class="text-blue-500 transition-all duration-500" :stroke-dasharray="`${metrics.cpuLoad}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
             </svg>
             <span class="absolute text-xs font-bold">{{ Math.round(metrics.cpuLoad) }}%</span>
@@ -396,7 +396,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         <div class="bg-white dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner">
           <div class="relative w-16 h-16 flex items-center justify-center">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path class="text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+              <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
               <path class="text-purple-500 transition-all duration-500" :stroke-dasharray="`${memPercent()}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
             </svg>
             <span class="absolute text-xs font-bold">{{ Math.round(memPercent()) }}%</span>
@@ -408,7 +408,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         <div class="bg-white dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner">
           <div class="relative w-16 h-16 flex items-center justify-center">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path class="text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+              <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
               <path class="text-teal-500 transition-all duration-500" :stroke-dasharray="`${diskPercent()}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
             </svg>
             <span class="absolute text-xs font-bold">{{ Math.round(diskPercent()) }}%</span>

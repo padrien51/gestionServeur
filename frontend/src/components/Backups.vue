@@ -255,17 +255,17 @@ const formatDate = (dateStr) => {
       <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">💾</span> Orchestrateur de Sauvegardes
       </h2>
-      <div class="flex bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-300 dark:border-slate-700 w-full sm:w-auto">
+      <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-auto">
         <button 
           @click="activeTab = 'jobs'; fetchJobs()" 
-          :class="activeTab === 'jobs' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          :class="activeTab === 'jobs' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'"
           class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
         >
           Jobs de Sauvegarde
         </button>
         <button 
           @click="activeTab = 'logs'; fetchLogs()" 
-          :class="activeTab === 'logs' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          :class="activeTab === 'logs' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'"
           class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
         >
           Historique (Logs)

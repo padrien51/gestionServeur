@@ -48,11 +48,11 @@
           </div>
           <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700/50 pb-2">
             <span class="text-slate-500 dark:text-slate-400">Sous-réseau (Subnet)</span>
-            <span class="text-slate-700 dark:text-slate-300 font-mono text-xs bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded">{{ net.subnet }}</span>
+            <span class="text-slate-700 dark:text-slate-300 font-mono text-xs bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded">{{ net.subnet }}</span>
           </div>
           <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700/50 pb-2">
             <span class="text-slate-500 dark:text-slate-400">Passerelle (Gateway)</span>
-            <span class="text-slate-700 dark:text-slate-300 font-mono text-xs bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded">{{ net.gateway }}</span>
+            <span class="text-slate-700 dark:text-slate-300 font-mono text-xs bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded">{{ net.gateway }}</span>
           </div>
           <div class="flex justify-between items-center">
             <span class="text-slate-500 dark:text-slate-400">Conteneurs attachés</span>

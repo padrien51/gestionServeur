@@ -33,15 +33,15 @@
       </div>
 
       <!-- Editor Body -->
-      <div class="flex-grow flex flex-col relative bg-slate-900">
-        <div v-if="isLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+      <div class="flex-grow flex flex-col relative bg-slate-50 dark:bg-slate-900">
+        <div v-if="isLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
            <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
         </div>
         
         <textarea 
           v-model="fileContent" 
           spellcheck="false"
-          class="flex-grow w-full bg-transparent text-slate-300 font-mono text-sm p-4 resize-none focus:outline-none focus:ring-0 border-none"
+          class="flex-grow w-full bg-transparent text-slate-900 dark:text-slate-300 font-mono text-sm p-4 resize-none focus:outline-none focus:ring-0 border-none"
           placeholder="Sélectionnez un fichier pour commencer l'édition..."
           :disabled="!selectedFile || isLoading"
         ></textarea>

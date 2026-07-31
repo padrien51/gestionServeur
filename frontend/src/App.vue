@@ -7,6 +7,7 @@ import Settings from './components/Settings.vue';
 import Optimization from './components/Optimization.vue';
 import Networks from './components/Networks.vue';
 import Profile from './components/Profile.vue';
+import Guide from './components/Guide.vue';
 import AppModal from './components/AppModal.vue';
 
 // Vues d'authentification
@@ -145,6 +146,7 @@ const logout = () => {
           <button @click="currentTab = 'optimization'" :class="currentTab === 'optimization' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Optimisation</button>
           <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
           <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
+          <button @click="currentTab = 'guide'" :class="currentTab === 'guide' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Guide</button>
           <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Paramètres</button>
         </nav>
         
@@ -180,6 +182,7 @@ const logout = () => {
         <Optimization v-if="currentTab === 'optimization'" />
         <Updates v-else-if="currentTab === 'updates'" />
         <Backups v-else-if="currentTab === 'backups'" />
+        <Guide v-else-if="currentTab === 'guide'" />
         <Settings v-else-if="currentTab === 'settings'" />
         <Profile v-else-if="currentTab === 'profile'" />
       </transition>
@@ -208,6 +211,11 @@ const logout = () => {
       <button @click="currentTab = 'backups'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'backups' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
         <svg class="w-6 h-6 mb-1" :class="currentTab === 'backups' ? 'stroke-2' : 'stroke-[1.5]'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
         <span class="text-[10px] font-medium">Backups</span>
+      </button>
+
+      <button @click="currentTab = 'guide'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'guide' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
+        <svg class="w-6 h-6 mb-1" :class="currentTab === 'guide' ? 'stroke-2' : 'stroke-[1.5]'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+        <span class="text-[10px] font-medium">Guide</span>
       </button>
 
       <button @click="currentTab = 'settings'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'settings' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">

@@ -112,11 +112,17 @@ async function executeBackup(jobId) {
 
                 console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);
                 
-                // On pull l'image d'abord si elle n'est pas là
-                await new Promise((resolve, reject) => {
+                // On tente de pull l'image, mais on ne bloque pas si on est hors ligne
+                await new Promise((resolve) => {
                     docker.pull('alpine:latest', (err, stream) => {
-                        if (err) return reject(err);
-                        docker.modem.followProgress(stream, (err, res) => err ? reject(err) : resolve(res));
+                        if (err) {
+                            console.warn("[Backup] Impossible de pull alpine:latest (mode hors ligne ?), utilisation du cache local.");
+                            return resolve();
+                        }
+                        docker.modem.followProgress(stream, (err, res) => {
+                            if (err) console.warn("[Backup] Erreur pendant le pull de alpine:latest, utilisation du cache local.");
+                            resolve(res);
+                        });
                     });
                 });
 

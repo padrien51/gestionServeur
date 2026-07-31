@@ -99,12 +99,25 @@ const fetchLogs = async () => {
   }
 };
 
+const parseContainers = (containersStr) => {
+  if (!containersStr) return [];
+  try {
+    let parsed = JSON.parse(containersStr);
+    if (typeof parsed === 'string') {
+      parsed = JSON.parse(parsed);
+    }
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+};
+
 const openForm = (job = null) => {
   if (job) {
     editingId.value = job.id;
     form.value = {
       ...job,
-      containers: JSON.parse(job.containers || '[]')
+      containers: parseContainers(job.containers)
     };
   } else {
     editingId.value = null;
@@ -155,10 +168,25 @@ const saveJob = async () => {
 
 const toggleJob = async (job) => {
   try {
+    let parsedContainers = [];
+    try {
+      parsedContainers = typeof job.containers === 'string' ? JSON.parse(job.containers) : job.containers;
+      // Si les données ont été corrompues (double stringify) et qu'on a encore une string
+      if (typeof parsedContainers === 'string') {
+        parsedContainers = JSON.parse(parsedContainers);
+      }
+    } catch (e) {
+      parsedContainers = [];
+    }
+    
     await fetch(`${API_BASE}/backups/${job.id}`, {
       method: 'PUT',
       ...getFetchOptions(),
-      body: JSON.stringify({ ...job, enabled: job.enabled ? 0 : 1 })
+      body: JSON.stringify({ 
+        ...job, 
+        containers: parsedContainers,
+        enabled: job.enabled ? 0 : 1 
+      })
     });
     await fetchJobs();
   } catch (e) {
@@ -371,10 +399,10 @@ const formatDate = (dateStr) => {
             <div class="flex items-start">
               <span class="w-24 text-slate-500 text-xs uppercase tracking-wider mt-0.5">Applications</span>
               <div class="flex flex-wrap gap-1 flex-1">
-                <span v-for="app in JSON.parse(job.containers || '[]')" :key="app" class="px-2 py-0.5 bg-blue-900/30 text-blue-300 border border-blue-800/50 rounded text-xs">
+                <span v-for="app in parseContainers(job.containers)" :key="app" class="px-2 py-0.5 bg-blue-900/30 text-blue-300 border border-blue-800/50 rounded text-xs">
                   {{ app }}
                 </span>
-                <span v-if="!job.containers || JSON.parse(job.containers).length === 0" class="text-slate-500 italic">Aucune</span>
+                <span v-if="!job.containers || parseContainers(job.containers).length === 0" class="text-slate-500 italic">Aucune</span>
               </div>
             </div>
             <div class="flex items-center">

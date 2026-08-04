@@ -54,23 +54,38 @@ const toggleViewMode = (mode) => {
 import { computed } from 'vue';
 
 const knownProjects = ref([]);
+const searchQuery = ref('');
 
 const groupedApps = computed(() => {
   const map = {};
+  const query = searchQuery.value.toLowerCase().trim();
   
   // 1. Initialiser avec tous les projets connus (même ceux arrêtés)
   for (const app of knownProjects.value) {
-    map[app.name] = { name: app.name, containers: [] };
+    if (!query || app.name.toLowerCase().includes(query)) {
+      map[app.name] = { name: app.name, containers: [] };
+    }
   }
 
   // 2. Ajouter les conteneurs actifs
   for (const c of containers.value) {
-    if (!map[c.project]) {
-      map[c.project] = { name: c.project, containers: [] };
+    const projectMatch = c.project.toLowerCase().includes(query);
+    const containerMatch = c.name.toLowerCase().includes(query);
+    
+    if (!query || projectMatch || containerMatch) {
+      if (!map[c.project]) {
+        map[c.project] = { name: c.project, containers: [] };
+      }
+      map[c.project].containers.push(c);
     }
-    map[c.project].containers.push(c);
   }
   return Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const filteredContainers = computed(() => {
+    if (!searchQuery.value) return containers.value;
+    const q = searchQuery.value.toLowerCase().trim();
+    return containers.value.filter(c => c.name.toLowerCase().includes(q) || c.project.toLowerCase().includes(q));
 });
 
 const API_BASE = '/api'; // Chemin relatif pour fonctionner avec le backend Express
@@ -436,27 +451,42 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
 
     <!-- Section Conteneurs / Applications -->
     <section>
-      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 gap-3">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+      <div class="flex flex-col lg:flex-row lg:justify-between lg:items-end mb-4 gap-4">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center shrink-0">
           <span class="mr-2">📦</span> Applications & Conteneurs
         </h2>
         
-        <!-- Toggle Vue -->
-        <div class="flex bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-300 dark:border-slate-700 w-full sm:w-auto">
-          <button 
-            @click="toggleViewMode('apps')" 
-            :class="viewMode === 'apps' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
-            class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
-          >
-            Vue Applications
-          </button>
-          <button 
-            @click="toggleViewMode('containers')" 
-            :class="viewMode === 'containers' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
-            class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
-          >
-            Vue Conteneurs
-          </button>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
+          <!-- Recherche -->
+          <div class="relative flex-1 sm:w-64 sm:flex-none">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </div>
+              <input 
+                  v-model="searchQuery" 
+                  type="text" 
+                  placeholder="Filtrer..." 
+                  class="block w-full pl-10 pr-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+          </div>
+
+          <!-- Toggle Vue -->
+          <div class="flex bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-300 dark:border-slate-700 w-full sm:w-auto shrink-0">
+            <button 
+              @click="toggleViewMode('apps')" 
+              :class="viewMode === 'apps' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+              class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+            >
+              Vue Applications
+            </button>
+            <button 
+              @click="toggleViewMode('containers')" 
+              :class="viewMode === 'containers' ? 'bg-slate-800 text-white dark:bg-slate-700 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+              class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+            >
+              Vue Conteneurs
+            </button>
+          </div>
         </div>
       </div>
 
@@ -559,7 +589,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         <!-- Vue par Conteneurs (Plate) -->
         <div v-else class="space-y-3">
           <ContainerCard 
-            v-for="container in containers" 
+            v-for="container in filteredContainers" 
             :key="container.id" 
             :container="container"
             @action="handleContainerAction"

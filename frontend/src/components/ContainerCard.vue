@@ -47,6 +47,11 @@ const handleAction = async (action) => {
         <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 truncate flex items-center gap-2">
           {{ container.name }}
           <span class="h-2.5 w-2.5 rounded-full inline-block shrink-0" :class="statusColor"></span>
+          <!-- Badge MAJ -->
+          <span v-if="container.hasUpdate && !isUpdateIgnored" class="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center shadow-sm ml-1" title="Mise à jour disponible">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            v.{{ container.newVersion }}
+          </span>
         </h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{{ container.image }}</p>
         <p class="text-xs font-mono text-slate-500 mt-0.5">{{ container.status }}</p>
@@ -54,11 +59,6 @@ const handleAction = async (action) => {
       
       <!-- Actions -->
       <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:justify-end">
-        <!-- Badge MAJ -->
-        <span v-if="container.hasUpdate && !isUpdateIgnored" class="text-[10px] font-bold px-2 py-1 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center shadow-sm animate-pulse mr-1" title="Mise à jour disponible">
-          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-          v.{{ container.newVersion }}
-        </span>
         
         <button @click="$emit('toggle-ignore-update', container)" class="p-2 rounded-lg transition-colors shadow-sm" :class="isUpdateIgnored ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'" :title="isUpdateIgnored ? 'Mises à jour ignorées (Cliquer pour surveiller)' : 'Mises à jour surveillées (Cliquer pour ignorer)'">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" :class="!isUpdateIgnored ? 'opacity-60' : ''"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>

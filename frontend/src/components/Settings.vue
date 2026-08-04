@@ -16,6 +16,9 @@ const getFetchOptions = () => ({
 
 const form = ref({
   mattermost_webhook_url: '',
+  notify_backups: 'true',
+  notify_updates: 'true',
+  notify_ai_alerts: 'true',
   update_cron_schedule: '0 9 * * *',
   ai_enabled: 'false',
   ai_engine: 'ollama',
@@ -230,7 +233,27 @@ onMounted(() => {
                   <span v-else>Tester 🚀</span>
                 </button>
               </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL après chaque tâche de sauvegarde et vérification de MAJ.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">L'orchestrateur enverra un message à cette URL selon vos préférences ci-dessous.</p>
+            </div>
+
+            <!-- Options de notifications -->
+            <div class="space-y-3 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Quelles alertes souhaitez-vous recevoir ?</label>
+              
+              <div class="flex items-center">
+                <input type="checkbox" id="notify_ai_alerts" v-model="form.notify_ai_alerts" true-value="true" false-value="false" class="mr-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                <label for="notify_ai_alerts" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">Alerte IA (Problème détecté dans les logs)</label>
+              </div>
+              
+              <div class="flex items-center">
+                <input type="checkbox" id="notify_backups" v-model="form.notify_backups" true-value="true" false-value="false" class="mr-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                <label for="notify_backups" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">Rapport de Sauvegarde (Succès / Échec)</label>
+              </div>
+              
+              <div class="flex items-center">
+                <input type="checkbox" id="notify_updates" v-model="form.notify_updates" true-value="true" false-value="false" class="mr-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                <label for="notify_updates" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">Alerte de Mise à jour (OS et Conteneurs)</label>
+              </div>
             </div>
           </div>
         </div>

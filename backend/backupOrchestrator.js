@@ -57,6 +57,10 @@ async function executeBackup(jobId) {
 
         const sendWebhook = async (text, color) => {
             if (!webhookUrl) return;
+            
+            const notifyPref = await getQuery(`SELECT value FROM settings WHERE key = 'notify_backups'`);
+            if (notifyPref.length > 0 && notifyPref[0].value === 'false') return;
+
             try {
                 await fetch(webhookUrl, {
                     method: 'POST',

@@ -186,6 +186,9 @@ async function checkAndNotifyUpdates() {
         
         if (!webhookUrl) return; // Pas de webhook configuré
 
+        const notifyPref = await getQuery(`SELECT value FROM settings WHERE key = 'notify_updates'`);
+        if (notifyPref.length > 0 && notifyPref[0].value === 'false') return;
+
         let message = "";
         
         // Check OS updates

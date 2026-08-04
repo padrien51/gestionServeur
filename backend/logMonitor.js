@@ -11,6 +11,9 @@ const containerMonitors = {}; // { [containerId]: { buffer: [], timer: null, nam
 
 async function sendMattermostAlert(projectName, containerName, diagnosis, solution) {
     try {
+        const notifyPref = await getQuery(`SELECT value FROM settings WHERE key = 'notify_ai_alerts'`);
+        if (notifyPref.length > 0 && notifyPref[0].value === 'false') return;
+
         const webhookRow = await getQuery(`SELECT value FROM settings WHERE key = 'mattermost_webhook_url'`);
         const webhookUrl = webhookRow.length > 0 ? webhookRow[0].value : null;
         if (!webhookUrl) return;

@@ -61,6 +61,27 @@ async function analyzeLog(logContext, containerName) {
         }
 
         try {
+            // Vérification et téléchargement automatique du modèle
+            try {
+                const tagsRes = await fetch(`${settings.url}/api/tags`);
+                if (tagsRes.ok) {
+                    const tagsData = await tagsRes.json();
+                    const hasModel = tagsData.models?.some(m => m.name === settings.model || m.name.startsWith(settings.model + ':'));
+                    
+                    if (!hasModel) {
+                        console.log(`[AIOps] Le modèle '${settings.model}' est introuvable. Téléchargement automatique en cours (cela prendra quelques minutes)...`);
+                        await fetch(`${settings.url}/api/pull`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: settings.model, stream: false })
+                        });
+                        console.log(`[AIOps] Modèle '${settings.model}' téléchargé avec succès !`);
+                    }
+                }
+            } catch (checkErr) {
+                console.warn("[AIOps] Impossible de vérifier les modèles Ollama avant l'analyse:", checkErr.message);
+            }
+
             const response = await fetch(`${settings.url}/api/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

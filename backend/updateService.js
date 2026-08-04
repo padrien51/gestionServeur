@@ -62,9 +62,22 @@ const semver = require('semver');
 async function checkDockerUpdates() {
     const containers = await docker.listContainers();
     const results = [];
+    
+    // Récupérer la liste des conteneurs ignorés
+    const ignoreRow = await getQuery(`SELECT value FROM settings WHERE key = 'ignore_updates_containers'`);
+    let ignoredContainers = [];
+    if (ignoreRow.length > 0 && ignoreRow[0].value) {
+        try {
+            ignoredContainers = JSON.parse(ignoreRow[0].value);
+        } catch (e) {
+            ignoredContainers = [];
+        }
+    }
 
     for (const container of containers) {
-        if (container.Names.some(n => n.includes('gestion_serveur'))) continue;
+        const cName = container.Names[0] ? container.Names[0].replace(/^\//, '') : '';
+        if (cName.includes('gestion_serveur')) continue;
+        if (ignoredContainers.includes(cName)) continue;
 
         let imageName = container.Image;
         let tag = 'latest';

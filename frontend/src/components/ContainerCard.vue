@@ -5,6 +5,10 @@ const props = defineProps({
   container: {
     type: Object,
     required: true
+  },
+  isUpdateIgnored: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -12,7 +16,7 @@ import { useModal } from '../composables/useModal';
 
 const { showConfirm } = useModal();
 
-const emit = defineEmits(['action', 'view-logs', 'live-logs', 'open-terminal']);
+const emit = defineEmits(['action', 'view-logs', 'live-logs', 'open-terminal', 'toggle-ignore-update']);
 
 const isUp = computed(() => props.container.state === 'running');
 
@@ -51,9 +55,14 @@ const handleAction = async (action) => {
       <!-- Actions -->
       <div class="flex items-center space-x-2">
         <!-- Badge MAJ -->
-        <span v-if="container.hasUpdate" class="text-[10px] font-bold px-2 py-1 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center shadow-sm animate-pulse mr-1" title="Mise à jour disponible">
+        <span v-if="container.hasUpdate && !isUpdateIgnored" class="text-[10px] font-bold px-2 py-1 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center shadow-sm animate-pulse mr-1" title="Mise à jour disponible">
           ⬆️ v.{{ container.newVersion }}
         </span>
+        
+        <button @click="$emit('toggle-ignore-update', container)" class="p-2 rounded-lg transition-colors" :class="isUpdateIgnored ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'" :title="isUpdateIgnored ? 'Mises à jour ignorées (Cliquer pour surveiller)' : 'Mises à jour surveillées (Cliquer pour ignorer)'">
+          <span v-if="isUpdateIgnored">🛡️</span>
+          <span v-else class="grayscale opacity-50">🛡️</span>
+        </button>
         
         <button v-if="isUp" @click="$emit('open-terminal', container)" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" title="Ouvrir le Terminal (Shell)">
           📟

@@ -347,10 +347,52 @@ const updateApplication = async (app) => {
   fetchUpdates();
 };
 
+const ignoredUpdateContainers = ref([]);
+
+const fetchIgnoredUpdates = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/settings`, getFetchOptions());
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ignore_updates_containers) {
+         try {
+           ignoredUpdateContainers.value = JSON.parse(data.ignore_updates_containers);
+         } catch(e) { ignoredUpdateContainers.value = []; }
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const handleToggleIgnoreUpdate = async (container) => {
+  const containerName = container.name || container.id; // Fallback
+  let newList = [...ignoredUpdateContainers.value];
+  if (newList.includes(containerName)) {
+      newList = newList.filter(n => n !== containerName);
+  } else {
+      newList.push(containerName);
+  }
+  ignoredUpdateContainers.value = newList;
+
+  try {
+    await fetch(`${API_BASE}/settings`, {
+      method: 'PUT',
+      headers: { ...getFetchOptions().headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ignore_updates_containers: JSON.stringify(newList) })
+    });
+    showAlert("Succès", `Vérification des mises à jour ${newList.includes(containerName) ? 'désactivée' : 'réactivée'} pour ${containerName}`);
+  } catch (err) {
+    console.error(err);
+    showAlert("Erreur", "Impossible de sauvegarder la préférence.");
+  }
+};
+
 let intervalId;
 onMounted(() => {
   refreshData();
   fetchUpdates();
+  fetchIgnoredUpdates();
   intervalId = setInterval(refreshData, 5000); // Auto refresh toutes les 5s
 });
 
@@ -574,9 +616,12 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                 v-for="container in app.containers" 
                 :key="container.id" 
                 :container="container"
+                :is-update-ignored="ignoredUpdateContainers.includes(container.name)"
                 @action="handleContainerAction"
-                @open-terminal="openTerminal"
+                @view-logs="openLogs"
                 @live-logs="openLiveLogs"
+                @open-terminal="openTerminal"
+                @toggle-ignore-update="handleToggleIgnoreUpdate"
               />
             </div>
           </div>
@@ -592,10 +637,12 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
             v-for="container in filteredContainers" 
             :key="container.id" 
             :container="container"
+            :is-update-ignored="ignoredUpdateContainers.includes(container.name)"
             @action="handleContainerAction"
             @view-logs="openLogs"
-            @open-terminal="openTerminal"
             @live-logs="openLiveLogs"
+            @open-terminal="openTerminal"
+            @toggle-ignore-update="handleToggleIgnoreUpdate"
           />
           <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 border-dashed">
             Aucun conteneur trouvé.

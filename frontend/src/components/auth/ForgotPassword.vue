@@ -37,7 +37,7 @@ const handleForgot = async () => {
 </script>
 
 <template>
-  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl relative overflow-hidden">
     <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 text-center flex items-center justify-center">
       <span class="mr-2">📧</span> Mot de passe oublié
     </h1>
@@ -58,11 +58,11 @@ const handleForgot = async () => {
           v-model="email" 
           type="email" 
           placeholder="admin@domaine.com"
-          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
         >
       </div>
-      <button type="submit" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg transition-colors shadow-lg shadow-blue-900/20 mt-2">
+      <button type="submit" :disabled="loading" class="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 font-medium py-3 rounded-lg transition-colors shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/20 mt-2">
         <span v-if="loading">Envoi en cours...</span>
         <span v-else>Envoyer le lien</span>
       </button>

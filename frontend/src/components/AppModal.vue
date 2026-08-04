@@ -10,7 +10,7 @@ const { state, close } = useModal();
       <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="close(false)"></div>
       
       <!-- Modal Box -->
-      <div class="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col transform transition-all">
+      <div class="relative bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl w-full max-w-md overflow-hidden flex flex-col transform transition-all">
         
         <!-- Header -->
         <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center" 
@@ -33,16 +33,16 @@ const { state, close } = useModal();
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
           <template v-if="state.type === 'confirm'">
-            <button @click="close(false)" class="px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-200 dark:border-slate-700">
+            <button @click="close(false)" class="px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-200/60 dark:border-slate-700">
               Annuler
             </button>
-            <button @click="close(true)" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition-colors">
+            <button @click="close(true)" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 rounded-lg text-sm font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/50 transition-colors">
               Confirmer
             </button>
           </template>
           
           <template v-else>
-            <button @click="close(true)" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition-colors">
+            <button @click="close(true)" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 rounded-lg text-sm font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/50 transition-colors">
               OK
             </button>
           </template>

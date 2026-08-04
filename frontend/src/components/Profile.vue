@@ -143,11 +143,11 @@ const disable2FA = async () => {
       <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Gérez vos informations personnelles et votre sécurité.</p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl p-6 space-y-8">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl p-6 space-y-8">
       
       <!-- Modifier l'email -->
       <div>
-        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4 flex items-center">
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200/60 dark:border-slate-700 pb-2 mb-4 flex items-center">
           <span class="mr-2">📧</span> Changer d'adresse email
         </h3>
         <form @submit.prevent="handleChangeEmail" class="flex flex-col md:flex-row gap-4 items-end">
@@ -157,10 +157,10 @@ const disable2FA = async () => {
               v-model="newEmail" 
               type="email" 
               placeholder="votre.nouvel@email.com" 
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
             />
           </div>
-          <button type="submit" class="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-6 rounded-xl transition-all h-[50px] shadow-lg shadow-blue-900/20">
+          <button type="submit" class="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 font-medium py-3 px-6 rounded-xl transition-all h-[50px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/20">
             Mettre à jour
           </button>
         </form>
@@ -168,7 +168,7 @@ const disable2FA = async () => {
 
       <!-- Modifier le mot de passe -->
       <div>
-        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4 flex items-center">
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200/60 dark:border-slate-700 pb-2 mb-4 flex items-center">
           <span class="mr-2">🔑</span> Changer de mot de passe
         </h3>
         <form @submit.prevent="handleChangePassword" class="space-y-4 max-w-md">
@@ -177,7 +177,7 @@ const disable2FA = async () => {
             <input 
               v-model="currentPassword" 
               type="password" 
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
             />
           </div>
           <div>
@@ -185,11 +185,11 @@ const disable2FA = async () => {
             <input 
               v-model="newPassword" 
               type="password" 
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
             />
           </div>
           <div class="pt-2">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-900/20">
+            <button type="submit" class="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 font-medium py-3 px-6 rounded-xl transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/20">
               Modifier le mot de passe
             </button>
           </div>
@@ -198,16 +198,16 @@ const disable2FA = async () => {
       
       <!-- Authentification Double Facteur (A2F) -->
       <div>
-        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4 flex items-center">
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200/60 dark:border-slate-700 pb-2 mb-4 flex items-center">
           <span class="mr-2">🛡️</span> Double Authentification (A2F)
         </h3>
         
-        <div v-if="!is2FAEnabled" class="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center border border-slate-200 dark:border-slate-700">
+        <div v-if="!is2FAEnabled" class="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center border border-slate-200/60 dark:border-slate-700">
           <div class="mb-4 md:mb-0">
             <h4 class="font-bold text-slate-800 dark:text-slate-200">Sécurisez votre compte</h4>
             <p class="text-slate-500 text-sm mt-1">Utilisez une application comme Google Authenticator pour protéger votre serveur.</p>
           </div>
-          <button @click="start2FASetup" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 px-5 rounded-lg transition-all shadow-lg shadow-emerald-900/20 whitespace-nowrap">
+          <button @click="start2FASetup" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 font-medium py-2.5 px-5 rounded-lg transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-emerald-900/20 whitespace-nowrap">
             Activer l'A2F
           </button>
         </div>
@@ -230,14 +230,14 @@ const disable2FA = async () => {
 
     <!-- Modal Configuration A2F -->
     <div v-if="show2FAModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl overflow-hidden border border-slate-200/60 dark:border-slate-700">
         
         <div v-if="backupCodes.length > 0" class="p-6">
           <h3 class="text-xl font-bold text-emerald-600 mb-4 flex items-center"><span class="mr-2">🎉</span> A2F Activée !</h3>
           <p class="text-slate-600 dark:text-slate-300 text-sm mb-4">
             Voici vos codes de récupération. <strong>Copiez-les en lieu sûr</strong>. Ils vous permettront de vous connecter si vous perdez votre téléphone.
           </p>
-          <div class="bg-slate-100 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 grid grid-cols-2 gap-2 text-center font-mono text-sm text-slate-800 dark:text-slate-200 mb-6">
+          <div class="bg-slate-100 dark:bg-slate-900 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700 grid grid-cols-2 gap-2 text-center font-mono text-sm text-slate-800 dark:text-slate-200 mb-6">
             <div v-for="code in backupCodes" :key="code">{{ code }}</div>
           </div>
           <button @click="show2FAModal = false" class="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium py-3 px-4 rounded-xl transition-all">
@@ -268,11 +268,11 @@ const disable2FA = async () => {
               type="text" 
               maxlength="6"
               placeholder="123456" 
-              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center text-2xl tracking-widest text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-center text-2xl tracking-widest text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
             />
           </div>
 
-          <button @click="verify2FASetup" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-900/20">
+          <button @click="verify2FASetup" class="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 font-medium py-3 px-4 rounded-xl transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/20">
             Valider et Activer
           </button>
         </div>
@@ -281,14 +281,14 @@ const disable2FA = async () => {
 
     <!-- Modal Désactivation A2F -->
     <div v-if="showDisableModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 p-6 space-y-6">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl overflow-hidden border border-slate-200/60 dark:border-slate-700 p-6 space-y-6">
         <h3 class="text-xl font-bold text-slate-800 dark:text-white">Désactiver l'A2F</h3>
         <p class="text-sm text-slate-600 dark:text-slate-300">Veuillez entrer votre mot de passe pour confirmer la désactivation.</p>
         <input 
           v-model="twoFAPassword" 
           type="password" 
           placeholder="Mot de passe actuel" 
-          class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-red-500 focus:outline-none"
+          class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-red-500 focus:outline-none"
         />
         <div class="flex space-x-3">
           <button @click="showDisableModal = false; twoFAPassword = ''" class="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-medium py-3 rounded-xl transition-all">Annuler</button>

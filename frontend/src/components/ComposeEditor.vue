@@ -1,9 +1,9 @@
 <template>
   <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
       
       <!-- Header -->
-      <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+      <div class="p-4 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
@@ -20,7 +20,7 @@
             v-if="files.length > 0"
             v-model="selectedFile" 
             @change="loadFile(selectedFile)"
-            class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
             <option v-for="f in files" :key="f" :value="f">{{ f }}</option>
           </select>
@@ -48,7 +48,7 @@
       </div>
 
       <!-- Footer -->
-      <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+      <div class="p-4 border-t border-slate-200/60 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
         <p class="text-xs text-slate-500 flex items-center">
           <svg class="w-4 h-4 mr-1 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           Attention : Les erreurs de syntaxe empêcheront le redémarrage.
@@ -57,7 +57,7 @@
         <div class="flex space-x-3">
           <button 
             @click="$emit('close')"
-            class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+            class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
           >
             Fermer
           </button>

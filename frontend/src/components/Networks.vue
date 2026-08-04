@@ -6,7 +6,7 @@
       </h1>
       <button 
         @click="fetchNetworks" 
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center transition-colors"
+        class="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 px-4 py-2 rounded-lg text-sm font-medium shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm flex items-center transition-colors"
         :disabled="loading"
       >
         <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
@@ -25,7 +25,7 @@
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      <div v-for="net in networks" :key="net.id" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-shadow">
+      <div v-for="net in networks" :key="net.id" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.05)] dark:shadow-md transition-shadow">
         <div class="flex items-start justify-between mb-4">
           <div class="flex items-center">
             <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mr-3">
@@ -36,7 +36,7 @@
               <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ net.id.substring(0, 12) }}</p>
             </div>
           </div>
-          <span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md text-xs font-semibold border border-slate-200 dark:border-slate-600">
+          <span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md text-xs font-semibold border border-slate-200/60 dark:border-slate-600">
             {{ net.driver }}
           </span>
         </div>

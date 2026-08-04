@@ -173,7 +173,7 @@ onMounted(() => {
     </div>
 
     <!-- TABS -->
-    <div class="flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner max-w-fit">
+    <div class="flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] dark:shadow-inner max-w-fit">
         <button 
             @click="activeTab = 'express'" 
             :class="activeTab === 'express' ? 'bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
@@ -203,12 +203,12 @@ onMounted(() => {
     <div v-if="activeTab === 'express' && dfInfo" class="space-y-6 animate-fade-in">
         <!-- Dashboard Summary -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-center items-center text-center">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm flex flex-col justify-center items-center text-center">
                 <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Espace Total Consommé par Docker</span>
                 <span class="text-4xl font-black text-slate-800 dark:text-white mt-2">{{ formatBytes(dfInfo.TotalSize || 0) }}</span>
             </div>
             
-            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-md flex flex-col justify-center items-center text-center text-white relative overflow-hidden group">
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.05)] dark:shadow-md flex flex-col justify-center items-center text-center text-white relative overflow-hidden group">
                 <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <span class="text-sm font-medium text-emerald-100">Espace Récupérable (Inutilisé)</span>
                 <span class="text-4xl font-black mt-2">{{ formatBytes(dfInfo.Reclaimable || 0) }}</span>
@@ -229,7 +229,7 @@ onMounted(() => {
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <!-- Images -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200/60 dark:border-slate-700 flex flex-col h-full">
                 <div class="flex items-center space-x-3 mb-2">
                     <span class="text-2xl">📦</span>
                     <h4 class="font-bold text-slate-800 dark:text-slate-200">Images</h4>
@@ -239,7 +239,7 @@ onMounted(() => {
             </div>
 
             <!-- Conteneurs -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200/60 dark:border-slate-700 flex flex-col h-full">
                 <div class="flex items-center space-x-3 mb-2">
                     <span class="text-2xl">🐳</span>
                     <h4 class="font-bold text-slate-800 dark:text-slate-200">Conteneurs</h4>
@@ -249,7 +249,7 @@ onMounted(() => {
             </div>
 
             <!-- Volumes -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200/60 dark:border-slate-700 flex flex-col h-full">
                 <div class="flex items-center space-x-3 mb-2">
                     <span class="text-2xl">💾</span>
                     <h4 class="font-bold text-slate-800 dark:text-slate-200">Volumes</h4>
@@ -271,8 +271,8 @@ onMounted(() => {
         <div v-else-if="unusedResources">
             
             <!-- CONTENEURS ARRÊTÉS -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6 shadow-sm">
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700 overflow-hidden mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm">
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center">
                     <div class="flex items-center space-x-2">
                         <span class="text-xl">🐳</span>
                         <h3 class="font-bold text-slate-800 dark:text-slate-200">Conteneurs Arrêtés</h3>
@@ -288,14 +288,14 @@ onMounted(() => {
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
                     <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
-                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('containers')" :checked="selectedIds.containers.length === unusedResources.containers.length && unusedResources.containers.length > 0" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
+                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('containers')" :checked="selectedIds.containers.length === unusedResources.containers.length && unusedResources.containers.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-1">Nom du Conteneur</div>
                         <div class="flex-1 hidden md:block">Image</div>
                         <div class="w-24 text-right pr-4">Action</div>
                     </div>
                     <div v-for="c in unusedResources.containers" :key="c.id" class="p-3 flex items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                         <div class="w-8 flex justify-center">
-                            <input type="checkbox" :checked="selectedIds.containers.includes(c.id)" @change="toggleSelection('containers', c.id)" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
+                            <input type="checkbox" :checked="selectedIds.containers.includes(c.id)" @change="toggleSelection('containers', c.id)" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
                         </div>
                         <div class="flex-1 min-w-0 pr-4">
                             <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ c.name.replace(/^\//, '') }}</p>
@@ -314,8 +314,8 @@ onMounted(() => {
             </div>
 
             <!-- IMAGES INUTILISÉES -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6 shadow-sm">
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700 overflow-hidden mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm">
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center">
                     <div class="flex items-center space-x-2">
                         <span class="text-xl">📦</span>
                         <h3 class="font-bold text-slate-800 dark:text-slate-200">Images Inutilisées</h3>
@@ -331,14 +331,14 @@ onMounted(() => {
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
                     <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
-                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('images')" :checked="selectedIds.images.length === unusedResources.images.length && unusedResources.images.length > 0" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
+                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('images')" :checked="selectedIds.images.length === unusedResources.images.length && unusedResources.images.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-[2]">Image</div>
                         <div class="flex-1 text-right pr-4">Taille</div>
                         <div class="w-24 text-right pr-4">Action</div>
                     </div>
                     <div v-for="img in unusedResources.images" :key="img.id" class="p-3 flex items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                         <div class="w-8 flex justify-center">
-                            <input type="checkbox" :checked="selectedIds.images.includes(img.id)" @change="toggleSelection('images', img.id)" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
+                            <input type="checkbox" :checked="selectedIds.images.includes(img.id)" @change="toggleSelection('images', img.id)" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
                         </div>
                         <div class="flex-[2] min-w-0 pr-4">
                             <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ img.tags.length > 0 ? img.tags[0] : '<none>:<none>' }}</p>
@@ -357,8 +357,8 @@ onMounted(() => {
             </div>
 
             <!-- VOLUMES ORPHELINS -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6 shadow-sm">
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700 overflow-hidden mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm">
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center">
                     <div class="flex items-center space-x-2">
                         <span class="text-xl">💾</span>
                         <h3 class="font-bold text-slate-800 dark:text-slate-200">Volumes Orphelins</h3>
@@ -374,14 +374,14 @@ onMounted(() => {
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
                     <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
-                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('volumes')" :checked="selectedIds.volumes.length === unusedResources.volumes.length && unusedResources.volumes.length > 0" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
+                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('volumes')" :checked="selectedIds.volumes.length === unusedResources.volumes.length && unusedResources.volumes.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-[2]">Nom du Volume</div>
                         <div class="flex-1 text-right pr-4">Taille</div>
                         <div class="w-24 text-right pr-4">Action</div>
                     </div>
                     <div v-for="vol in unusedResources.volumes" :key="vol.name" class="p-3 flex items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                         <div class="w-8 flex justify-center">
-                            <input type="checkbox" :checked="selectedIds.volumes.includes(vol.name)" @change="toggleSelection('volumes', vol.name)" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
+                            <input type="checkbox" :checked="selectedIds.volumes.includes(vol.name)" @change="toggleSelection('volumes', vol.name)" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
                         </div>
                         <div class="flex-[2] min-w-0 pr-4">
                             <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ vol.name }}</p>
@@ -399,8 +399,8 @@ onMounted(() => {
             </div>
 
             <!-- RÉSEAUX INUTILISÉS -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm">
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center">
                     <div class="flex items-center space-x-2">
                         <span class="text-xl">🌐</span>
                         <h3 class="font-bold text-slate-800 dark:text-slate-200">Réseaux Inutilisés</h3>
@@ -416,14 +416,14 @@ onMounted(() => {
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
                     <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
-                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('networks')" :checked="selectedIds.networks.length === unusedResources.networks.length && unusedResources.networks.length > 0" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
+                        <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('networks')" :checked="selectedIds.networks.length === unusedResources.networks.length && unusedResources.networks.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-1">Nom du Réseau</div>
                         <div class="flex-1 hidden md:block">Driver</div>
                         <div class="w-24 text-right pr-4">Action</div>
                     </div>
                     <div v-for="net in unusedResources.networks" :key="net.id" class="p-3 flex items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                         <div class="w-8 flex justify-center">
-                            <input type="checkbox" :checked="selectedIds.networks.includes(net.id)" @change="toggleSelection('networks', net.id)" class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
+                            <input type="checkbox" :checked="selectedIds.networks.includes(net.id)" @change="toggleSelection('networks', net.id)" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent">
                         </div>
                         <div class="flex-1 min-w-0 pr-4">
                             <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ net.name }}</p>

@@ -91,7 +91,7 @@ onMounted(async () => {
       <h2 class="text-xl font-bold mb-4 text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">🐧</span> Mises à jour Système (Ubuntu)
       </h2>
-      <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-lg">
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg">
         <div v-if="osUpdates.supported && osUpdates.available" class="text-slate-800 dark:text-slate-300 font-mono text-sm whitespace-pre-wrap bg-slate-100 dark:bg-[#0d1117] p-4 rounded-lg">
           {{ osUpdates.rawText }}
         </div>
@@ -122,8 +122,8 @@ onMounted(async () => {
       </div>
       <div v-else class="space-y-4">
         <div v-for="container in containers" :key="container.id" 
-             class="bg-white dark:bg-slate-800 rounded-xl border shadow-md transition-all overflow-hidden"
-             :class="container.hasUpdate ? (container.isBreaking ? 'border-red-500/50' : 'border-blue-500/50') : 'border-slate-200 dark:border-slate-700'">
+             class="bg-white dark:bg-slate-800 rounded-xl border shadow-[0_8px_30px_rgb(0,0,0,0.05)] dark:shadow-md transition-all overflow-hidden"
+             :class="container.hasUpdate ? (container.isBreaking ? 'border-red-500/50' : 'border-blue-500/50') : 'border-slate-200/60 dark:border-slate-700'">
           
           <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex-1 min-w-0">
@@ -150,7 +150,7 @@ onMounted(async () => {
                 @click="applyUpdate(container)"
                 :disabled="updatingContainer === container.name"
                 class="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-lg shadow transition-all disabled:opacity-50"
-                :class="container.isBreaking ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'"
+                :class="container.isBreaking ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30'"
               >
                 {{ updatingContainer === container.name ? 'En cours...' : 'Mettre à jour' }}
               </button>
@@ -161,7 +161,7 @@ onMounted(async () => {
           </div>
 
           <!-- Section Changelog (si mise à jour dispo) -->
-          <div v-if="container.hasUpdate" class="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
+          <div v-if="container.hasUpdate" class="border-t border-slate-200/60 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
             <div v-if="container.isBreaking" class="mb-3 text-xs font-bold text-red-700 bg-red-100 border border-red-200 dark:text-red-400 flex items-center dark:bg-red-950/30 p-2 rounded dark:border-red-900/50">
               ⚠️ BREAKING CHANGES DÉTECTÉS
             </div>
@@ -180,7 +180,7 @@ onMounted(async () => {
           </div>
         </div>
         
-        <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 border-dashed">
+        <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700 border-dashed">
           Aucun conteneur trouvé.
         </div>
       </div>

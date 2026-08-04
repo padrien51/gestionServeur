@@ -48,9 +48,9 @@ const ignoreInsight = async (id) => {
     ></div>
 
     <!-- Drawer Panel -->
-    <div class="ml-auto w-full max-w-lg h-full bg-white dark:bg-slate-900 shadow-2xl relative flex flex-col transition-transform duration-300 transform translate-x-0 border-l border-slate-200 dark:border-slate-700">
+    <div class="ml-auto w-full max-w-lg h-full bg-white dark:bg-slate-900 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl relative flex flex-col transition-transform duration-300 transform translate-x-0 border-l border-slate-200/60 dark:border-slate-700">
         <!-- Header -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
+        <div class="p-4 border-b border-slate-200/60 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
             <h2 class="text-xl font-bold flex items-center text-slate-800 dark:text-slate-100">
                 <span class="mr-2">🤖</span> AIOps Insights
             </h2>
@@ -67,7 +67,7 @@ const ignoreInsight = async (id) => {
                 <p class="text-sm">Vos conteneurs se portent bien !</p>
             </div>
 
-            <div v-else v-for="insight in insights" :key="insight.id" class="bg-white dark:bg-slate-800 rounded-xl border border-rose-200 dark:border-rose-900/50 shadow-sm overflow-hidden flex flex-col">
+            <div v-else v-for="insight in insights" :key="insight.id" class="bg-white dark:bg-slate-800 rounded-xl border border-rose-200 dark:border-rose-900/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm overflow-hidden flex flex-col">
                 <div class="p-3 border-b border-slate-100 dark:border-slate-700/50 bg-rose-50 dark:bg-rose-900/20">
                     <div class="flex justify-between items-start">
                         <div>

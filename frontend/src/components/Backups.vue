@@ -255,17 +255,17 @@ const formatDate = (dateStr) => {
       <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
         <span class="mr-2">💾</span> Orchestrateur de Sauvegardes
       </h2>
-      <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-auto">
+      <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200/60 dark:border-slate-700 w-full sm:w-auto">
         <button 
           @click="activeTab = 'jobs'; fetchJobs()" 
-          :class="activeTab === 'jobs' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'"
+          :class="activeTab === 'jobs' ? 'bg-white text-slate-900 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'"
           class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
         >
           Jobs de Sauvegarde
         </button>
         <button 
           @click="activeTab = 'logs'; fetchLogs()" 
-          :class="activeTab === 'logs' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'"
+          :class="activeTab === 'logs' ? 'bg-white text-slate-900 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'"
           class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
         >
           Historique (Logs)
@@ -276,14 +276,14 @@ const formatDate = (dateStr) => {
     <!-- VUE DES JOBS -->
     <div v-if="activeTab === 'jobs'">
       <div class="flex justify-end mb-4">
-        <button @click="openForm()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-900/50 transition-all active:scale-95">
+        <button @click="openForm()" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 rounded-lg text-sm font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/50 transition-all active:scale-95">
           + Nouvelle Sauvegarde
         </button>
       </div>
 
       <!-- Formulaire Ajout/Modif -->
       <transition name="fade">
-        <div v-if="showForm" class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 mb-8 shadow-xl">
+        <div v-if="showForm" class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-700 mb-8 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl">
           <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center">
             <span class="mr-2">⚙️</span> {{ editingId ? 'Modifier la sauvegarde' : 'Configurer une Sauvegarde' }}
           </h3>
@@ -292,32 +292,32 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Nom de la sauvegarde</label>
-                <input v-model="form.name" required placeholder="Ex: Apps Principales" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                <input v-model="form.name" required placeholder="Ex: Apps Principales" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
               </div>
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Fréquence d'exécution</label>
                 <div class="flex flex-col space-y-4">
                   <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg w-max">
-                    <button type="button" @click="cronMode = 'simple'" :class="cronMode === 'simple' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Interface Simple</button>
-                    <button type="button" @click="cronMode = 'advanced'" :class="cronMode === 'advanced' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Mode Avancé (CRON)</button>
+                    <button type="button" @click="cronMode = 'simple'" :class="cronMode === 'simple' ? 'bg-white text-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Interface Simple</button>
+                    <button type="button" @click="cronMode = 'advanced'" :class="cronMode === 'advanced' ? 'bg-white text-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Mode Avancé (CRON)</button>
                   </div>
 
-                  <div v-if="cronMode === 'simple'" class="space-y-5 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div v-if="cronMode === 'simple'" class="space-y-5 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Heure d'exécution</label>
-                        <input type="time" v-model="cronTime" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                        <input type="time" v-model="cronTime" class="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Jours d'exécution</label>
                         <div class="flex flex-wrap gap-2">
-                          <button type="button" @click="cronDays = []" class="px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium" :class="cronDays.length === 0 ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                          <button type="button" @click="cronDays = []" class="px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium" :class="cronDays.length === 0 ? 'bg-blue-600 text-white border-blue-600 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
                             Tous les jours
                           </button>
                           <button type="button" v-for="day in [{v:1,l:'Lun'},{v:2,l:'Mar'},{v:3,l:'Mer'},{v:4,l:'Jeu'},{v:5,l:'Ven'},{v:6,l:'Sam'},{v:0,l:'Dim'}]" :key="day.v" 
                                 @click="toggleDay(day.v)"
                                 class="cursor-pointer select-none px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium"
-                                :class="cronDays.length > 0 && cronDays.includes(day.v) ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700 shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                                :class="cronDays.length > 0 && cronDays.includes(day.v) ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
                             {{ day.l }}
                           </button>
                         </div>
@@ -329,7 +329,7 @@ const formatDate = (dateStr) => {
                   <div v-else class="space-y-4">
                     <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Expression CRON personnalisée</label>
                     <div class="relative">
-                      <input v-model="form.cron_schedule" required type="text" placeholder="0 3 * * 0" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                      <input v-model="form.cron_schedule" required type="text" placeholder="0 3 * * 0" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
                       <span class="absolute right-3 top-3 text-slate-500 text-xs">Ex: 0 3 * * 0</span>
                     </div>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Permet d'utiliser des formats complexes (ex: tous les 1er du mois).</p>
@@ -339,18 +339,18 @@ const formatDate = (dateStr) => {
 
               <div>
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Dossier Racine (Cible)</label>
-                <input v-model="form.dest_path" required placeholder="/mnt/Backup_serveur/sauvegardes" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                <input v-model="form.dest_path" required placeholder="/mnt/Backup_serveur/sauvegardes" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">Un sous-dossier sera créé automatiquement pour chaque application.</p>
               </div>
               
               <div>
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Rétention (Nombre de backups à conserver)</label>
-                <input v-model="form.retention_count" required type="number" min="1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
+                <input v-model="form.retention_count" required type="number" min="1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all" />
               </div>
             </div>
 
             <!-- Sélection des applications -->
-            <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div class="pt-4 border-t border-slate-200/60 dark:border-slate-700">
               <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-3">Applications à sauvegarder</label>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div 
@@ -358,7 +358,7 @@ const formatDate = (dateStr) => {
                   :key="app.name"
                   @click="toggleAppSelection(app.name)"
                   class="cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200"
-                  :class="form.containers.includes(app.name) ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                  :class="form.containers.includes(app.name) ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
                 >
                   <div class="text-2xl mb-1">{{ form.containers.includes(app.name) ? '✅' : '📦' }}</div>
                   <div class="font-bold text-sm truncate w-full">{{ app.name }}</div>
@@ -371,9 +371,9 @@ const formatDate = (dateStr) => {
               </p>
             </div>
 
-            <div class="flex justify-end space-x-3 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <div class="flex justify-end space-x-3 pt-6 border-t border-slate-200/60 dark:border-slate-700">
               <button type="button" @click="showForm = false" class="px-6 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-sm font-medium transition-colors">Annuler</button>
-              <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-900/50 transition-all">Sauvegarder ce Job</button>
+              <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 rounded-xl text-sm font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/50 transition-all">Sauvegarder ce Job</button>
             </div>
           </form>
         </div>
@@ -381,7 +381,7 @@ const formatDate = (dateStr) => {
 
       <!-- Liste des Jobs -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div v-for="job in jobs" :key="job.id" class="bg-white dark:bg-slate-800/80 backdrop-blur rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl relative overflow-hidden transition-all hover:border-slate-600">
+        <div v-for="job in jobs" :key="job.id" class="bg-white dark:bg-slate-800/80 backdrop-blur rounded-2xl p-6 border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl relative overflow-hidden transition-all hover:border-slate-600">
           <!-- Indicateur on/off -->
           <div class="absolute top-0 right-0 w-1.5 h-full transition-colors" :class="job.enabled ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-600'"></div>
           
@@ -391,12 +391,12 @@ const formatDate = (dateStr) => {
                 {{ job.name }}
               </h3>
             </div>
-            <span class="text-xs font-mono bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center shadow-inner">
+            <span class="text-xs font-mono bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 flex items-center shadow-[0_2px_10px_rgb(0,0,0,0.02)] dark:shadow-inner">
               <span class="mr-1">⏱️</span> {{ job.cron_schedule }}
             </span>
           </div>
           
-          <div class="text-sm text-slate-500 dark:text-slate-400 space-y-3 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
+          <div class="text-sm text-slate-500 dark:text-slate-400 space-y-3 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
             <div class="flex items-center">
               <span class="w-24 text-slate-500 text-xs uppercase tracking-wider">Cible</span>
               <span class="text-slate-800 dark:text-slate-200 font-mono text-xs">{{ job.dest_path }}</span>
@@ -418,7 +418,7 @@ const formatDate = (dateStr) => {
           
           <div class="flex justify-between items-center">
             <div class="flex space-x-2">
-              <button @click="triggerJob(job.id)" class="text-xs text-blue-100 hover:text-white font-medium bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors shadow-lg shadow-blue-900/30">
+              <button @click="triggerJob(job.id)" class="text-xs text-blue-100 hover:text-white font-medium bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/30">
                 ▶️ Lancer
               </button>
               <button @click="openForm(job)" class="text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-lg transition-colors">
@@ -435,7 +435,7 @@ const formatDate = (dateStr) => {
           </div>
         </div>
         
-        <div v-if="jobs.length === 0" class="col-span-1 lg:col-span-2 text-center py-16 text-slate-500 bg-white dark:bg-slate-800/30 rounded-2xl border-2 border-slate-200 dark:border-slate-700 border-dashed">
+        <div v-if="jobs.length === 0" class="col-span-1 lg:col-span-2 text-center py-16 text-slate-500 bg-white dark:bg-slate-800/30 rounded-2xl border-2 border-slate-200/60 dark:border-slate-700 border-dashed">
           <div class="text-4xl mb-4">📭</div>
           <p class="text-lg font-medium text-slate-500 dark:text-slate-400">Aucun Job de sauvegarde configuré.</p>
           <p class="text-sm mt-2">Cliquez sur "+ Nouvelle Sauvegarde" pour commencer.</p>
@@ -444,10 +444,10 @@ const formatDate = (dateStr) => {
     </div>
 
     <!-- VUE DES LOGS -->
-    <div v-if="activeTab === 'logs'" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl">
+    <div v-if="activeTab === 'logs'" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-          <thead class="bg-slate-50 dark:bg-slate-900/80 text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 backdrop-blur">
+          <thead class="bg-slate-50 dark:bg-slate-900/80 text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200/60 dark:border-slate-700 backdrop-blur">
             <tr>
               <th class="px-6 py-4 font-semibold tracking-wider">Date</th>
               <th class="px-6 py-4 font-semibold tracking-wider">Job</th>

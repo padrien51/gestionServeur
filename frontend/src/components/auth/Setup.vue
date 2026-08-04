@@ -42,7 +42,7 @@ const handleSetup = async () => {
 </script>
 
 <template>
-  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
+  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl">
     <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 text-center flex flex-col items-center justify-center">
       <span class="mb-2 text-4xl">👋</span> Bienvenue
     </h1>
@@ -58,7 +58,7 @@ const handleSetup = async () => {
         <input 
           v-model="email" 
           type="email" 
-          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
         >
       </div>
@@ -67,7 +67,7 @@ const handleSetup = async () => {
         <input 
           v-model="password" 
           type="password" 
-          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
           minlength="6"
         >
@@ -77,12 +77,12 @@ const handleSetup = async () => {
         <input 
           v-model="confirmPassword" 
           type="password" 
-          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
+          class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition-colors"
           required
           minlength="6"
         >
       </div>
-      <button type="submit" :disabled="loading" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 rounded-lg transition-colors shadow-lg shadow-emerald-900/20 mt-2">
+      <button type="submit" :disabled="loading" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 font-medium py-3 rounded-lg transition-colors shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-emerald-900/20 mt-2">
         <span v-if="loading">Création...</span>
         <span v-else>Créer mon compte</span>
       </button>

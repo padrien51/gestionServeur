@@ -208,8 +208,8 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Section Notifications -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 flex flex-col">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm p-6 flex flex-col">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200/60 dark:border-slate-700 pb-3 mb-5 flex items-center">
             <span class="mr-2">💬</span> Notifications
           </h3>
           
@@ -221,7 +221,7 @@ onMounted(() => {
                   v-model="form.mattermost_webhook_url" 
                   type="url" 
                   placeholder="https://mattermost.mon-domaine.com/hooks/xyz..." 
-                  class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
+                  class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
                 />
                 <button 
                   @click="testWebhook" 
@@ -237,7 +237,7 @@ onMounted(() => {
             </div>
 
             <!-- Options de notifications -->
-            <div class="space-y-4 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div class="space-y-4 mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-700">
               <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-3">Quelles alertes souhaitez-vous recevoir ?</label>
               
               <div class="flex flex-col gap-3">
@@ -264,33 +264,33 @@ onMounted(() => {
         </div>
 
         <!-- Section Mises à jour -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 flex flex-col">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm p-6 flex flex-col">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200/60 dark:border-slate-700 pb-3 mb-5 flex items-center">
             <span class="mr-2">🔄</span> Vérification des mises à jour
           </h3>
           
           <div class="flex-1 space-y-4">
             
             <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg w-max">
-               <button type="button" @click="cronMode = 'simple'" :class="cronMode === 'simple' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Interface Simple</button>
-               <button type="button" @click="cronMode = 'advanced'" :class="cronMode === 'advanced' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Mode Avancé</button>
+               <button type="button" @click="cronMode = 'simple'" :class="cronMode === 'simple' ? 'bg-white text-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Interface Simple</button>
+               <button type="button" @click="cronMode = 'advanced'" :class="cronMode === 'advanced' ? 'bg-white text-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'" class="px-4 py-1.5 text-sm font-medium rounded-md transition-all">Mode Avancé</button>
             </div>
 
-            <div v-if="cronMode === 'simple'" class="space-y-5 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div v-if="cronMode === 'simple'" class="space-y-5 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700">
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Heure d'exécution</label>
-                <input type="time" v-model="cronTime" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                <input type="time" v-model="cronTime" class="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-600 rounded-lg p-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Jours d'exécution</label>
                 <div class="flex flex-wrap gap-2">
-                  <button type="button" @click="cronDays = []" class="px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium" :class="cronDays.length === 0 ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                  <button type="button" @click="cronDays = []" class="px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium" :class="cronDays.length === 0 ? 'bg-blue-600 text-white border-blue-600 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
                     Tous les jours
                   </button>
                   <button type="button" v-for="day in [{v:1,l:'Lun'},{v:2,l:'Mar'},{v:3,l:'Mer'},{v:4,l:'Jeu'},{v:5,l:'Ven'},{v:6,l:'Sam'},{v:0,l:'Dim'}]" :key="day.v" 
                          @click="toggleDay(day.v)"
                          class="cursor-pointer select-none px-3 py-1.5 rounded-lg border text-sm transition-colors font-medium"
-                         :class="cronDays.length > 0 && cronDays.includes(day.v) ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700 shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                         :class="cronDays.length > 0 && cronDays.includes(day.v) ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
                     {{ day.l }}
                   </button>
                 </div>
@@ -304,7 +304,7 @@ onMounted(() => {
                 v-model="form.update_cron_schedule" 
                 type="text" 
                 placeholder="0 9 * * *" 
-                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
+                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all font-mono"
               />
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Permet d'utiliser des formats complexes (ex: tous les 1er du mois).</p>
             </div>
@@ -312,8 +312,8 @@ onMounted(() => {
         </div>
 
         <!-- Section IA (AIOps) -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6 lg:col-span-2">
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-3 mb-5 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm p-6 lg:col-span-2">
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200/60 dark:border-slate-700 pb-3 mb-5 flex items-center">
             <span class="mr-2">🤖</span> Intelligence Artificielle (AIOps)
           </h3>
           
@@ -329,7 +329,7 @@ onMounted(() => {
             <div v-if="form.ai_enabled === 'true'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <div>
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">Moteur IA</label>
-                <select v-model="form.ai_engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none">
+                <select v-model="form.ai_engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none">
                   <option value="ollama">Ollama (Local)</option>
                   <option value="openai">OpenAI (Cloud)</option>
                 </select>
@@ -337,18 +337,18 @@ onMounted(() => {
               
               <div>
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">Modèle</label>
-                <input v-model="form.ai_model" type="text" placeholder="mistral" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                <input v-model="form.ai_model" type="text" placeholder="mistral" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">URL (Ollama/Custom)</label>
-                <input v-model="form.ai_url" type="url" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                <input v-model="form.ai_url" type="url" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
                 <p class="text-[10px] text-slate-400 mt-1">Défaut Docker: http://host.docker.internal:11434</p>
               </div>
 
               <div v-if="form.ai_engine === 'openai'" class="md:col-span-2 lg:col-span-3">
                 <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1.5">Clé API (OpenAI)</label>
-                <input v-model="form.ai_api_key" type="password" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
+                <input v-model="form.ai_api_key" type="password" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:outline-none" />
               </div>
             </div>
           </div>
@@ -357,12 +357,12 @@ onMounted(() => {
       </div>
 
       <!-- STICKY ACTION BAR -->
-      <div class="fixed bottom-14 sm:bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <div class="fixed bottom-14 sm:bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/60 dark:border-slate-800 p-4 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="max-w-6xl mx-auto flex justify-end">
           <button 
             type="submit" 
             :disabled="isSaving"
-            class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-2.5 px-8 rounded-xl transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
+            class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-2.5 px-8 rounded-xl transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
           >
             <svg v-if="!isSaving" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
@@ -382,10 +382,10 @@ onMounted(() => {
     </div>
 
     <!-- Section Utilisateurs -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm p-6">
-      <div class="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm p-6">
+      <div class="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700 overflow-hidden mb-6">
         <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-          <thead class="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+          <thead class="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-b border-slate-200/60 dark:border-slate-700">
             <tr>
               <th class="px-5 py-3.5 font-medium">Email</th>
               <th class="px-5 py-3.5 font-medium text-right">Actions</th>
@@ -405,14 +405,14 @@ onMounted(() => {
         </table>
       </div>
 
-      <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col md:flex-row gap-5 items-end">
+      <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700 rounded-xl p-5 flex flex-col md:flex-row gap-5 items-end">
         <div class="flex-1 w-full">
           <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Nouvel email</label>
-          <input v-model="newUserEmail" type="email" placeholder="admin@domaine.com" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+          <input v-model="newUserEmail" type="email" placeholder="admin@domaine.com" class="w-full bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
         </div>
         <div class="flex-1 w-full">
           <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Mot de passe</label>
-          <input v-model="newUserPassword" type="password" placeholder="••••••••" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+          <input v-model="newUserPassword" type="password" placeholder="••••••••" class="w-full bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
         </div>
         <button type="button" @click="handleAddUser" class="w-full md:w-auto bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium py-3 px-6 rounded-xl transition-colors md:h-[46px] whitespace-nowrap flex items-center justify-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

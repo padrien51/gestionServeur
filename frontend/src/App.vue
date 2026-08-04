@@ -133,26 +133,26 @@ const logout = () => {
 
   <div v-else class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 flex flex-col font-sans">
     <!-- En-tête -->
-    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-20 shadow-sm">
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 sticky top-0 z-20 shadow-sm">
       <div class="max-w-6xl mx-auto flex justify-between items-center gap-4">
         <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 flex items-center">
           <span class="mr-2 text-2xl">🎛️</span> <span class="hidden xs:inline sm:inline">Gestion Serveur</span>
         </h1>
         
         <!-- Navigation Desktop -->
-        <nav class="hidden sm:flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-          <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
-          <button @click="currentTab = 'networks'" :class="currentTab === 'networks' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Réseaux</button>
-          <button @click="currentTab = 'optimization'" :class="currentTab === 'optimization' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Optimisation</button>
-          <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
-          <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
-          <button @click="currentTab = 'guide'" :class="currentTab === 'guide' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Guide</button>
-          <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Paramètres</button>
+        <nav class="hidden sm:flex space-x-1 bg-slate-100/50 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-inner">
+          <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
+          <button @click="currentTab = 'networks'" :class="currentTab === 'networks' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Réseaux</button>
+          <button @click="currentTab = 'optimization'" :class="currentTab === 'optimization' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Optimisation</button>
+          <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
+          <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
+          <button @click="currentTab = 'guide'" :class="currentTab === 'guide' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Guide</button>
+          <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Paramètres</button>
         </nav>
         
         <!-- Actions Rapides (Thème/Profil/Déconnexion) -->
-        <div class="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 ml-auto sm:ml-0 shadow-sm">
-          <button @click="toggleTheme" class="p-1.5 sm:p-2 rounded-md text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all" title="Changer de thème">
+        <div class="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200/60 dark:border-slate-700 ml-auto sm:ml-0 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+          <button @click="toggleTheme" class="p-1.5 sm:p-2 rounded-md text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 transition-all hover:bg-slate-50 dark:hover:bg-transparent" title="Changer de thème">
             <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
               <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
             </svg>
@@ -160,12 +160,12 @@ const logout = () => {
               <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 4.22a1 1 0 011.415 0l.707.707a1 1 0 01-1.414 1.414l-.708-.707a1 1 0 010-1.414zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-4.22 4.22a1 1 0 010 1.415l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.22-4.22a1 1 0 01-1.415 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm4.22-4.22a1 1 0 010-1.415l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM10 5a5 5 0 100 10 5 5 0 000-10z" clip-rule="evenodd" />
             </svg>
           </button>
-          <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'" class="p-1.5 sm:p-2 ml-1 rounded-md text-sm transition-all" title="Mon Compte">
+          <button @click="currentTab = 'profile'" :class="currentTab === 'profile' ? 'bg-indigo-50 dark:bg-slate-700 text-indigo-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-transparent'" class="p-1.5 sm:p-2 ml-1 rounded-md text-sm transition-all" title="Mon Compte">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
             </svg>
           </button>
-          <button @click="logout" class="p-1.5 sm:p-2 ml-1 rounded-md text-sm text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all border border-transparent hover:border-red-200 dark:hover:border-red-800/50" title="Déconnexion">
+          <button @click="logout" class="p-1.5 sm:p-2 ml-1 rounded-md text-sm text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-transparent transition-all" title="Déconnexion">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
             </svg>

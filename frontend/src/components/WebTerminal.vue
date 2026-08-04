@@ -87,7 +87,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex flex-col p-4 md:p-8">
-    <div class="bg-slate-800 rounded-t-xl border-t border-x border-slate-700 p-4 flex justify-between items-center shadow-lg">
+    <div class="bg-slate-800 rounded-t-xl border-t border-x border-slate-700 p-4 flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg">
       <div class="flex items-center space-x-3">
         <span class="text-xl">📟</span>
         <h3 class="text-white font-bold">Terminal Web ({{ containerId.substring(0, 8) }})</h3>
@@ -96,7 +96,7 @@ onBeforeUnmount(() => {
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
-    <div class="flex-1 bg-[#0f172a] rounded-b-xl border-b border-x border-slate-700 overflow-hidden relative shadow-2xl">
+    <div class="flex-1 bg-[#0f172a] rounded-b-xl border-b border-x border-slate-700 overflow-hidden relative shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl">
       <div ref="terminalContainer" class="absolute inset-0 p-2"></div>
     </div>
   </div>

@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex flex-col p-4 md:p-8">
-    <div class="bg-slate-800 rounded-t-xl border-t border-x border-slate-700 p-4 flex justify-between items-center shadow-lg">
+    <div class="bg-slate-800 rounded-t-xl border-t border-x border-slate-700 p-4 flex justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg">
       <div class="flex items-center space-x-3">
         <div :class="['w-3 h-3 rounded-full', isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500']"></div>
         <h3 class="text-white font-bold">Logs en Direct : {{ containerName }}</h3>
@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
     <div 
       ref="logsContainer"
       @scroll="handleScroll"
-      class="flex-1 bg-[#1e1e1e] rounded-b-xl border-b border-x border-slate-700 overflow-y-auto p-4 font-mono text-sm shadow-2xl space-y-1"
+      class="flex-1 bg-[#1e1e1e] rounded-b-xl border-b border-x border-slate-700 overflow-y-auto p-4 font-mono text-sm shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-2xl space-y-1"
     >
       <div 
         v-for="(log, idx) in logs" 
@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
     </div>
     
     <div v-if="!autoScroll" class="absolute bottom-10 left-1/2 transform -translate-x-1/2">
-      <button @click="autoScroll = true; scrollToBottom()" class="bg-blue-600/90 hover:bg-blue-500 text-white text-xs py-2 px-4 rounded-full shadow-lg backdrop-blur-sm border border-blue-400/30 flex items-center space-x-2 transition-all">
+      <button @click="autoScroll = true; scrollToBottom()" class="bg-blue-600/90 hover:bg-blue-500 text-white text-xs py-2 px-4 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg backdrop-blur-sm border border-blue-400/30 flex items-center space-x-2 transition-all">
         <span>↓</span>
         <span>Reprendre le défilement automatique</span>
       </button>

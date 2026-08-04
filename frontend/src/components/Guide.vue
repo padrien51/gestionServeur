@@ -27,7 +27,7 @@ const scrollTo = (id) => {
   <div class="h-full flex flex-col md:flex-row gap-6 max-w-7xl mx-auto w-full">
     <!-- Sidebar Navigation -->
     <div class="md:w-64 shrink-0 hidden md:block">
-      <div class="sticky top-24 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden p-4">
+      <div class="sticky top-24 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl overflow-hidden p-4">
         <h3 class="font-bold text-slate-800 dark:text-white mb-4 flex items-center">
           <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
@@ -53,7 +53,7 @@ const scrollTo = (id) => {
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl p-6 md:p-10 overflow-y-auto">
+    <div class="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl p-6 md:p-10 overflow-y-auto">
       
       <!-- Introduction -->
       <section id="intro" class="mb-12 scroll-mt-24">
@@ -73,7 +73,7 @@ const scrollTo = (id) => {
         </p>
       </section>
 
-      <hr class="border-slate-200 dark:border-slate-700 my-8" />
+      <hr class="border-slate-200/60 dark:border-slate-700 my-8" />
 
       <!-- Tableau de bord -->
       <section id="dashboard" class="mb-12 scroll-mt-24">
@@ -120,7 +120,7 @@ const scrollTo = (id) => {
         </div>
       </section>
 
-      <hr class="border-slate-200 dark:border-slate-700 my-8" />
+      <hr class="border-slate-200/60 dark:border-slate-700 my-8" />
 
       <!-- Réseaux -->
       <section id="networks" class="mb-12 scroll-mt-24">
@@ -135,7 +135,7 @@ const scrollTo = (id) => {
         </p>
       </section>
 
-      <hr class="border-slate-200 dark:border-slate-700 my-8" />
+      <hr class="border-slate-200/60 dark:border-slate-700 my-8" />
 
       <!-- Optimisation -->
       <section id="optimization" class="mb-12 scroll-mt-24">
@@ -146,13 +146,13 @@ const scrollTo = (id) => {
           Docker a tendance à accumuler des données obsolètes (anciennes images téléchargées, volumes orphelins). Cette page vous permet de récupérer de l'espace disque.
         </p>
         <div class="grid md:grid-cols-2 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div class="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700">
             <h4 class="font-bold text-slate-800 dark:text-white mb-2">Nettoyage Standard (Prune)</h4>
             <p class="text-sm text-slate-600 dark:text-slate-400">
               Supprime les conteneurs arrêtés, les réseaux inutilisés et les images "dangling" (sans nom). <strong>Sans danger</strong>.
             </p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div class="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700">
             <h4 class="font-bold text-slate-800 dark:text-white mb-2">Nettoyage Total</h4>
             <p class="text-sm text-slate-600 dark:text-slate-400">
               Même chose, mais supprime également <strong>toutes les images</strong> qui ne sont pas actuellement utilisées par un conteneur actif. Le prochain lancement d'un conteneur qui utilisait cette image nécessitera de la re-télécharger.
@@ -161,7 +161,7 @@ const scrollTo = (id) => {
         </div>
       </section>
 
-      <hr class="border-slate-200 dark:border-slate-700 my-8" />
+      <hr class="border-slate-200/60 dark:border-slate-700 my-8" />
 
       <!-- Mises à jour -->
       <section id="updates" class="mb-12 scroll-mt-24">
@@ -179,7 +179,7 @@ const scrollTo = (id) => {
         </ul>
       </section>
 
-      <hr class="border-slate-200 dark:border-slate-700 my-8" />
+      <hr class="border-slate-200/60 dark:border-slate-700 my-8" />
 
       <!-- Sauvegardes -->
       <section id="backups" class="mb-12 scroll-mt-24">
@@ -199,7 +199,7 @@ const scrollTo = (id) => {
         </div>
       </section>
 
-      <hr class="border-slate-200 dark:border-slate-700 my-8" />
+      <hr class="border-slate-200/60 dark:border-slate-700 my-8" />
 
       <!-- Paramètres & IA -->
       <section id="settings" class="mb-6 scroll-mt-24">

@@ -167,17 +167,28 @@ const closeLiveLogs = () => {
   activeLiveLogContainer.value = null;
 };
 
+const containerLoading = ref({});
+
 const handleContainerAction = async ({ id, action }) => {
+  containerLoading.value = { ...containerLoading.value, [id]: action };
   try {
     const res = await fetch(`${API_BASE}/docker/containers/${id}/${action}`, { 
       method: 'POST',
       ...getFetchOptions()
     });
-    if (res.status === 401) return handleUnauthorized();
+    if (res.status === 401) {
+      containerLoading.value = { ...containerLoading.value, [id]: null };
+      return handleUnauthorized();
+    }
     if (!res.ok) throw new Error(`Erreur lors de l'action ${action}`);
+    
     // Rafraîchir après une petite pause pour laisser le temps au démon Docker
-    setTimeout(refreshData, 1000);
+    setTimeout(async () => {
+      await refreshData();
+      containerLoading.value = { ...containerLoading.value, [id]: null };
+    }, 1000);
   } catch (err) {
+    containerLoading.value = { ...containerLoading.value, [id]: null };
     showAlert("Erreur", err.message);
   }
 };
@@ -618,6 +629,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                 :key="container.id" 
                 :container="container"
                 :is-update-ignored="ignoredUpdateContainers.includes(container.name)"
+                :action-loading="containerLoading[container.id]"
                 @action="handleContainerAction"
                 @view-logs="openLogs"
                 @live-logs="openLiveLogs"
@@ -637,8 +649,9 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
           <ContainerCard 
             v-for="container in filteredContainers" 
             :key="container.id" 
-            :container="container"
+            :container="container" 
             :is-update-ignored="ignoredUpdateContainers.includes(container.name)"
+            :action-loading="containerLoading[container.id]"
             @action="handleContainerAction"
             @view-logs="openLogs"
             @live-logs="openLiveLogs"

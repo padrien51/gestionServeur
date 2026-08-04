@@ -1,6 +1,6 @@
 const { docker } = require('./dockerService');
 const { analyzeLog, getAISettings } = require('./aiService');
-const { runQuery } = require('./db');
+const { runQuery, getQuery } = require('./db');
 
 const BUFFER_SIZE = 25; // Nombre de lignes de contexte
 const ERROR_REGEX = /(exception|fatal|panic|error|timeout)/i;
@@ -8,6 +8,31 @@ const DEBOUNCE_MS = 2000;
 
 // Stockage de l'état par conteneur
 const containerMonitors = {}; // { [containerId]: { buffer: [], timer: null, name: '', project: '' } }
+
+async function sendMattermostAlert(projectName, containerName, diagnosis, solution) {
+    try {
+        const webhookRow = await getQuery(`SELECT value FROM settings WHERE key = 'mattermost_webhook_url'`);
+        const webhookUrl = webhookRow.length > 0 ? webhookRow[0].value : null;
+        if (!webhookUrl) return;
+
+        const text = `**Diagnostic :**\n${diagnosis}\n\n**Solution proposée :**\n${solution}`;
+
+        // Utilisation de fetch natif (Node >= 18)
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                attachments: [{
+                    color: "#e11d48",
+                    title: `🤖 Alerte IA : Problème détecté sur [${projectName}] ${containerName}`,
+                    text: text
+                }]
+            })
+        });
+    } catch (e) {
+        console.error("[AIOps] Erreur envoi webhook:", e.message);
+    }
+}
 
 async function saveInsight(projectName, containerName, context, diagnosis, solution) {
     try {
@@ -17,6 +42,9 @@ async function saveInsight(projectName, containerName, context, diagnosis, solut
             [projectName, containerName, context, diagnosis, solution]
         );
         console.log(`[AIOps] Alerte sauvegardée pour ${containerName}`);
+        
+        // Envoi de la notification Mattermost si configuré
+        await sendMattermostAlert(projectName, containerName, diagnosis, solution);
     } catch (e) {
         console.error("[AIOps] Erreur de sauvegarde DB:", e.message);
     }

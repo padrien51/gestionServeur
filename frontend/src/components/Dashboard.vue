@@ -544,11 +544,12 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         
         <!-- Vue par Applications -->
         <div v-if="viewMode === 'apps'" class="space-y-6">
-          <div v-for="app in groupedApps" :key="app.name" class="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-sm">
+          <div v-for="app in groupedApps" :key="app.name" class="bg-white dark:bg-slate-800/50 rounded-xl border border-indigo-100/80 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-sm">
             <!-- En-tête de l'application -->
-            <div class="bg-slate-50/50 dark:bg-slate-800 px-4 py-3 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2">
+            <div class="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-slate-800 dark:to-slate-800 px-4 py-3 border-b border-indigo-100/60 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2">
               <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center text-lg">
-                <span class="mr-2">📂</span> {{ app.name }}
+                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                {{ app.name }}
               </h3>
               
               <div class="flex items-center gap-2">

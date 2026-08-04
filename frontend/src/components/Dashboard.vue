@@ -548,7 +548,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
             <!-- En-tête de l'application -->
             <div class="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-slate-800 dark:to-slate-800 px-4 py-3 border-b border-indigo-100/60 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2">
               <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center text-lg">
-                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                <svg class="w-5 h-5 mr-2 text-slate-400 dark:text-slate-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
                 {{ app.name }}
               </h3>
               

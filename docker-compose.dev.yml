@@ -23,3 +23,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Montage (en lecture seule) pour lire les infos système de l'hôte
       - /:/hostOS:ro
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: gestion_serveur_ollama
+    restart: unless-stopped
+    volumes:
+      - ./data/ollama:/root/.ollama

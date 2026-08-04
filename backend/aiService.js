@@ -7,7 +7,7 @@ async function getAISettings() {
     const settings = {
         enabled: 'false',
         engine: 'ollama',
-        url: 'http://host.docker.internal:11434',
+        url: 'http://gestion_serveur_ollama:11434',
         apiKey: '',
         model: 'mistral'
     };

@@ -237,22 +237,27 @@ onMounted(() => {
             </div>
 
             <!-- Options de notifications -->
-            <div class="space-y-3 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-              <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Quelles alertes souhaitez-vous recevoir ?</label>
+            <div class="space-y-4 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-3">Quelles alertes souhaitez-vous recevoir ?</label>
               
-              <div class="flex items-center">
-                <input type="checkbox" id="notify_ai_alerts" v-model="form.notify_ai_alerts" true-value="true" false-value="false" class="mr-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
-                <label for="notify_ai_alerts" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">Alerte IA (Problème détecté dans les logs)</label>
-              </div>
-              
-              <div class="flex items-center">
-                <input type="checkbox" id="notify_backups" v-model="form.notify_backups" true-value="true" false-value="false" class="mr-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
-                <label for="notify_backups" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">Rapport de Sauvegarde (Succès / Échec)</label>
-              </div>
-              
-              <div class="flex items-center">
-                <input type="checkbox" id="notify_updates" v-model="form.notify_updates" true-value="true" false-value="false" class="mr-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
-                <label for="notify_updates" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">Alerte de Mise à jour (OS et Conteneurs)</label>
+              <div class="flex flex-col gap-3">
+                <label class="relative inline-flex items-center cursor-pointer group">
+                  <input type="checkbox" v-model="form.notify_ai_alerts" true-value="true" false-value="false" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600 group-hover:bg-slate-300 dark:group-hover:bg-slate-600"></div>
+                  <span class="ml-3 text-sm text-slate-700 dark:text-slate-300 select-none">Alerte IA (Problème détecté dans les logs)</span>
+                </label>
+                
+                <label class="relative inline-flex items-center cursor-pointer group">
+                  <input type="checkbox" v-model="form.notify_backups" true-value="true" false-value="false" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600 group-hover:bg-slate-300 dark:group-hover:bg-slate-600"></div>
+                  <span class="ml-3 text-sm text-slate-700 dark:text-slate-300 select-none">Rapport de Sauvegarde (Succès / Échec)</span>
+                </label>
+                
+                <label class="relative inline-flex items-center cursor-pointer group">
+                  <input type="checkbox" v-model="form.notify_updates" true-value="true" false-value="false" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600 group-hover:bg-slate-300 dark:group-hover:bg-slate-600"></div>
+                  <span class="ml-3 text-sm text-slate-700 dark:text-slate-300 select-none">Alerte de Mise à jour (OS et Conteneurs)</span>
+                </label>
               </div>
             </div>
           </div>
@@ -314,8 +319,11 @@ onMounted(() => {
           
           <div class="space-y-6">
             <div class="flex items-center bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40">
-              <input type="checkbox" id="ai_enabled" v-model="form.ai_enabled" true-value="true" false-value="false" class="mr-4 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
-              <label for="ai_enabled" class="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer select-none">Activer la surveillance et l'analyse des logs d'erreurs par l'IA</label>
+              <label class="relative inline-flex items-center cursor-pointer group">
+                <input type="checkbox" v-model="form.ai_enabled" true-value="true" false-value="false" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600 group-hover:bg-slate-400 dark:group-hover:bg-slate-600"></div>
+                <span class="ml-4 text-sm font-bold text-slate-700 dark:text-slate-200 select-none">Activer la surveillance et l'analyse des logs d'erreurs par l'IA</span>
+              </label>
             </div>
             
             <div v-if="form.ai_enabled === 'true'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

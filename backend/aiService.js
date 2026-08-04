@@ -35,6 +35,12 @@ async function analyzeLog(logContext, containerName) {
         return null;
     }
 
+    // Protection anti-SSRF de base
+    if (!settings.url.startsWith('http://') && !settings.url.startsWith('https://')) {
+        console.error("[AIOps] Erreur Sécurité: L'URL de l'IA doit commencer par http:// ou https://");
+        return null;
+    }
+
     const prompt = `Conteneur: ${containerName}\nLogs:\n${logContext}`;
 
     if (settings.engine === 'ollama') {
@@ -103,9 +109,16 @@ async function analyzeLog(logContext, containerName) {
                 // Parfois Ollama ajoute du markdown même quand on demande du JSON
                 const cleanJson = data.response.replace(/```json/g, '').replace(/```/g, '').trim();
                 const result = JSON.parse(cleanJson);
+                
+                // Nettoyage de sécurité (Protection Phishing et XSS basique)
+                const sanitizeStr = (str) => {
+                    if (typeof str !== 'string') return '';
+                    return str.replace(/https?:\/\/[^\s]+/gi, '[LIEN RETIRÉ]').replace(/[<>]/g, '');
+                };
+
                 return {
-                    diagnosis: result.diagnosis || 'Analyse incomplète',
-                    solution: result.solution || 'Aucune solution identifiée'
+                    diagnosis: sanitizeStr(result.diagnosis || 'Analyse incomplète'),
+                    solution: sanitizeStr(result.solution || 'Aucune solution identifiée')
                 };
             } catch (e) {
                 console.error("Impossible de parser la réponse JSON de l'IA:", data.response);

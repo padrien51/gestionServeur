@@ -125,7 +125,9 @@ async function attachLogStream(containerInfo) {
             if (!monitor) return;
 
             for (const line of lines) {
-                monitor.buffer.push(line);
+                // Truncature pour éviter un DoS mémoire avec des lignes géantes
+                const safeLine = line.length > 1000 ? line.substring(0, 1000) + '...[TRONQUÉ]' : line;
+                monitor.buffer.push(safeLine);
                 if (monitor.buffer.length > BUFFER_SIZE) {
                     monitor.buffer.shift();
                 }

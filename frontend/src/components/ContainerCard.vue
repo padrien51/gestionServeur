@@ -42,18 +42,18 @@ const handleAction = async (action) => {
     <!-- Ligne colorée indicatrice sur la gauche -->
     <div class="absolute left-0 top-0 bottom-0 w-1" :class="isUp ? 'bg-emerald-500' : 'bg-red-500'"></div>
     
-    <div class="flex justify-between items-start ml-2">
-      <div class="truncate pr-2 flex-1">
+    <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center ml-2 gap-3 sm:gap-2">
+      <div class="truncate pr-2 w-full sm:flex-1">
         <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 truncate flex items-center gap-2">
           {{ container.name }}
-          <span class="h-2.5 w-2.5 rounded-full inline-block" :class="statusColor"></span>
+          <span class="h-2.5 w-2.5 rounded-full inline-block shrink-0" :class="statusColor"></span>
         </h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{{ container.image }}</p>
         <p class="text-xs font-mono text-slate-500 mt-0.5">{{ container.status }}</p>
       </div>
       
       <!-- Actions -->
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:justify-end">
         <!-- Badge MAJ -->
         <span v-if="container.hasUpdate && !isUpdateIgnored" class="text-[10px] font-bold px-2 py-1 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center shadow-sm animate-pulse mr-1" title="Mise à jour disponible">
           ⬆️ v.{{ container.newVersion }}

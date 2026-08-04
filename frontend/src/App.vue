@@ -102,7 +102,7 @@ const logout = () => {
 </script>
 
 <template>
-  <div v-if="authState !== 'authenticated'" class="min-h-screen bg-[#f4f7fb] dark:bg-slate-950 flex items-center justify-center p-4">
+  <div v-if="authState !== 'authenticated'" class="min-h-screen bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4">
     <div v-if="authState === 'loading'" class="text-slate-500 dark:text-slate-400 animate-pulse text-lg">
       Chargement...
     </div>
@@ -131,7 +131,7 @@ const logout = () => {
     />
   </div>
 
-  <div v-else class="min-h-screen bg-[#f4f7fb] dark:bg-slate-950 text-slate-800 dark:text-slate-200 flex flex-col font-sans">
+  <div v-else class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-200 flex flex-col font-sans">
     <!-- En-tête -->
     <header class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 sticky top-0 z-20 shadow-sm">
       <div class="max-w-6xl mx-auto flex justify-between items-center gap-4">

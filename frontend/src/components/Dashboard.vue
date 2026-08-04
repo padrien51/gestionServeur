@@ -544,9 +544,9 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         
         <!-- Vue par Applications -->
         <div v-if="viewMode === 'apps'" class="space-y-6">
-          <div v-for="app in groupedApps" :key="app.name" class="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm">
+          <div v-for="app in groupedApps" :key="app.name" class="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-sm">
             <!-- En-tête de l'application -->
-            <div class="bg-slate-100 dark:bg-slate-800 px-4 py-3 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2">
+            <div class="bg-slate-50/50 dark:bg-slate-800 px-4 py-3 border-b border-slate-200/60 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2">
               <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center text-lg">
                 <span class="mr-2">📂</span> {{ app.name }}
               </h3>

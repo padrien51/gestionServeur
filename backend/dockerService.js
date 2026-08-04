@@ -450,6 +450,81 @@ async function updateProjectFile(projectName, fileName, content) {
     return { success: true };
 }
 
+// --- Nettoyage Détaillé (Unused Resources) ---
+async function getUnusedResources() {
+    // Images inutilisées (dangling ou sans containers)
+    const images = await docker.listImages();
+    const unusedImages = images
+        .filter(img => img.Containers === 0 || (img.RepoTags && img.RepoTags.includes('<none>:<none>')))
+        .map(img => ({
+            id: img.Id,
+            tags: img.RepoTags || [],
+            size: img.Size || img.VirtualSize || 0
+        }));
+
+    // Conteneurs arrêtés
+    const containers = await docker.listContainers({ all: true });
+    const stoppedContainers = containers
+        .filter(c => c.State === 'exited' || c.State === 'dead')
+        .map(c => ({
+            id: c.Id,
+            name: c.Names[0],
+            image: c.Image,
+            status: c.Status
+        }));
+
+    // Volumes orphelins (dangling)
+    const volumeData = await docker.listVolumes({ filters: { dangling: ["true"] } });
+    const orphanedVolumes = (volumeData.Volumes || []).map(v => ({
+        name: v.Name,
+        size: v.UsageData ? v.UsageData.Size : 0
+    }));
+
+    // Réseaux personnalisés non utilisés
+    const networks = await docker.listNetworks({ filters: { type: ["custom"] } });
+    const unusedNetworks = networks
+        .filter(n => !n.Containers || Object.keys(n.Containers).length === 0)
+        .map(n => ({
+            id: n.Id,
+            name: n.Name,
+            driver: n.Driver
+        }));
+
+    return {
+        images: unusedImages,
+        containers: stoppedContainers,
+        volumes: orphanedVolumes,
+        networks: unusedNetworks
+    };
+}
+
+async function deleteResources(type, ids) {
+    const results = { success: 0, failed: 0, errors: [] };
+    
+    for (const id of ids) {
+        try {
+            if (type === 'image') {
+                const img = docker.getImage(id);
+                await img.remove({ force: true });
+            } else if (type === 'container') {
+                const container = docker.getContainer(id);
+                await container.remove({ force: true });
+            } else if (type === 'volume') {
+                const vol = docker.getVolume(id);
+                await vol.remove();
+            } else if (type === 'network') {
+                const net = docker.getNetwork(id);
+                await net.remove();
+            }
+            results.success++;
+        } catch (err) {
+            results.failed++;
+            results.errors.push(`Erreur sur ${id}: ${err.message}`);
+        }
+    }
+    return results;
+}
+
 module.exports = {
     docker,
     getContainers,
@@ -464,5 +539,7 @@ module.exports = {
     getProjectFiles,
     readProjectFile,
     updateProjectFile,
-    getNetworks
+    getNetworks,
+    getUnusedResources,
+    deleteResources
 };

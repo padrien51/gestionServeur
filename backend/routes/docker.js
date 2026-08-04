@@ -136,6 +136,7 @@ router.put('/projects/:name/file', async (req, res) => {
 router.get('/system-df', async (req, res) => {
     try {
         const info = await dockerService.getSystemDf();
+        res.set('Cache-Control', 'no-store');
         res.json(info);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -145,6 +146,30 @@ router.get('/system-df', async (req, res) => {
 router.post('/prune', async (req, res) => {
     try {
         const result = await dockerService.pruneSystem();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- NETTOYAGE DÉTAILLÉ ---
+router.get('/unused', async (req, res) => {
+    try {
+        const resources = await dockerService.getUnusedResources();
+        res.set('Cache-Control', 'no-store');
+        res.json(resources);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/delete-resources', async (req, res) => {
+    try {
+        const { type, ids } = req.body;
+        if (!type || !ids || !Array.isArray(ids)) {
+            return res.status(400).json({ error: "Paramètres invalides" });
+        }
+        const result = await dockerService.deleteResources(type, ids);
         res.json(result);
     } catch (err) {
         res.status(500).json({ error: err.message });

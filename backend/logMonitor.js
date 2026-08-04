@@ -55,12 +55,17 @@ async function saveInsight(projectName, containerName, context, diagnosis, solut
 
 function processBufferAndAnalyze(containerId) {
     const monitor = containerMonitors[containerId];
-    if (!monitor) return;
+    if (!monitor || monitor.isAnalyzing) return;
+
+    monitor.isAnalyzing = true;
 
     const contextLines = monitor.buffer.join('\n');
     const cName = monitor.name;
     const pName = monitor.project;
     
+    // On vide le buffer pour éviter de réanalyser la même erreur en boucle
+    monitor.buffer = [];
+
     getAISettings().then(async (settings) => {
         if (settings.enabled === 'true') {
             console.log(`[AIOps] Analyse en cours pour une erreur dans ${cName}...`);
@@ -69,10 +74,12 @@ function processBufferAndAnalyze(containerId) {
                 await saveInsight(pName, cName, contextLines, insight.diagnosis, insight.solution);
             }
         }
-    }).catch(e => console.error("[AIOps] Erreur durant l'analyse:", e.message));
-
-    // On vide le buffer pour éviter de réanalyser la même erreur en boucle
-    monitor.buffer = [];
+    }).catch(e => console.error("[AIOps] Erreur durant l'analyse:", e.message))
+      .finally(() => {
+          if (containerMonitors[containerId]) {
+              containerMonitors[containerId].isAnalyzing = false;
+          }
+      });
 }
 
 async function attachLogStream(containerInfo) {
@@ -92,7 +99,8 @@ async function attachLogStream(containerInfo) {
         name: name,
         project: project,
         buffer: [],
-        timer: null
+        timer: null,
+        isAnalyzing: false
     };
 
     try {

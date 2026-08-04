@@ -1,4 +1,6 @@
 const { getQuery } = require('./db');
+const Docker = require('dockerode');
+const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 async function getAISettings() {
     const rows = await getQuery("SELECT key, value FROM settings WHERE key IN ('ai_engine', 'ai_url', 'ai_api_key', 'ai_model', 'ai_enabled')");
@@ -36,6 +38,28 @@ async function analyzeLog(logContext, containerName) {
     const prompt = `Conteneur: ${containerName}\nLogs:\n${logContext}`;
 
     if (settings.engine === 'ollama') {
+        let ollamaContainer = null;
+        let wasStopped = false;
+
+        try {
+            // Recherche d'un conteneur Ollama local
+            const containers = await docker.listContainers({ all: true });
+            const ollamaInfo = containers.find(c => c.Names.some(n => n.includes('ollama')));
+            
+            if (ollamaInfo) {
+                ollamaContainer = docker.getContainer(ollamaInfo.Id);
+                if (ollamaInfo.State !== 'running') {
+                    console.log("[AIOps] Démarrage du conteneur Ollama pour l'analyse...");
+                    await ollamaContainer.start();
+                    wasStopped = true;
+                    // Attente que le service Ollama soit prêt
+                    await new Promise(resolve => setTimeout(resolve, 8000));
+                }
+            }
+        } catch (e) {
+            console.warn("[AIOps] Avertissement: Impossible d'interagir avec le conteneur Ollama via l'API Docker:", e.message);
+        }
+
         try {
             const response = await fetch(`${settings.url}/api/generate`, {
                 method: 'POST',
@@ -69,6 +93,15 @@ async function analyzeLog(logContext, containerName) {
         } catch (error) {
             console.error("Erreur lors de l'appel à Ollama:", error.message);
             throw error;
+        } finally {
+            if (wasStopped && ollamaContainer) {
+                console.log("[AIOps] Arrêt du conteneur Ollama pour économiser les ressources...");
+                try {
+                    await ollamaContainer.stop();
+                } catch (e) {
+                    console.error("[AIOps] Impossible d'arrêter Ollama:", e.message);
+                }
+            }
         }
     } else {
         throw new Error(`Engine IA ${settings.engine} non implémenté pour le moment.`);

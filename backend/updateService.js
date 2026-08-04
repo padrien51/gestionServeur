@@ -58,6 +58,27 @@ async function applyDockerUpdate(containerName) {
 
 const semver = require('semver');
 
+// Fonction utilitaire pour récupérer un jeton d'authentification Registry V2
+async function getRegistryAuthToken(registry, repo) {
+    try {
+        let authUrl = '';
+        if (registry === 'registry-1.docker.io' || registry === 'docker.io' || registry === 'hub.docker.com') {
+            authUrl = `https://auth.docker.io/token?service=registry.docker.io&scope=repository:${repo}:pull`;
+        } else {
+            authUrl = `https://${registry}/token?scope=repository:${repo}:pull`;
+        }
+        
+        const authRes = await fetch(authUrl);
+        if (authRes.ok) {
+            const authData = await authRes.json();
+            return authData.token || authData.access_token || '';
+        }
+    } catch (e) {
+        // Certains registres publics n'ont pas besoin de jeton
+    }
+    return '';
+}
+
 // Vérifie les mises à jour et les changelogs pour tous les conteneurs
 async function checkDockerUpdates() {
     const containers = await docker.listContainers();
@@ -91,7 +112,18 @@ async function checkDockerUpdates() {
             imageName = imageName.split('@')[0];
         }
 
-        const repoPath = imageName.includes('/') ? imageName : `library/${imageName}`;
+        let registry = 'registry-1.docker.io';
+        let repo = imageName;
+
+        const imgParts = imageName.split('/');
+        if (imgParts.length > 1 && imgParts[0].includes('.')) {
+            registry = imgParts[0];
+            repo = imgParts.slice(1).join('/');
+        } else {
+            if (!repo.includes('/')) {
+                repo = `library/${repo}`;
+            }
+        }
 
         let hasUpdate = false;
         let currentVersion = tag !== 'latest' ? tag : container.ImageID.substring(7, 19);
@@ -104,12 +136,17 @@ async function checkDockerUpdates() {
             const imageInfo = await docker.getImage(container.Image).inspect();
             const localDigests = imageInfo.RepoDigests || [];
             
+            const token = await getRegistryAuthToken(registry, repo);
+            const headers = {
+                'Accept': 'application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json'
+            };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
             if (tag === 'latest' || tag === '') {
                 // Logique par Digest pour 'latest'
-                const response = await fetch(`https://hub.docker.com/v2/repositories/${repoPath}/tags/latest`);
-                if (response.ok) {
-                    const data = await response.json();
-                    const remoteDigest = data.digest;
+                const manifestRes = await fetch(`https://${registry}/v2/${repo}/manifests/${tag || 'latest'}`, { headers });
+                if (manifestRes.ok) {
+                    const remoteDigest = manifestRes.headers.get('docker-content-digest');
                     if (remoteDigest) {
                         newVersion = remoteDigest.substring(7, 19);
                         if (!localDigests.some(d => d.includes(remoteDigest))) {
@@ -125,17 +162,19 @@ async function checkDockerUpdates() {
                 
                 const cleanTag = semver.clean(tag) || semver.coerce(tag);
                 if (cleanTag) {
-                    const response = await fetch(`https://hub.docker.com/v2/repositories/${repoPath}/tags?page_size=100`);
-                    if (response.ok) {
-                        const data = await response.json();
+                    const tagsRes = await fetch(`https://${registry}/v2/${repo}/tags/list`, { headers });
+                    if (tagsRes.ok) {
+                        const data = await tagsRes.json();
                         let highestVersion = cleanTag;
                         let foundNewer = false;
 
-                        for (const t of data.results) {
-                            const parsed = semver.clean(t.name) || semver.coerce(t.name);
-                            if (parsed && semver.gt(parsed, highestVersion)) {
-                                highestVersion = parsed;
-                                foundNewer = true;
+                        if (data.tags) {
+                            for (const t of data.tags) {
+                                const parsed = semver.clean(t) || semver.coerce(t);
+                                if (parsed && semver.gt(parsed, highestVersion)) {
+                                    highestVersion = parsed;
+                                    foundNewer = true;
+                                }
                             }
                         }
 

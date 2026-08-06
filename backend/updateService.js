@@ -64,8 +64,6 @@ async function getRegistryAuthToken(registry, repo) {
         if (registry === 'registry-1.docker.io' || registry === 'docker.io' || registry === 'hub.docker.com') {
             authUrl = `https://auth.docker.io/token?service=registry.docker.io&scope=repository:${repo}:pull`;
         } else {
-            // Standard OCI : le registre expose son endpoint d'auth via le header WWW-Authenticate
-            // On essaie d'abord le pattern le plus courant (GHCR, Quay, etc.)
             authUrl = `https://${registry}/token?scope=repository:${repo}:pull`;
         }
         const authRes = await fetch(authUrl);
@@ -73,9 +71,7 @@ async function getRegistryAuthToken(registry, repo) {
             const authData = await authRes.json();
             return authData.token || authData.access_token || '';
         }
-    } catch (e) {
-        // Certains registres publics n'ont pas besoin de jeton
-    }
+    } catch (e) {}
     return '';
 }
 
@@ -83,7 +79,6 @@ async function getRegistryAuthToken(registry, repo) {
 // C'est exactement ce que fait Watchtower pour détecter les mises à jour
 async function getRemoteDigest(registry, repo, tag, token) {
     const headers = {
-        // On accepte tous les types de manifests connus (multi-arch, OCI, Docker)
         'Accept': [
             'application/vnd.docker.distribution.manifest.list.v2+json',
             'application/vnd.oci.image.index.v1+json',
@@ -92,10 +87,45 @@ async function getRemoteDigest(registry, repo, tag, token) {
         ].join(', ')
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-
     const res = await fetch(`https://${registry}/v2/${repo}/manifests/${tag}`, { headers });
     if (!res.ok) return null;
     return res.headers.get('docker-content-digest');
+}
+
+// Détermine si un tag est "flottant" (non-versionné numériquement)
+// Tags flottants : latest, stable, release, main, edge, etc.
+// Tags versionnés : 2026.7.4, v1.9.0, 3.22.0, etc.
+function isVersionedTag(tag) {
+    return /[0-9]/.test(tag); // Si le tag contient un chiffre, c'est versionné
+}
+
+// Comparaison de versions simplifiée qui gère les formats HA (2026.7.4) et SemVer (v1.9.0)
+// Retourne true si versionB est strictement plus récente que versionA
+function isNewerVersion(versionA, versionB) {
+    const normalize = (v) => v.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const a = normalize(versionA);
+    const b = normalize(versionB);
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        const ai = a[i] || 0;
+        const bi = b[i] || 0;
+        if (bi > ai) return true;
+        if (bi < ai) return false;
+    }
+    return false;
+}
+
+// Récupère la dernière version disponible via GitHub Releases
+// Utilisé pour les tags versionnés quand le label source GitHub est présent sur l'image
+async function getLatestGitHubRelease(githubRepo) {
+    try {
+        const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, {
+            headers: { 'User-Agent': 'GestionServeur-App' }
+        });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (e) {
+        return null;
+    }
 }
 
 // Vérifie les mises à jour et les changelogs pour tous les conteneurs
@@ -159,37 +189,48 @@ async function checkDockerUpdates() {
             const localDigestSet = new Set(localDigests.map(d => d.split('@')[1]).filter(Boolean));
 
             const token = await getRegistryAuthToken(registry, repo);
+            const labels = imageInfo.Config.Labels || {};
+            const sourceLabel = labels['org.opencontainers.image.source'] || labels['org.label-schema.vcs-url'] || '';
+            const githubRepo = sourceLabel.includes('github.com')
+                ? sourceLabel.replace('https://github.com/', '').replace('.git', '').trim()
+                : null;
             
-            // --- STRATÉGIE UNIVERSELLE : Comparaison de Digest (comme Watchtower) ---
-            // On interroge le registre pour le digest ACTUEL du même tag que celui en cours d'exécution.
-            // Si le digest distant diffère du digest local → une mise à jour est disponible.
-            // Cela fonctionne pour tous les types de tags : latest, stable, release, 2024.6.0, v1.9.0, etc.
-            const remoteDigest = await getRemoteDigest(registry, repo, tag, token);
-
-            if (remoteDigest) {
-                if (!localDigestSet.has(remoteDigest)) {
-                    hasUpdate = true;
-                    newVersion = remoteDigest.substring(7, 19); // Courte représentation du digest
-                } else {
-                    newVersion = tag; // Déjà à jour
-                }
-            }
-
-            // Fetch Changelog from GitHub
-            if (hasUpdate) {
-                const labels = imageInfo.Config.Labels || {};
-                const source = labels['org.opencontainers.image.source'] || labels['org.label-schema.vcs-url'];
-                
-                if (source && source.includes('github.com')) {
-                    const githubRepo = source.replace('https://github.com/', '').replace('.git', '');
-                    const ghRes = await fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, {
-                        headers: { 'User-Agent': 'GestionServeur-App' }
-                    });
-                    if (ghRes.ok) {
-                        const ghData = await ghRes.json();
-                        changelog = ghData.body;
+            if (isVersionedTag(tag) && githubRepo) {
+                // --- STRATÉGIE A : Tag versionné + source GitHub connue ---
+                // On compare la version actuelle avec la dernière release GitHub.
+                // Fonctionne pour : HA (2026.7.4), Mealie (v1.9.0), Immich, etc.
+                isUpdatableViaUI = false;
+                const ghRelease = await getLatestGitHubRelease(githubRepo);
+                if (ghRelease && ghRelease.tag_name) {
+                    const latestTag = ghRelease.tag_name;
+                    if (isNewerVersion(tag, latestTag)) {
+                        hasUpdate = true;
+                        newVersion = latestTag;
+                        changelog = ghRelease.body || null;
                         if (changelog && (changelog.includes('BREAKING') || changelog.includes('Breaking') || changelog.includes('MAJOR'))) {
                             isBreaking = true;
+                        }
+                    }
+                }
+            } else {
+                // --- STRATÉGIE B : Digest universel (comme Watchtower) ---
+                // Pour les tags flottants (latest, stable, release...) ou quand pas de source GitHub.
+                // On compare le digest local avec le digest distant du même tag.
+                const remoteDigest = await getRemoteDigest(registry, repo, tag, token);
+                if (remoteDigest) {
+                    if (!localDigestSet.has(remoteDigest)) {
+                        hasUpdate = true;
+                        newVersion = remoteDigest.substring(7, 19);
+                        // Bonus : si la source GitHub est connue, on récupère aussi le changelog
+                        if (githubRepo) {
+                            const ghRelease = await getLatestGitHubRelease(githubRepo);
+                            if (ghRelease) {
+                                newVersion = ghRelease.tag_name || newVersion;
+                                changelog = ghRelease.body || null;
+                                if (changelog && (changelog.includes('BREAKING') || changelog.includes('Breaking') || changelog.includes('MAJOR'))) {
+                                    isBreaking = true;
+                                }
+                            }
                         }
                     }
                 }

@@ -56,18 +56,18 @@ async function applyDockerUpdate(containerName) {
     }
 }
 
-const semver = require('semver');
-
 // Fonction utilitaire pour récupérer un jeton d'authentification Registry V2
+// Fonctionne avec tous les registres publics : Docker Hub, GHCR, Quay.io, etc.
 async function getRegistryAuthToken(registry, repo) {
     try {
         let authUrl = '';
         if (registry === 'registry-1.docker.io' || registry === 'docker.io' || registry === 'hub.docker.com') {
             authUrl = `https://auth.docker.io/token?service=registry.docker.io&scope=repository:${repo}:pull`;
         } else {
+            // Standard OCI : le registre expose son endpoint d'auth via le header WWW-Authenticate
+            // On essaie d'abord le pattern le plus courant (GHCR, Quay, etc.)
             authUrl = `https://${registry}/token?scope=repository:${repo}:pull`;
         }
-        
         const authRes = await fetch(authUrl);
         if (authRes.ok) {
             const authData = await authRes.json();
@@ -77,6 +77,25 @@ async function getRegistryAuthToken(registry, repo) {
         // Certains registres publics n'ont pas besoin de jeton
     }
     return '';
+}
+
+// Récupère le digest distant d'un tag via l'API Registry V2 (standard OCI)
+// C'est exactement ce que fait Watchtower pour détecter les mises à jour
+async function getRemoteDigest(registry, repo, tag, token) {
+    const headers = {
+        // On accepte tous les types de manifests connus (multi-arch, OCI, Docker)
+        'Accept': [
+            'application/vnd.docker.distribution.manifest.list.v2+json',
+            'application/vnd.oci.image.index.v1+json',
+            'application/vnd.docker.distribution.manifest.v2+json',
+            'application/vnd.oci.image.manifest.v1+json'
+        ].join(', ')
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`https://${registry}/v2/${repo}/manifests/${tag}`, { headers });
+    if (!res.ok) return null;
+    return res.headers.get('docker-content-digest');
 }
 
 // Vérifie les mises à jour et les changelogs pour tous les conteneurs
@@ -126,65 +145,33 @@ async function checkDockerUpdates() {
         }
 
         let hasUpdate = false;
-        let currentVersion = tag !== 'latest' ? tag : container.ImageID.substring(7, 19);
-        let newVersion = 'Inconnu';
+        let currentVersion = tag;
+        let newVersion = tag; // Par défaut, pas de changement
         let changelog = null;
         let isBreaking = false;
         let isUpdatableViaUI = true;
 
         try {
             const imageInfo = await docker.getImage(container.Image).inspect();
+            // Les digests locaux sont sous la forme "registry/repo@sha256:..."
             const localDigests = imageInfo.RepoDigests || [];
-            
+            // On extrait juste les parties sha256 pour simplifier la comparaison
+            const localDigestSet = new Set(localDigests.map(d => d.split('@')[1]).filter(Boolean));
+
             const token = await getRegistryAuthToken(registry, repo);
-            const headers = {
-                'Accept': 'application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json'
-            };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
+            
+            // --- STRATÉGIE UNIVERSELLE : Comparaison de Digest (comme Watchtower) ---
+            // On interroge le registre pour le digest ACTUEL du même tag que celui en cours d'exécution.
+            // Si le digest distant diffère du digest local → une mise à jour est disponible.
+            // Cela fonctionne pour tous les types de tags : latest, stable, release, 2024.6.0, v1.9.0, etc.
+            const remoteDigest = await getRemoteDigest(registry, repo, tag, token);
 
-            if (tag === 'latest' || tag === '') {
-                // Logique par Digest pour 'latest'
-                const manifestRes = await fetch(`https://${registry}/v2/${repo}/manifests/${tag || 'latest'}`, { headers });
-                if (manifestRes.ok) {
-                    const remoteDigest = manifestRes.headers.get('docker-content-digest');
-                    if (remoteDigest) {
-                        newVersion = remoteDigest.substring(7, 19);
-                        if (!localDigests.some(d => d.includes(remoteDigest))) {
-                            hasUpdate = true;
-                        } else {
-                            newVersion = currentVersion;
-                        }
-                    }
-                }
-            } else {
-                // Logique SemVer pour tags fixes (ex: 4.1.2)
-                isUpdatableViaUI = false; // Ne pas permettre la maj via Watchtower si c'est un tag fixe
-                
-                const cleanTag = semver.clean(tag) || semver.coerce(tag);
-                if (cleanTag) {
-                    const tagsRes = await fetch(`https://${registry}/v2/${repo}/tags/list`, { headers });
-                    if (tagsRes.ok) {
-                        const data = await tagsRes.json();
-                        let highestVersion = cleanTag;
-                        let foundNewer = false;
-
-                        if (data.tags) {
-                            for (const t of data.tags) {
-                                const parsed = semver.clean(t) || semver.coerce(t);
-                                if (parsed && semver.gt(parsed, highestVersion)) {
-                                    highestVersion = parsed;
-                                    foundNewer = true;
-                                }
-                            }
-                        }
-
-                        if (foundNewer) {
-                            hasUpdate = true;
-                            newVersion = highestVersion.version;
-                        } else {
-                            newVersion = currentVersion;
-                        }
-                    }
+            if (remoteDigest) {
+                if (!localDigestSet.has(remoteDigest)) {
+                    hasUpdate = true;
+                    newVersion = remoteDigest.substring(7, 19); // Courte représentation du digest
+                } else {
+                    newVersion = tag; // Déjà à jour
                 }
             }
 

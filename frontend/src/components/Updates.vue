@@ -155,7 +155,7 @@ onMounted(async () => {
                 {{ updatingContainer === container.name ? 'En cours...' : 'Mettre à jour' }}
               </button>
               <div v-else-if="container.hasUpdate && !container.isUpdatableViaUI" class="text-xs text-orange-700 bg-orange-100 border border-orange-200 dark:text-orange-400 dark:bg-orange-950/40 p-2 rounded dark:border-orange-900/50 text-center">
-                Action requise :<br>Modifiez le <code>docker-compose.yml</code>
+                Mise à jour manuelle<br>requise
               </div>
             </div>
           </div>
@@ -166,7 +166,7 @@ onMounted(async () => {
               ⚠️ BREAKING CHANGES DÉTECTÉS
             </div>
             <div v-if="!container.isUpdatableViaUI" class="mb-3 text-xs text-slate-600 dark:text-slate-300">
-              ℹ️ Ce conteneur utilise un tag fixe (<code>{{ container.tag }}</code>). Pour le mettre à jour vers <code>{{ container.newVersion }}</code>, vous devez modifier manuellement votre fichier <code>docker-compose.yml</code> et relancer le conteneur.
+              ℹ️ Une nouvelle version (<code>{{ container.newVersion }}</code>) est disponible. Pour mettre à jour ce conteneur, changez son tag dans votre <code>docker-compose.yml</code> et relancez-le.
             </div>
             <details class="text-xs text-slate-600 dark:text-slate-300">
               <summary class="cursor-pointer font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Voir les notes de mise à jour (Changelog)</summary>

@@ -56,22 +56,56 @@ async function applyDockerUpdate(containerName) {
     }
 }
 
-// Fonction utilitaire pour récupérer un jeton d'authentification Registry V2
-// Fonctionne avec tous les registres publics : Docker Hub, GHCR, Quay.io, etc.
+// Cache d'endpoints d'authentification par registre (pour éviter de re-prober à chaque conteneur)
+const authEndpointCache = {};
+
+// Récupère le jeton d'auth pour n'importe quel registre OCI
+// Utilise une découverte dynamique via WWW-Authenticate pour les registres non-standards
+// (lscr.io, Quay.io, registres privés, etc.)
 async function getRegistryAuthToken(registry, repo) {
     try {
         let authUrl = '';
+
         if (registry === 'registry-1.docker.io' || registry === 'docker.io' || registry === 'hub.docker.com') {
+            // Docker Hub : endpoint connu
             authUrl = `https://auth.docker.io/token?service=registry.docker.io&scope=repository:${repo}:pull`;
+        } else if (authEndpointCache[registry]) {
+            // Utilise l'endpoint mis en cache pour ce registre
+            authUrl = `${authEndpointCache[registry]}&scope=repository:${repo}:pull`;
         } else {
-            authUrl = `https://${registry}/token?scope=repository:${repo}:pull`;
+            // Registre inconnu : on sonde le endpoint /v2/ pour découvrir l'endpoint d'auth
+            // via le header WWW-Authenticate (standard OCI Registry Spec)
+            const probeRes = await fetch(`https://${registry}/v2/`, {
+                headers: { Accept: 'application/json' }
+            });
+            const wwwAuth = probeRes.headers.get('www-authenticate');
+
+            if (wwwAuth) {
+                const realmMatch = wwwAuth.match(/realm="([^"]+)"/);
+                const serviceMatch = wwwAuth.match(/service="([^"]+)"/);
+                if (realmMatch) {
+                    const realm = realmMatch[1];
+                    const service = serviceMatch ? serviceMatch[1] : '';
+                    const base = `${realm}?service=${service}`;
+                    authEndpointCache[registry] = base; // Mise en cache
+                    authUrl = `${base}&scope=repository:${repo}:pull`;
+                }
+            }
+
+            if (!authUrl) {
+                // Fallback : pattern courant
+                authUrl = `https://${registry}/token?scope=repository:${repo}:pull`;
+            }
         }
+
         const authRes = await fetch(authUrl);
         if (authRes.ok) {
             const authData = await authRes.json();
             return authData.token || authData.access_token || '';
         }
-    } catch (e) {}
+    } catch (e) {
+        // Registre public sans authentification
+    }
     return '';
 }
 

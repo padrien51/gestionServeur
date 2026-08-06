@@ -247,15 +247,42 @@ async function runComposeAction(projectName, action) {
     const translatedWorkingDir = translateToVMPath(rawWorkingDir);
     console.log(`Exécution de compose via conteneur : ${cmdArgs.join(' ')} (Binds: ${rawWorkingDir} -> ${translatedWorkingDir})`);
 
+    // Recherche de la configuration Docker de l'hôte pour l'authentification (pull images privées)
+    let dockerConfigBase64 = '';
+    const osPaths = [
+        '/root/.docker/config.json',
+        '/hostOS/root/.docker/config.json'
+    ];
+    try {
+        if (fs.existsSync('/hostOS/home')) {
+            const users = fs.readdirSync('/hostOS/home');
+            users.forEach(u => osPaths.push(`/hostOS/home/${u}/.docker/config.json`));
+        }
+    } catch(e) {}
+
+    for (const p of osPaths) {
+        if (fs.existsSync(p)) {
+            try {
+                const content = fs.readFileSync(p, 'utf8');
+                dockerConfigBase64 = Buffer.from(content).toString('base64');
+                console.log(`Fichier d'authentification Docker trouvé : ${p}`);
+                break;
+            } catch (e) {}
+        }
+    }
+
     // Utiliser l'image du conteneur actuel
     const os = require('os');
     const myContainerId = os.hostname();
     const myContainer = containersList.find(c => c.Id.startsWith(myContainerId));
     const containerImage = myContainer ? myContainer.Image : 'alpine';
 
+    const setupAuthCmd = dockerConfigBase64 ? 'mkdir -p ~/.docker && printf "%s" "$DOCKER_AUTH_B64" | base64 -d > ~/.docker/config.json && ' : '';
+
     const container = await docker.createContainer({
         Image: containerImage, 
-        Cmd: ['sh', '-c', `apk add --no-cache docker-cli docker-cli-compose > /dev/null 2>&1 && ${cmdArgs.join(' ')}`],
+        Cmd: ['sh', '-c', `${setupAuthCmd}apk add --no-cache docker-cli docker-cli-compose > /dev/null 2>&1 && ${cmdArgs.join(' ')}`],
+        Env: dockerConfigBase64 ? [`DOCKER_AUTH_B64=${dockerConfigBase64}`] : [],
         HostConfig: {
             Binds: [
                 '/var/run/docker.sock:/var/run/docker.sock',

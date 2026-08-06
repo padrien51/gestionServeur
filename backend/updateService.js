@@ -184,15 +184,30 @@ async function checkDockerUpdates() {
         if (ignoredContainers.includes(cName)) continue;
 
         let imageName = container.Image;
+        
+        try {
+            // Si container.Image est juste un hash sha256 (arrive souvent avec docker-compose), 
+            // on essaie de récupérer le vrai nom d'image depuis la config du conteneur.
+            const cInfo = await docker.getContainer(container.Id).inspect();
+            if ((imageName.startsWith('sha256:') || !imageName.includes(':')) && cInfo.Config.Image && !cInfo.Config.Image.startsWith('sha256:')) {
+                imageName = cInfo.Config.Image;
+            }
+        } catch (e) {
+            // Ignorer si on n'arrive pas à inspecter
+        }
+
         let tag = 'latest';
         
+        // On retire d'abord le digest (@sha256:...) s'il y en a un
+        if (imageName.includes('@')) {
+            imageName = imageName.split('@')[0];
+        }
+
+        // Ensuite on extrait le tag
         if (imageName.includes(':')) {
             const parts = imageName.split(':');
             imageName = parts[0];
             tag = parts[1];
-        }
-        if (imageName.includes('@')) {
-            imageName = imageName.split('@')[0];
         }
 
         let registry = 'registry-1.docker.io';

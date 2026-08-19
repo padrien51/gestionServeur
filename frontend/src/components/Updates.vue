@@ -15,7 +15,7 @@ const containers = ref([]);
 const loading = ref(true);
 const updatingContainer = ref(null);
 const updateMessage = ref('');
-const showOnlyUpdates = ref(false);
+const showOnlyUpdates = ref(true);
 
 const filteredContainers = computed(() => {
   if (showOnlyUpdates.value) {
@@ -115,11 +115,13 @@ onMounted(async () => {
           <span class="mr-2">🐳</span> Conteneurs Docker
         </h2>
         <div class="flex items-center gap-4">
-          <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer select-none">
-            <input type="checkbox" v-model="showOnlyUpdates" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700">
-            MAJ uniquement
+          <label class="relative inline-flex items-center cursor-pointer select-none">
+            <input type="checkbox" v-model="showOnlyUpdates" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-500 peer-checked:bg-blue-500"></div>
+            <span class="ml-2 text-sm font-medium text-slate-600 dark:text-slate-300">MAJ uniquement</span>
           </label>
-          <button @click="checkDockerUpdates" class="text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1 rounded">
+          <button @click="checkDockerUpdates" class="text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             Rafraîchir
           </button>
         </div>

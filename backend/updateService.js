@@ -152,7 +152,7 @@ function isNewerVersion(versionA, versionB) {
 // Utilisé pour agréger les changelogs des versions intermédiaires
 async function getRecentGitHubReleases(githubRepo) {
     try {
-        const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases?per_page=15`, {
+        const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases?per_page=100`, {
             headers: { 'User-Agent': 'GestionServeur-App' }
         });
         if (!res.ok) return [];

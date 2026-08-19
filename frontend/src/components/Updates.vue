@@ -79,7 +79,13 @@ const applyUpdate = async (container) => {
     if (!res.ok) throw new Error(await res.text());
     
     await showAlert("Succès", `La mise à jour de ${container.name} a été effectuée avec succès !`);
-    checkDockerUpdates();
+    
+    // Mise à jour optimiste de l'UI pour éviter de tout recharger
+    container.hasUpdate = false;
+    container.currentVersion = container.newVersion;
+    container.hasBreakingChanges = false;
+    container.changelog = null;
+    
   } catch (err) {
     showAlert("Erreur", "Erreur lors de la mise à jour : " + err.message);
   } finally {

@@ -289,13 +289,32 @@ async function checkDockerUpdates() {
                         // Bonus : si la source GitHub est connue, on récupère aussi le changelog
                         if (githubRepo) {
                             const releases = await getRecentGitHubReleases(githubRepo);
-                            const ghRelease = releases && releases.length > 0 ? releases[0] : null;
-                            if (ghRelease) {
+                            if (releases && releases.length > 0) {
+                                const ghRelease = releases[0];
                                 newVersion = ghRelease.tag_name || newVersion;
-                                changelog = ghRelease.body || null;
-                                if (changelog && (changelog.includes('BREAKING') || changelog.includes('Breaking') || changelog.includes('MAJOR'))) {
-                                    isBreaking = true;
+                                
+                                // On utilise la date de création de l'image locale pour savoir jusqu'où remonter
+                                const localImageDate = new Date(imageInfo.Created);
+                                
+                                let aggregatedChangelog = "";
+                                let foundBreaking = false;
+                                
+                                for (const release of releases) {
+                                    const releaseDate = new Date(release.published_at || release.created_at);
+                                    if (releaseDate > localImageDate) {
+                                        if (release.body) {
+                                            aggregatedChangelog += `\n\n### Version ${release.tag_name}\n${release.body}`;
+                                            if (release.body.includes('BREAKING') || release.body.includes('Breaking') || release.body.includes('MAJOR')) {
+                                                foundBreaking = true;
+                                            }
+                                        }
+                                    } else {
+                                        break; // On a atteint les versions que l'utilisateur a déjà
+                                    }
                                 }
+                                
+                                changelog = aggregatedChangelog.trim() || ghRelease.body || null;
+                                isBreaking = foundBreaking;
                             }
                         }
                     }

@@ -180,7 +180,7 @@ async function checkDockerUpdates() {
 
     for (const container of containers) {
         const cName = container.Names[0] ? container.Names[0].replace(/^\//, '') : '';
-        if (cName.includes('gestion_serveur')) continue;
+        if (cName === 'gestion_serveur' || cName === 'gestion_serveur_dev') continue;
         if (ignoredContainers.includes(cName)) continue;
 
         let imageName = container.Image;

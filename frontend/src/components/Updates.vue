@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useModal } from '../composables/useModal';
 
 const { showConfirm, showAlert } = useModal();
@@ -15,6 +15,14 @@ const containers = ref([]);
 const loading = ref(true);
 const updatingContainer = ref(null);
 const updateMessage = ref('');
+const showOnlyUpdates = ref(false);
+
+const filteredContainers = computed(() => {
+  if (showOnlyUpdates.value) {
+    return containers.value.filter(c => c.hasUpdate);
+  }
+  return containers.value;
+});
 
 const fetchOSUpdates = async () => {
   try {
@@ -106,9 +114,15 @@ onMounted(async () => {
         <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
           <span class="mr-2">🐳</span> Conteneurs Docker
         </h2>
-        <button @click="checkDockerUpdates" class="text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1 rounded">
-          Rafraîchir
-        </button>
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+            <input type="checkbox" v-model="showOnlyUpdates" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700">
+            MAJ uniquement
+          </label>
+          <button @click="checkDockerUpdates" class="text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1 rounded">
+            Rafraîchir
+          </button>
+        </div>
       </div>
 
       <div v-if="updateMessage" class="mb-4 p-3 bg-blue-900/50 text-blue-300 border border-blue-700 rounded-lg text-sm flex items-center">
@@ -121,7 +135,7 @@ onMounted(async () => {
         <div class="h-20 bg-white dark:bg-slate-800 rounded-xl"></div>
       </div>
       <div v-else class="space-y-4">
-        <div v-for="container in containers" :key="container.id" 
+        <div v-for="container in filteredContainers" :key="container.id" 
              class="bg-white dark:bg-slate-800 rounded-xl border shadow-[0_8px_30px_rgb(0,0,0,0.05)] dark:shadow-md transition-all overflow-hidden"
              :class="container.hasUpdate ? (container.isBreaking ? 'border-red-500/50' : 'border-blue-500/50') : 'border-slate-200/60 dark:border-slate-700'">
           
@@ -180,8 +194,8 @@ onMounted(async () => {
           </div>
         </div>
         
-        <div v-if="containers.length === 0" class="text-center py-8 text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700 border-dashed">
-          Aucun conteneur trouvé.
+        <div v-if="filteredContainers.length === 0" class="text-center py-8 text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700 border-dashed">
+          Aucun conteneur à afficher.
         </div>
       </div>
     </section>

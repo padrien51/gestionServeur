@@ -324,6 +324,7 @@ const fetchUpdates = async () => {
 };
 
 const appHasUpdates = (app) => app.containers.some(c => c.hasUpdate && c.isUpdatableViaUI);
+const appHasBreakingChanges = (app) => app.containers.some(c => c.hasUpdate && c.isUpdatableViaUI && c.hasBreakingChanges);
 
 const updateApplication = async (app) => {
   const containersToUpdate = app.containers.filter(c => c.hasUpdate && c.isUpdatableViaUI);
@@ -576,8 +577,11 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
                   <button v-if="appHasAIAlert(app.name) > 0" @click="isAIDrawerOpen = true" class="text-xs bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-md border border-rose-500 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-rose-900/50 flex items-center transition-all animate-pulse" title="Voir les alertes IA">
                     <span class="mr-1">🤖</span> {{ appHasAIAlert(app.name) }} Alerte(s) IA
                   </button>
-                  <button v-if="appHasUpdates(app)" @click="updateApplication(app)" class="text-xs bg-orange-600 hover:bg-orange-500 text-white px-2.5 py-1.5 rounded-md border border-orange-500 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-orange-900/50 flex items-center transition-all animate-pulse" title="Mettre à jour l'application">
-                    <span class="mr-1">⬆️</span> MAJ dispo
+                  <button v-if="appHasUpdates(app)" @click="updateApplication(app)" 
+                          :class="appHasBreakingChanges(app) ? 'bg-red-600 hover:bg-red-500 border-red-500 shadow-red-900/50' : 'bg-orange-600 hover:bg-orange-500 border-orange-500 shadow-orange-900/50'"
+                          class="text-xs text-white px-2.5 py-1.5 rounded-md border shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg flex items-center transition-all animate-pulse" 
+                          :title="appHasBreakingChanges(app) ? 'Breaking Changes potentiels ! Vérifiez les logs avant MAJ.' : 'Mettre à jour l\'application'">
+                    <span class="mr-1">{{ appHasBreakingChanges(app) ? '⚠️' : '⬆️' }}</span> {{ appHasBreakingChanges(app) ? 'Breaking Changes !' : 'MAJ dispo' }}
                   </button>
 
                   <div class="flex items-center space-x-2">

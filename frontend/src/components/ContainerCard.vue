@@ -52,8 +52,11 @@ const handleAction = async (action) => {
           {{ container.name }}
           <span class="h-2.5 w-2.5 rounded-full inline-block shrink-0" :class="statusColor"></span>
           <!-- Badge MAJ -->
-          <span v-if="container.hasUpdate && !isUpdateIgnored" class="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center shadow-sm ml-1" title="Mise à jour disponible">
-            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+          <span v-if="container.hasUpdate && !isUpdateIgnored" class="text-[10px] font-bold px-2 py-0.5 rounded flex items-center shadow-sm ml-1" 
+                :class="container.hasBreakingChanges ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'" 
+                :title="container.hasBreakingChanges ? 'Breaking Changes potentiels !' : 'Mise à jour disponible'">
+            <svg v-if="container.hasBreakingChanges" class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <svg v-else class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
             v.{{ container.newVersion }}
           </span>
         </h3>

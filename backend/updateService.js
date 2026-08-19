@@ -148,17 +148,17 @@ function isNewerVersion(versionA, versionB) {
     return false;
 }
 
-// Récupère la dernière version disponible via GitHub Releases
-// Utilisé pour les tags versionnés quand le label source GitHub est présent sur l'image
-async function getLatestGitHubRelease(githubRepo) {
+// Récupère les dernières versions disponibles via GitHub Releases
+// Utilisé pour agréger les changelogs des versions intermédiaires
+async function getRecentGitHubReleases(githubRepo) {
     try {
-        const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, {
+        const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases?per_page=15`, {
             headers: { 'User-Agent': 'GestionServeur-App' }
         });
-        if (!res.ok) return null;
+        if (!res.ok) return [];
         return await res.json();
     } catch (e) {
-        return null;
+        return [];
     }
 }
 
@@ -249,16 +249,32 @@ async function checkDockerUpdates() {
                 // On compare la version actuelle avec la dernière release GitHub.
                 // Fonctionne pour : HA (2026.7.4), Mealie (v1.9.0), Immich, etc.
                 isUpdatableViaUI = false;
-                const ghRelease = await getLatestGitHubRelease(githubRepo);
-                if (ghRelease && ghRelease.tag_name) {
-                    const latestTag = ghRelease.tag_name;
+                const releases = await getRecentGitHubReleases(githubRepo);
+                if (releases && releases.length > 0) {
+                    const latestRelease = releases[0];
+                    const latestTag = latestRelease.tag_name;
                     if (isNewerVersion(tag, latestTag)) {
                         hasUpdate = true;
                         newVersion = latestTag;
-                        changelog = ghRelease.body || null;
-                        if (changelog && (changelog.includes('BREAKING') || changelog.includes('Breaking') || changelog.includes('MAJOR'))) {
-                            isBreaking = true;
+                        
+                        let aggregatedChangelog = "";
+                        let foundBreaking = false;
+                        
+                        for (const release of releases) {
+                            if (isNewerVersion(tag, release.tag_name)) {
+                                if (release.body) {
+                                    aggregatedChangelog += `\n\n### Version ${release.tag_name}\n${release.body}`;
+                                    if (release.body.includes('BREAKING') || release.body.includes('Breaking') || release.body.includes('MAJOR')) {
+                                        foundBreaking = true;
+                                    }
+                                }
+                            } else {
+                                break;
+                            }
                         }
+                        
+                        changelog = aggregatedChangelog.trim() || latestRelease.body || null;
+                        isBreaking = foundBreaking;
                     }
                 }
             } else {
@@ -272,7 +288,8 @@ async function checkDockerUpdates() {
                         newVersion = remoteDigest.substring(7, 19);
                         // Bonus : si la source GitHub est connue, on récupère aussi le changelog
                         if (githubRepo) {
-                            const ghRelease = await getLatestGitHubRelease(githubRepo);
+                            const releases = await getRecentGitHubReleases(githubRepo);
+                            const ghRelease = releases && releases.length > 0 ? releases[0] : null;
                             if (ghRelease) {
                                 newVersion = ghRelease.tag_name || newVersion;
                                 changelog = ghRelease.body || null;

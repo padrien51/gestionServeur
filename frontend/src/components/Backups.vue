@@ -245,26 +245,11 @@ const navigateUp = () => {
 
 const downloadBackupFolder = (folderName) => {
     if (!explorerJob.value || !explorerApp.value) return;
-    const url = `${API_BASE}/backups/${explorerJob.value.id}/download/${explorerApp.value}/${folderName}`;
-    // Ajouter le header d'autorisation est difficile avec un simple <a> ou window.location.href, 
-    // on va donc utiliser fetch pour télécharger en tant que blob.
-    showAlert("Téléchargement", "Le téléchargement va démarrer (cela peut prendre du temps selon la taille).");
-    fetch(url, getFetchOptions())
-      .then(res => {
-        if (!res.ok) throw new Error("Erreur serveur lors de la préparation de l'archive.");
-        return res.blob();
-      })
-      .then(blob => {
-        const a = document.createElement('a');
-        a.href = window.URL.createObjectURL(blob);
-        a.download = `${explorerApp.value}_${folderName}.tar.gz`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      })
-      .catch(e => {
-        showAlert("Erreur", "Le téléchargement a échoué: " + e.message);
-      });
+    const token = localStorage.getItem('auth_token') || '';
+    const url = `${API_BASE}/backups/${explorerJob.value.id}/download/${explorerApp.value}/${folderName}?token=${token}`;
+    
+    // Le navigateur va directement gérer le flux de téléchargement (barre de progression native)
+    window.location.href = url;
 };
 
 const confirmRestoreBackup = async (folderName) => {

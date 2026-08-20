@@ -171,6 +171,98 @@ const saveJob = async () => {
   }
 };
 
+// --- EXPLORATEUR ---
+const explorerModal = ref(false); // Utilisé pour l'affichage de l'explorateur
+const explorerJob = ref(null);
+const explorerApp = ref('');
+const explorerPath = ref('');
+const explorerFiles = ref([]);
+const explorerLoading = ref(false);
+const explorerError = ref(null);
+
+const explorerPathParts = computed(() => {
+    return explorerPath.value.split('/').filter(Boolean);
+});
+
+const sortedExplorerFiles = computed(() => {
+    return [...explorerFiles.value].sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        return a.name.localeCompare(b.name);
+    });
+});
+
+const openExplorer = (job = null, app = null, inModal = true) => {
+    if (job) explorerJob.value = job;
+    else if (jobs.value.length > 0 && !explorerJob.value) explorerJob.value = jobs.value[0];
+    
+    if (app) explorerApp.value = app;
+    else if (explorerJob.value && parseContainers(explorerJob.value.containers).length > 0 && (!explorerApp.value || !parseContainers(explorerJob.value.containers).includes(explorerApp.value))) {
+        explorerApp.value = parseContainers(explorerJob.value.containers)[0];
+    }
+
+    explorerPath.value = '';
+    
+    if (inModal) {
+        explorerModal.value = true;
+    }
+    
+    if (explorerJob.value && explorerApp.value) {
+        loadExplorerFiles();
+    }
+};
+
+const closeExplorer = () => {
+    explorerModal.value = false;
+};
+
+const loadExplorerFiles = async () => {
+    if (!explorerJob.value || !explorerApp.value) return;
+    explorerLoading.value = true;
+    explorerError.value = null;
+    explorerFiles.value = [];
+    try {
+        const res = await fetch(`${API_BASE}/backups/${explorerJob.value.id}/explore/${explorerApp.value}?path=${encodeURIComponent(explorerPath.value)}`, getFetchOptions());
+        if (!res.ok) throw new Error(await res.text());
+        explorerFiles.value = await res.json();
+    } catch (e) {
+        explorerError.value = e.message;
+    } finally {
+        explorerLoading.value = false;
+    }
+};
+
+const navigateExplorer = (newPath) => {
+    explorerPath.value = newPath;
+    loadExplorerFiles();
+};
+
+const navigateUp = () => {
+    const parts = explorerPathParts.value;
+    parts.pop();
+    navigateExplorer(parts.join('/'));
+};
+
+watch(activeTab, (newTab) => {
+    if (newTab === 'explore') {
+        openExplorer(null, null, false);
+    }
+});
+
+// Écouter les changements des selects pour recharger les fichiers
+watch([explorerJob, explorerApp], () => {
+    if (activeTab.value === 'explore' && explorerJob.value && explorerApp.value) {
+        // Reset l'app si elle n'appartient pas au job
+        const apps = parseContainers(explorerJob.value.containers);
+        if (!apps.includes(explorerApp.value)) {
+            explorerApp.value = apps.length > 0 ? apps[0] : '';
+        }
+        
+        explorerPath.value = '';
+        loadExplorerFiles();
+    }
+});
+
 const toggleJob = async (job) => {
   try {
     let parsedContainers = [];
@@ -262,6 +354,13 @@ const formatDate = (dateStr) => {
           class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
         >
           Jobs de Sauvegarde
+        </button>
+        <button 
+          @click="activeTab = 'explore'" 
+          :class="activeTab === 'explore' ? 'bg-white text-slate-900 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-transparent'"
+          class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+        >
+          Explorateur
         </button>
         <button 
           @click="activeTab = 'logs'; fetchLogs()" 
@@ -439,6 +538,60 @@ const formatDate = (dateStr) => {
           <div class="text-4xl mb-4">📭</div>
           <p class="text-lg font-medium text-slate-500 dark:text-slate-400">Aucun Job de sauvegarde configuré.</p>
           <p class="text-sm mt-2">Cliquez sur "+ Nouvelle Sauvegarde" pour commencer.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VUE DE L'EXPLORATEUR (ONGLET) -->
+    <div v-if="activeTab === 'explore'" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl flex flex-col h-[70vh]">
+      <!-- Barre de sélection et navigation -->
+      <div class="p-4 border-b dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-t-2xl flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <div class="flex gap-2 w-full sm:w-auto">
+          <select v-model="explorerJob" class="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-lg p-2 text-sm text-slate-900 dark:text-slate-100 flex-1">
+            <option :value="null" disabled>Sélectionner un Job...</option>
+            <option v-for="job in jobs" :key="job.id" :value="job">{{ job.name }}</option>
+          </select>
+          <select v-model="explorerApp" class="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-lg p-2 text-sm text-slate-900 dark:text-slate-100 flex-1" :disabled="!explorerJob">
+            <option value="" disabled>Sélectionner une application...</option>
+            <option v-if="explorerJob" v-for="app in parseContainers(explorerJob.containers)" :key="app" :value="app">{{ app }}</option>
+          </select>
+        </div>
+        
+        <div v-if="explorerJob && explorerApp" class="flex-1 overflow-x-auto whitespace-nowrap bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-sm flex items-center gap-2 max-w-full">
+           <button @click="navigateExplorer('')" class="hover:bg-slate-200 dark:hover:bg-slate-700 px-2 py-1 rounded dark:text-slate-300">🏠 Racine</button>
+           <span v-for="(part, i) in explorerPathParts" :key="i" class="flex items-center gap-2 text-slate-500">
+              <span>/</span>
+              <button @click="navigateExplorer(explorerPathParts.slice(0, i+1).join('/'))" class="hover:bg-slate-200 dark:hover:bg-slate-700 px-2 py-1 rounded dark:text-slate-300">{{ part }}</button>
+           </span>
+        </div>
+      </div>
+      
+      <!-- Contenu des fichiers -->
+      <div class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
+        <div v-if="!explorerJob || !explorerApp" class="flex h-full items-center justify-center text-slate-500 italic text-center p-8">
+          Veuillez sélectionner un job de sauvegarde et une application pour commencer l'exploration.
+        </div>
+        <div v-else-if="explorerLoading" class="flex h-full items-center justify-center p-8"><span class="animate-spin text-3xl">⏳</span></div>
+        <div v-else-if="explorerError" class="text-red-500 bg-red-100 dark:bg-red-900/30 p-4 rounded-xl border border-red-200 dark:border-red-800">{{ explorerError }}</div>
+        <div v-else>
+          <div v-if="explorerFiles.length === 0" class="text-center text-slate-500 p-12 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">Dossier vide ou introuvable.</div>
+          <div v-else class="grid gap-1 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200/60 dark:border-slate-700 shadow-sm">
+             <div v-if="explorerPath" @click="navigateUp" class="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer select-none transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                <span class="text-2xl">📁</span> <span class="dark:text-slate-300 font-bold">..</span>
+             </div>
+             <div v-for="f in sortedExplorerFiles" :key="f.name" @click="f.isDirectory ? navigateExplorer(explorerPath ? explorerPath + '/' + f.name : f.name) : null" 
+                  class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors border border-transparent"
+                  :class="{'cursor-pointer select-none hover:border-slate-200 dark:hover:border-slate-600': f.isDirectory}">
+                <div class="flex items-center gap-3 truncate">
+                   <span class="text-2xl">{{ f.isDirectory ? '📁' : '📄' }}</span>
+                   <span class="truncate dark:text-slate-200" :class="{'font-bold text-blue-600 dark:text-blue-400': f.isDirectory}">{{ f.name }}</span>
+                </div>
+                <div class="flex items-center gap-6 text-sm text-slate-500 shrink-0">
+                   <span v-if="!f.isDirectory" class="font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">{{ formatBytes(f.size) }}</span>
+                   <span class="hidden sm:inline">{{ formatDate(f.mtime) }}</span>
+                </div>
+             </div>
+          </div>
         </div>
       </div>
     </div>

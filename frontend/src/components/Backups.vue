@@ -679,14 +679,14 @@ const formatBytes = (bytes) => {
               <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ formatDate(log.created_at) }}</td>
               <td class="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{{ log.job_name || 'Job Supprimé' }}</td>
               <td class="px-6 py-4">
-                <span v-if="log.status === 'SUCCESS'" class="inline-flex items-center px-2.5 py-1 bg-emerald-900/30 text-emerald-400 rounded-full text-xs font-medium border border-emerald-800/50">
-                  <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1.5"></span> Succès
+                <span v-if="log.status === 'SUCCESS'" class="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50 rounded-full text-xs font-medium">
+                  <span class="w-1.5 h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full mr-1.5"></span> Succès
                 </span>
-                <span v-else-if="log.status === 'FAILED'" class="inline-flex items-center px-2.5 py-1 bg-red-900/30 text-red-400 rounded-full text-xs font-medium border border-red-800/50">
-                  <span class="w-1.5 h-1.5 bg-red-400 rounded-full mr-1.5"></span> Échec
+                <span v-else-if="log.status === 'FAILED'" class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50 rounded-full text-xs font-medium">
+                  <span class="w-1.5 h-1.5 bg-red-500 dark:bg-red-400 rounded-full mr-1.5"></span> Échec
                 </span>
-                <span v-else class="inline-flex items-center px-2.5 py-1 bg-blue-900/30 text-blue-400 rounded-full text-xs font-medium border border-blue-800/50">
-                  <span class="w-1.5 h-1.5 bg-blue-400 rounded-full mr-1.5 animate-pulse"></span> En cours
+                <span v-else class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50 rounded-full text-xs font-medium">
+                  <span class="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mr-1.5 animate-pulse"></span> En cours
                 </span>
               </td>
               <td class="px-6 py-4 text-xs max-w-md truncate text-slate-500 dark:text-slate-400" :title="log.message">{{ log.message }}</td>

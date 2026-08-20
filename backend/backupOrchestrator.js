@@ -313,14 +313,15 @@ async function exploreBackup(jobId, appName, subPath = '') {
     // Commande sh: lister avec ls et renvoyer en JSON
     const bashScript = `
         cd "/dest${safeSubPath}" 2>/dev/null || exit 1
-        ls -lA --time-style=+%Y-%m-%dT%H:%M:%S | awk 'NR>1 {
-            isDir = substr($1,1,1) == "d" ? "true" : "false"
-            size = $5
-            date = $6
-            name = $7
-            for(i=8; i<=NF; ++i) name = name " " $i
-            printf "{\\"name\\":\\"%s\\", \\"isDirectory\\":%s, \\"size\\":%s, \\"mtime\\":\\"%s\\"}\\n", name, isDir, size, date
-        }'
+        ls -1A | while read f; do
+            if [ -n "$f" ]; then
+                isDir="false"
+                if [ -d "$f" ]; then isDir="true"; fi
+                size=$(stat -c %s "$f")
+                mtime=$(stat -c %Y "$f")
+                printf "{\\"name\\":\\"%s\\", \\"isDirectory\\":%s, \\"size\\":%s, \\"mtime\\":%s000}\\n" "$f" "$isDir" "$size" "$mtime"
+            fi
+        done
     `;
 
     return new Promise((resolve, reject) => {

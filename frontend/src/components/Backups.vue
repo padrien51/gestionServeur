@@ -243,6 +243,57 @@ const navigateUp = () => {
     navigateExplorer(parts.join('/'));
 };
 
+const downloadBackupFolder = (folderName) => {
+    if (!explorerJob.value || !explorerApp.value) return;
+    const url = `${API_BASE}/backups/${explorerJob.value.id}/download/${explorerApp.value}/${folderName}`;
+    // Ajouter le header d'autorisation est difficile avec un simple <a> ou window.location.href, 
+    // on va donc utiliser fetch pour télécharger en tant que blob.
+    showAlert("Téléchargement", "Le téléchargement va démarrer (cela peut prendre du temps selon la taille).");
+    fetch(url, getFetchOptions())
+      .then(res => {
+        if (!res.ok) throw new Error("Erreur serveur lors de la préparation de l'archive.");
+        return res.blob();
+      })
+      .then(blob => {
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = `${explorerApp.value}_${folderName}.tar.gz`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      })
+      .catch(e => {
+        showAlert("Erreur", "Le téléchargement a échoué: " + e.message);
+      });
+};
+
+const confirmRestoreBackup = async (folderName) => {
+    const confirmed = await showConfirm(
+      "Restauration Destructrice",
+      `Vous êtes sur le point de restaurer les données de l'application "${explorerApp.value}" depuis la version "${folderName}".\n\nTOUTES LES DONNÉES ACTUELLES DE L'APPLICATION SERONT ÉCRASÉES ET REMPLACÉES PAR CETTE SAUVEGARDE.\n\nLes conteneurs vont s'arrêter pendant la restauration.\nVoulez-vous vraiment continuer ?`
+    );
+    if (!confirmed) return;
+    
+    explorerLoading.value = true;
+    explorerError.value = null;
+    
+    try {
+        const url = `${API_BASE}/backups/${explorerJob.value.id}/restore/${explorerApp.value}/${folderName}`;
+        const res = await fetch(url, {
+            method: 'POST',
+            ...getFetchOptions()
+        });
+        if (!res.ok) throw new Error(await res.text());
+        
+        showAlert("Succès", "La sauvegarde a été restaurée et les conteneurs ont été redémarrés avec succès.");
+    } catch (e) {
+        explorerError.value = "Erreur lors de la restauration : " + (e.message || "Erreur inconnue");
+        showAlert("Échec de la Restauration", explorerError.value);
+    } finally {
+        explorerLoading.value = false;
+    }
+};
+
 watch(activeTab, (newTab) => {
     if (newTab === 'explore') {
         openExplorer(null, null, false);
@@ -596,13 +647,19 @@ const formatBytes = (bytes) => {
                 <span class="text-2xl">📁</span> <span class="dark:text-slate-300 font-bold">..</span>
              </div>
              <div v-for="f in sortedExplorerFiles" :key="f.name" @click="f.isDirectory ? navigateExplorer(explorerPath ? explorerPath + '/' + f.name : f.name) : null" 
-                  class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors border border-transparent"
+                  class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors border border-transparent group"
                   :class="{'cursor-pointer select-none hover:border-slate-200 dark:hover:border-slate-600': f.isDirectory}">
                 <div class="flex items-center gap-3 truncate">
                    <span class="text-2xl">{{ f.isDirectory ? '📁' : '📄' }}</span>
                    <span class="truncate dark:text-slate-200" :class="{'font-bold text-blue-600 dark:text-blue-400': f.isDirectory}">{{ f.name }}</span>
                 </div>
-                <div class="flex items-center gap-6 text-sm text-slate-500 shrink-0">
+                <div class="flex items-center gap-4 text-sm text-slate-500 shrink-0">
+                   <!-- Boutons d'action (visibles uniquement à la racine pour les dossiers backup_...) -->
+                   <div v-if="!explorerPath && f.isDirectory && f.name.startsWith('backup_')" class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button @click.stop="downloadBackupFolder(f.name)" class="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-md transition-colors title='Télécharger (tar.gz)'">📥</button>
+                      <button @click.stop="confirmRestoreBackup(f.name)" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-md transition-colors title='Restaurer cette version (Écrase les données actuelles)'">🔄</button>
+                   </div>
+                   
                    <span v-if="!f.isDirectory" class="font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">{{ formatBytes(f.size) }}</span>
                    <span class="hidden sm:inline">{{ formatDate(f.mtime) }}</span>
                 </div>

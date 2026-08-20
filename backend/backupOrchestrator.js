@@ -348,6 +348,93 @@ async function exploreBackup(jobId, appName, subPath = '') {
     });
 }
 
+// -------------------------
+// RESTAURATION & TELECHARGEMENT
+// -------------------------
+
+async function downloadBackup(jobId, appName, backupFolder, res) {
+    const jobs = await getQuery(`SELECT dest_path FROM backup_jobs WHERE id = ?`, [jobId]);
+    if (!jobs || jobs.length === 0) throw new Error("Job introuvable");
+    const job = jobs[0];
+
+    const safeFolder = path.normalize('/' + backupFolder).replace(/^(\.\.(\/|\\|$))+/, '').replace(/^\//, '');
+    const dest = `${job.dest_path}/${appName}`;
+    
+    // Configurer la réponse Express pour forcer le téléchargement en tar.gz
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', `attachment; filename="${appName}_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}.tar.gz"`);
+
+    const bashScript = `cd "/dest" && tar -czf - "${safeFolder}"`;
+
+    return new Promise((resolve, reject) => {
+        // En passant res (qui est un flux inscriptible), dockerode pipe stdout directement vers le client
+        docker.run('alpine:latest', ['sh', '-c', bashScript], res, {
+            HostConfig: {
+                AutoRemove: true,
+                Binds: [ `${dest}:/dest:ro` ]
+            }
+        }, (err, data) => {
+            if (err) return reject(err);
+            resolve();
+        });
+    });
+}
+
+async function restoreBackup(jobId, appName, backupFolder) {
+    const jobs = await getQuery(`SELECT dest_path, source_path FROM backup_jobs WHERE id = ?`, [jobId]);
+    if (!jobs || jobs.length === 0) throw new Error("Job introuvable");
+    const job = jobs[0];
+
+    const safeFolder = path.normalize('/' + backupFolder).replace(/^(\.\.(\/|\\|$))+/, '').replace(/^\//, '');
+    const dest = `${job.dest_path}/${appName}`;
+
+    const allApps = await require('./dockerService').getApplications();
+    const appInfo = allApps.find(a => a.name === appName);
+    if (!appInfo) throw new Error("Application introuvable ou plus gérée.");
+
+    const { stopContainer, startContainer } = require('./dockerService');
+    
+    // 1. Arrêter les conteneurs
+    console.log(`[Restauration] Arrêt des conteneurs pour ${appName}...`);
+    for (const cInfo of appInfo.containers) {
+        if (cInfo.state === 'running') {
+            await stopContainer(cInfo.id);
+        }
+    }
+
+    // 2. Lancer la restauration via rsync
+    const bashScript = `
+        apk add --no-cache rsync && \\
+        rsync -a --delete "/backup/${safeFolder}/" "/source/"
+    `;
+    console.log(`[Restauration] Lancement de rsync pour ${appName} (depuis ${safeFolder})...`);
+
+    try {
+        await new Promise((resolve, reject) => {
+            docker.run('alpine:latest', ['sh', '-c', bashScript], process.stdout, {
+                HostConfig: {
+                    AutoRemove: true,
+                    Binds: [
+                        `${appInfo.working_dir}:/source`,
+                        `${dest}:/backup:ro`
+                    ]
+                }
+            }, (err, data) => {
+                if (err) return reject(err);
+                if (data && data.StatusCode !== 0) return reject(new Error("Erreur rsync (code " + data.StatusCode + ")"));
+                resolve();
+            });
+        });
+        console.log(`[Restauration] Succès de rsync pour ${appName}.`);
+    } finally {
+        // 3. Redémarrer les conteneurs
+        console.log(`[Restauration] Redémarrage des conteneurs pour ${appName}...`);
+        for (const cInfo of appInfo.containers) {
+            await startContainer(cInfo.id).catch(e => console.error("[Restauration] Erreur relance post-restauration:", e));
+        }
+    }
+}
+
 module.exports = {
     initializeScheduler,
     getJobs,
@@ -356,5 +443,7 @@ module.exports = {
     deleteJob,
     triggerManualBackup,
     getLogs,
-    exploreBackup
+    exploreBackup,
+    downloadBackup,
+    restoreBackup
 };

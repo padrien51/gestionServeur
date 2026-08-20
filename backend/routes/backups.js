@@ -62,4 +62,24 @@ router.get('/:id/explore/:app', async (req, res) => {
     }
 });
 
+// --- TELECHARGEMENT ET RESTAURATION ---
+router.get('/:id/download/:app/:folder', async (req, res) => {
+    try {
+        await backupOrchestrator.downloadBackup(req.params.id, req.params.app, req.params.folder, res);
+    } catch (err) {
+        console.error("[Backup] Erreur téléchargement:", err);
+        if (!res.headersSent) res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/:id/restore/:app/:folder', async (req, res) => {
+    try {
+        await backupOrchestrator.restoreBackup(req.params.id, req.params.app, req.params.folder);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("[Backup] Erreur restauration:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

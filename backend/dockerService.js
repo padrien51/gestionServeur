@@ -64,31 +64,7 @@ async function restartContainer(id) {
     await container.restart();
 }
 
-async function pruneSystem() {
-    try {
-        let totalReclaimed = 0;
-        
-        const containersPrune = await docker.pruneContainers();
-        if (containersPrune && containersPrune.SpaceReclaimed) totalReclaimed += containersPrune.SpaceReclaimed;
-        
-        const networksPrune = await docker.pruneNetworks();
-        // networks don't reclaim much space, but it cleans up
 
-        const volumesPrune = await docker.pruneVolumes();
-        if (volumesPrune && volumesPrune.SpaceReclaimed) totalReclaimed += volumesPrune.SpaceReclaimed;
-        
-        // Prune dangling first, then all unused images if possible.
-        // We'll stick to a standard pruneImages without filters which removes dangling (safe).
-        // Or if we want to remove ALL unused images (-a): { filters: '{"dangling":["false"]}' }
-        const imagesPrune = await docker.pruneImages({ filters: '{"dangling":["false"]}' });
-        if (imagesPrune && imagesPrune.SpaceReclaimed) totalReclaimed += imagesPrune.SpaceReclaimed;
-
-        return { success: true, spaceReclaimed: totalReclaimed };
-    } catch (error) {
-        console.error("Erreur lors du nettoyage Docker:", error);
-        throw new Error("Impossible d'exécuter la commande de nettoyage Docker.");
-    }
-}
 
 async function handleProjectAction(projectName, action) {
     const containers = await getContainers();
@@ -347,11 +323,24 @@ async function pruneSystem() {
         const containerPrune = await docker.pruneContainers();
         const networkPrune = await docker.pruneNetworks();
         const volumePrune = await docker.pruneVolumes();
+        
+        // Dockerode doesn't have a direct helper for pruneBuilds, so we use modem.dial
+        const buildPrune = await new Promise((resolve) => {
+            docker.modem.dial({ 
+                path: '/build/prune?all=true', 
+                method: 'POST', 
+                statusCodes: { 200: true, 500: 'server error' } 
+            }, (err, res) => {
+                if (err) return resolve({ SpaceReclaimed: 0 });
+                resolve(res || { SpaceReclaimed: 0 });
+            });
+        });
 
         let reclaimed = 0;
         if (imagePrune.SpaceReclaimed) reclaimed += imagePrune.SpaceReclaimed;
         if (containerPrune.SpaceReclaimed) reclaimed += containerPrune.SpaceReclaimed;
         if (volumePrune.SpaceReclaimed) reclaimed += volumePrune.SpaceReclaimed;
+        if (buildPrune.SpaceReclaimed) reclaimed += buildPrune.SpaceReclaimed;
 
         return { success: true, reclaimedSpace: reclaimed };
     } catch (error) {

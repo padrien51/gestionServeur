@@ -52,4 +52,14 @@ router.get('/logs', async (req, res) => {
     }
 });
 
+// --- EXPLORATEUR DE FICHIERS ---
+router.get('/:id/explore/:app', async (req, res) => {
+    try {
+        const files = await backupOrchestrator.exploreBackup(req.params.id, req.params.app, req.query.path || '');
+        res.json(files);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

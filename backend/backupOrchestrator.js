@@ -279,6 +279,82 @@ async function getLogs(jobId = null) {
     return await getQuery(query, params);
 }
 
+const fs = require('fs');
+
+async function exploreBackup(jobId, appName, subPath = '') {
+    const jobs = await getQuery(`SELECT dest_path FROM backup_jobs WHERE id = ?`, [jobId]);
+    if (!jobs || jobs.length === 0) throw new Error("Job introuvable");
+    const job = jobs[0];
+
+    // Sécurité: empêcher la navigation relative vers le haut
+    const safeSubPath = path.normalize('/' + subPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const absolutePath = path.posix.join('/hostOS', job.dest_path, appName, safeSubPath);
+
+    // Essayer de lire via le volume /hostOS
+    try {
+        if (fs.existsSync(absolutePath)) {
+            const files = fs.readdirSync(absolutePath, { withFileTypes: true });
+            return files.map(f => {
+                const stat = fs.statSync(path.join(absolutePath, f.name));
+                return {
+                    name: f.name,
+                    isDirectory: f.isDirectory(),
+                    size: stat.size,
+                    mtime: stat.mtime
+                };
+            });
+        }
+    } catch (e) {
+        console.warn("[Backup] Lecture locale impossible, fallback sur conteneur éphémère", e.message);
+    }
+
+    // Fallback: utiliser un conteneur docker éphémère (si on est sur Windows sans montage /hostOS fonctionnel par ex)
+    const dest = `${job.dest_path}/${appName}`;
+    // Commande sh: lister avec stat (ou ls) et renvoyer en JSON (Alpine/Busybox)
+    // Busybox stat ne supporte pas toujours toutes les options, on va utiliser ls -l --time-style=iso
+    // ou plutôt un petit script shell pour parser
+    const bashScript = `
+        cd /dest${safeSubPath} 2>/dev/null || exit 1
+        ls -lA --time-style=+%Y-%m-%dT%H:%M:%S | awk 'NR>1 {
+            isDir = substr($1,1,1) == "d" ? "true" : "false"
+            size = $5
+            date = $6
+            name = $7
+            for(i=8; i<=NF; ++i) name = name " " $i
+            printf "{\\"name\\":\\"%s\\", \\"isDirectory\\":%s, \\"size\\":%s, \\"mtime\\":\\"%s\\"}\\n", name, isDir, size, date
+        }'
+    `;
+
+    return new Promise((resolve, reject) => {
+        let output = '';
+        docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
+            HostConfig: {
+                AutoRemove: true,
+                Binds: [ `${dest}:/dest:ro` ]
+            }
+        }, (err, data, container) => {
+            if (err) return reject(err);
+        }).on('stream', stream => {
+            stream.on('data', chunk => output += chunk.toString('utf8'));
+            stream.on('end', () => {
+                try {
+                    // Nettoyer les logs docker (le stdout a un prefix 8 bytes)
+                    // Mais en mode run, il se peut qu'il n'y ait pas de muxer si on ne passe pas un write stream.
+                    // Pour éviter ça, on va nettoyer les caractères de contrôle au début de chaque ligne
+                    const lines = output.split('\n')
+                        .map(l => l.replace(/^[\\u0000-\\u0008\\u000B-\\u001F\\u007F]+/, '').trim())
+                        .filter(l => l.startsWith('{') && l.endsWith('}'));
+                    
+                    const files = lines.map(l => JSON.parse(l));
+                    resolve(files);
+                } catch(e) {
+                    reject(new Error("Erreur de lecture du dossier"));
+                }
+            });
+        });
+    });
+}
+
 module.exports = {
     initializeScheduler,
     getJobs,
@@ -286,5 +362,6 @@ module.exports = {
     updateJob,
     deleteJob,
     triggerManualBackup,
-    getLogs
+    getLogs,
+    exploreBackup
 };

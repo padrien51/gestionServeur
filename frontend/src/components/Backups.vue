@@ -247,6 +247,76 @@ const formatDate = (dateStr) => {
   if (!dateStr) return 'Jamais';
   return new Date(dateStr).toLocaleString('fr-FR');
 };
+
+const formatBytes = (bytes) => {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// --- EXPLORATEUR ---
+const explorerModal = ref(false);
+const explorerJob = ref(null);
+const explorerApp = ref('');
+const explorerPath = ref('');
+const explorerFiles = ref([]);
+const explorerLoading = ref(false);
+const explorerError = ref(null);
+
+import { computed } from 'vue';
+
+const explorerPathParts = computed(() => {
+    return explorerPath.value.split('/').filter(Boolean);
+});
+
+const sortedExplorerFiles = computed(() => {
+    return [...explorerFiles.value].sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        return a.name.localeCompare(b.name);
+    });
+});
+
+const openExplorer = (job, app) => {
+    explorerJob.value = job;
+    explorerApp.value = app;
+    explorerPath.value = '';
+    explorerModal.value = true;
+    loadExplorerFiles();
+};
+
+const closeExplorer = () => {
+    explorerModal.value = false;
+};
+
+const loadExplorerFiles = async () => {
+    explorerLoading.value = true;
+    explorerError.value = null;
+    explorerFiles.value = [];
+    try {
+        const res = await fetch(`${API_BASE}/backups/${explorerJob.value.id}/explore/${explorerApp.value}?path=${encodeURIComponent(explorerPath.value)}`, getFetchOptions());
+        if (!res.ok) throw new Error(await res.text());
+        explorerFiles.value = await res.json();
+    } catch (e) {
+        explorerError.value = e.message;
+    } finally {
+        explorerLoading.value = false;
+    }
+};
+
+const navigateExplorer = (newPath) => {
+    explorerPath.value = newPath;
+    loadExplorerFiles();
+};
+
+const navigateUp = () => {
+    const parts = explorerPathParts.value;
+    parts.pop();
+    navigateExplorer(parts.join('/'));
+};
+
 </script>
 
 <template>
@@ -379,6 +449,55 @@ const formatDate = (dateStr) => {
         </div>
       </transition>
 
+      <!-- Modal Explorateur -->
+      <transition name="fade">
+        <div v-if="explorerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-3xl flex flex-col max-h-[80vh] shadow-2xl border border-slate-700 overflow-hidden">
+            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
+              <h3 class="font-bold text-lg dark:text-white flex items-center gap-2">
+                📁 Explorateur : {{ explorerJob?.name }} / {{ explorerApp }}
+              </h3>
+              <button @click="closeExplorer" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-transparent text-xl font-bold">
+                 ✖
+              </button>
+            </div>
+            
+            <div class="p-2 border-b dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center gap-2 overflow-x-auto text-sm">
+               <button @click="navigateExplorer('')" class="hover:bg-slate-200 dark:hover:bg-slate-700 px-2 py-1 rounded dark:text-slate-300">🏠 Racine</button>
+               <span v-for="(part, i) in explorerPathParts" :key="i" class="flex items-center gap-2 text-slate-500">
+                  <span>/</span>
+                  <button @click="navigateExplorer(explorerPathParts.slice(0, i+1).join('/'))" class="hover:bg-slate-200 dark:hover:bg-slate-700 px-2 py-1 rounded dark:text-slate-300">{{ part }}</button>
+               </span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4">
+              <div v-if="explorerLoading" class="flex justify-center p-8"><span class="animate-spin text-2xl">⏳</span></div>
+              <div v-else-if="explorerError" class="text-red-500 bg-red-100 dark:bg-red-900/30 p-4 rounded">{{ explorerError }}</div>
+              <div v-else>
+                <div v-if="explorerFiles.length === 0" class="text-center text-slate-500 p-8">Dossier vide ou introuvable.</div>
+                <div v-else class="grid gap-1">
+                   <div v-if="explorerPath" @click="navigateUp" class="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded cursor-pointer select-none">
+                      <span class="text-xl">📁</span> <span class="dark:text-slate-300 font-medium">..</span>
+                   </div>
+                   <div v-for="f in sortedExplorerFiles" :key="f.name" @click="f.isDirectory ? navigateExplorer(explorerPath ? explorerPath + '/' + f.name : f.name) : null" 
+                        class="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded"
+                        :class="{'cursor-pointer select-none': f.isDirectory}">
+                      <div class="flex items-center gap-3 truncate">
+                         <span class="text-xl">{{ f.isDirectory ? '📁' : '📄' }}</span>
+                         <span class="truncate dark:text-slate-200" :class="{'font-bold text-blue-600 dark:text-blue-400': f.isDirectory}">{{ f.name }}</span>
+                      </div>
+                      <div class="flex items-center gap-4 text-xs text-slate-500 shrink-0">
+                         <span v-if="!f.isDirectory">{{ formatBytes(f.size) }}</span>
+                         <span>{{ formatDate(f.mtime) }}</span>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+
       <!-- Liste des Jobs -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div v-for="job in jobs" :key="job.id" class="bg-white dark:bg-slate-800/80 backdrop-blur rounded-2xl p-6 border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl relative overflow-hidden transition-all hover:border-slate-600">
@@ -404,8 +523,11 @@ const formatDate = (dateStr) => {
             <div class="flex items-start">
               <span class="w-24 text-slate-500 text-xs uppercase tracking-wider mt-0.5">Applications</span>
               <div class="flex flex-wrap gap-1 flex-1">
-                <span v-for="app in parseContainers(job.containers)" :key="app" class="px-2 py-0.5 bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 border dark:border-blue-800/50 rounded text-xs font-medium">
-                  {{ app }}
+                <span v-for="app in parseContainers(job.containers)" :key="app" 
+                      @click="openExplorer(job, app)" 
+                      title="Explorer les sauvegardes de cette application"
+                      class="px-2 py-0.5 bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 border dark:border-blue-800/50 rounded text-xs font-medium cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center gap-1">
+                  {{ app }} <span class="opacity-70 text-[10px]">🔍</span>
                 </span>
                 <span v-if="!job.containers || parseContainers(job.containers).length === 0" class="text-slate-500 italic">Aucune</span>
               </div>

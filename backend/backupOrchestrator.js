@@ -130,7 +130,7 @@ async function executeBackup(jobId) {
                     });
                 });
 
-                await docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
+                const runResult = await docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
                     HostConfig: {
                         AutoRemove: true,
                         Binds: [
@@ -139,6 +139,11 @@ async function executeBackup(jobId) {
                         ]
                     }
                 });
+                
+                const statusCode = runResult && runResult[0] ? runResult[0].StatusCode : 0;
+                if (statusCode !== 0) {
+                    throw new Error(`Le processus rsync a échoué (code de sortie : ${statusCode})`);
+                }
 
                 // 3. Redémarrer les conteneurs
                 for (const cInfo of appInfo.containers) {
@@ -188,6 +193,11 @@ async function executeBackup(jobId) {
 // -------------------------
 
 async function initializeScheduler() {
+    // 1. Nettoyer les sauvegardes restées "En cours" suite à un crash/redémarrage du serveur
+    await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE status = 'RUNNING'`, 
+        ['FAILED', 'Processus interrompu (le serveur a redémarré pendant la sauvegarde)']);
+
+    // 2. Planifier les jobs
     const jobs = await getQuery(`SELECT * FROM backup_jobs WHERE enabled = 1`);
     for (const job of jobs) {
         scheduleJob(job);

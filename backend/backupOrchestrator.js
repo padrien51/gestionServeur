@@ -310,11 +310,9 @@ async function exploreBackup(jobId, appName, subPath = '') {
 
     // Fallback: utiliser un conteneur docker éphémère (si on est sur Windows sans montage /hostOS fonctionnel par ex)
     const dest = `${job.dest_path}/${appName}`;
-    // Commande sh: lister avec stat (ou ls) et renvoyer en JSON (Alpine/Busybox)
-    // Busybox stat ne supporte pas toujours toutes les options, on va utiliser ls -l --time-style=iso
-    // ou plutôt un petit script shell pour parser
+    // Commande sh: lister avec ls et renvoyer en JSON
     const bashScript = `
-        cd /dest${safeSubPath} 2>/dev/null || exit 1
+        cd "/dest${safeSubPath}" 2>/dev/null || exit 1
         ls -lA --time-style=+%Y-%m-%dT%H:%M:%S | awk 'NR>1 {
             isDir = substr($1,1,1) == "d" ? "true" : "false"
             size = $5
@@ -326,31 +324,25 @@ async function exploreBackup(jobId, appName, subPath = '') {
     `;
 
     return new Promise((resolve, reject) => {
+        const { PassThrough } = require('stream');
+        const outStream = new PassThrough();
         let output = '';
-        docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
+        outStream.on('data', chunk => output += chunk.toString('utf8'));
+        
+        docker.run('alpine:latest', ['sh', '-c', bashScript], outStream, {
             HostConfig: {
                 AutoRemove: true,
                 Binds: [ `${dest}:/dest:ro` ]
             }
-        }, (err, data, container) => {
+        }, (err, data) => {
             if (err) return reject(err);
-        }).on('stream', stream => {
-            stream.on('data', chunk => output += chunk.toString('utf8'));
-            stream.on('end', () => {
-                try {
-                    // Nettoyer les logs docker (le stdout a un prefix 8 bytes)
-                    // Mais en mode run, il se peut qu'il n'y ait pas de muxer si on ne passe pas un write stream.
-                    // Pour éviter ça, on va nettoyer les caractères de contrôle au début de chaque ligne
-                    const lines = output.split('\n')
-                        .map(l => l.replace(/^[\\u0000-\\u0008\\u000B-\\u001F\\u007F]+/, '').trim())
-                        .filter(l => l.startsWith('{') && l.endsWith('}'));
-                    
-                    const files = lines.map(l => JSON.parse(l));
-                    resolve(files);
-                } catch(e) {
-                    reject(new Error("Erreur de lecture du dossier"));
-                }
-            });
+            try {
+                const lines = output.split('\n').filter(l => l.trim().startsWith('{'));
+                const files = lines.map(l => JSON.parse(l.trim()));
+                resolve(files);
+            } catch(e) {
+                reject(new Error("Erreur de lecture du dossier"));
+            }
         });
     });
 }

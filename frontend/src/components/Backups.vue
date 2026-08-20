@@ -203,9 +203,8 @@ const openExplorer = (job = null, app = null, inModal = true) => {
 
     explorerPath.value = '';
     
-    if (inModal) {
-        explorerModal.value = true;
-    }
+    // Au lieu d'ouvrir une modale, on bascule sur l'onglet
+    activeTab.value = 'explore';
     
     if (explorerJob.value && explorerApp.value) {
         loadExplorerFiles();
@@ -213,7 +212,7 @@ const openExplorer = (job = null, app = null, inModal = true) => {
 };
 
 const closeExplorer = () => {
-    explorerModal.value = false;
+    activeTab.value = 'jobs';
 };
 
 const loadExplorerFiles = async () => {
@@ -281,7 +280,7 @@ const confirmRestoreBackup = async (folderName) => {
 };
 
 watch(activeTab, (newTab) => {
-    if (newTab === 'explore') {
+    if (newTab === 'explore' && (!explorerJob.value || !explorerApp.value)) {
         openExplorer(null, null, false);
     }
 });

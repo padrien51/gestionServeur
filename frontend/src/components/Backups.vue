@@ -377,6 +377,14 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleString('fr-FR');
 };
 
+const formatBackupNameDate = (name) => {
+  const match = name.match(/^backup_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
+  if (match) {
+    return `${match[3]}/${match[2]}/${match[1]} ${match[4]}:${match[5]}:${match[6]}`;
+  }
+  return null;
+};
+
 const formatBytes = (bytes) => {
   if (!bytes) return '0 B';
   const k = 1024;
@@ -647,7 +655,7 @@ const formatBytes = (bytes) => {
                    </div>
                    
                    <span v-if="!f.isDirectory" class="font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">{{ formatBytes(f.size) }}</span>
-                   <span class="hidden sm:inline">{{ formatDate(f.mtime) }}</span>
+                   <span class="hidden sm:inline">{{ (f.isDirectory && formatBackupNameDate(f.name)) || formatDate(f.mtime) }}</span>
                 </div>
              </div>
           </div>

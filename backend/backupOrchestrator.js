@@ -27,6 +27,15 @@ const getQuery = (query, params = []) => {
     });
 };
 
+const ensureAlpine = () => {
+    return new Promise((resolve) => {
+        docker.pull('alpine:latest', (err, stream) => {
+            if (err) return resolve();
+            docker.modem.followProgress(stream, () => resolve());
+        });
+    });
+};
+
 // -------------------------
 // MOTEUR D'EXECUTION DOCKER
 // -------------------------
@@ -116,19 +125,7 @@ async function executeBackup(jobId) {
 
                 console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);
                 
-                // On tente de pull l'image, mais on ne bloque pas si on est hors ligne
-                await new Promise((resolve) => {
-                    docker.pull('alpine:latest', (err, stream) => {
-                        if (err) {
-                            console.warn("[Backup] Impossible de pull alpine:latest (mode hors ligne ?), utilisation du cache local.");
-                            return resolve();
-                        }
-                        docker.modem.followProgress(stream, (err, res) => {
-                            if (err) console.warn("[Backup] Erreur pendant le pull de alpine:latest, utilisation du cache local.");
-                            resolve(res);
-                        });
-                    });
-                });
+                await ensureAlpine();
 
                 const runResult = await docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
                     HostConfig: {
@@ -334,6 +331,7 @@ async function exploreBackup(jobId, appName, subPath = '') {
         done
     `;
 
+    await ensureAlpine();
     return new Promise((resolve, reject) => {
         const { PassThrough } = require('stream');
         const outStream = new PassThrough();
@@ -376,6 +374,7 @@ async function downloadBackup(jobId, appName, backupFolder, res) {
 
     const bashScript = `cd "/dest" && tar -czf - "${safeFolder}"`;
 
+    await ensureAlpine();
     return new Promise((resolve, reject) => {
         // En passant res (qui est un flux inscriptible), dockerode pipe stdout directement vers le client
         docker.run('alpine:latest', ['sh', '-c', bashScript], res, {
@@ -418,6 +417,7 @@ async function restoreBackup(jobId, appName, backupFolder) {
     
     console.log(`[Restauration Staging] Lancement de rsync pour ${appName} vers ${newFolderName}...`);
 
+    await ensureAlpine();
     await new Promise((resolve, reject) => {
         docker.run('alpine:latest', ['sh', '-c', bashScript], process.stdout, {
             HostConfig: {

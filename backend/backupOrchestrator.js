@@ -392,47 +392,40 @@ async function restoreBackup(jobId, appName, backupFolder) {
     const appInfo = allApps.find(a => a.name === appName);
     if (!appInfo) throw new Error("Application introuvable ou plus gérée.");
 
-    const { stopContainer, startContainer } = require('./dockerService');
-    
-    // 1. Arrêter les conteneurs
-    console.log(`[Restauration] Arrêt des conteneurs pour ${appName}...`);
-    for (const cInfo of appInfo.containers) {
-        if (cInfo.state === 'running') {
-            await stopContainer(cInfo.id);
-        }
-    }
+    // Option 3 : Restauration Parallèle (Staging)
+    // On ne supprime pas et on n'arrête pas les conteneurs.
+    // On crée un nouveau dossier à côté du dossier de l'application.
+    const parentDir = path.dirname(appInfo.working_dir);
+    const baseName = path.basename(appInfo.working_dir);
+    const newFolderName = `${baseName}_restored_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+    const newPath = path.join(parentDir, newFolderName);
 
-    // 2. Lancer la restauration via rsync
     const bashScript = `
         apk add --no-cache rsync && \\
-        rsync -a --delete "/backup/${safeFolder}/" "/source/"
+        mkdir -p "/source_parent/${newFolderName}" && \\
+        rsync -a "/backup/${safeFolder}/" "/source_parent/${newFolderName}/"
     `;
-    console.log(`[Restauration] Lancement de rsync pour ${appName} (depuis ${safeFolder})...`);
+    
+    console.log(`[Restauration Staging] Lancement de rsync pour ${appName} vers ${newFolderName}...`);
 
-    try {
-        await new Promise((resolve, reject) => {
-            docker.run('alpine:latest', ['sh', '-c', bashScript], process.stdout, {
-                HostConfig: {
-                    AutoRemove: true,
-                    Binds: [
-                        `${appInfo.working_dir}:/source`,
-                        `${dest}:/backup:ro`
-                    ]
-                }
-            }, (err, data) => {
-                if (err) return reject(err);
-                if (data && data.StatusCode !== 0) return reject(new Error("Erreur rsync (code " + data.StatusCode + ")"));
-                resolve();
-            });
+    await new Promise((resolve, reject) => {
+        docker.run('alpine:latest', ['sh', '-c', bashScript], process.stdout, {
+            HostConfig: {
+                AutoRemove: true,
+                Binds: [
+                    `${parentDir}:/source_parent`,
+                    `${dest}:/backup:ro`
+                ]
+            }
+        }, (err, data) => {
+            if (err) return reject(err);
+            if (data && data.StatusCode !== 0) return reject(new Error("Erreur rsync (code " + data.StatusCode + ")"));
+            resolve();
         });
-        console.log(`[Restauration] Succès de rsync pour ${appName}.`);
-    } finally {
-        // 3. Redémarrer les conteneurs
-        console.log(`[Restauration] Redémarrage des conteneurs pour ${appName}...`);
-        for (const cInfo of appInfo.containers) {
-            await startContainer(cInfo.id).catch(e => console.error("[Restauration] Erreur relance post-restauration:", e));
-        }
-    }
+    });
+    
+    console.log(`[Restauration Staging] Succès vers ${newPath}`);
+    return newPath;
 }
 
 module.exports = {

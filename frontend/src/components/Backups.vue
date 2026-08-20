@@ -254,8 +254,8 @@ const downloadBackupFolder = (folderName) => {
 
 const confirmRestoreBackup = async (folderName) => {
     const confirmed = await showConfirm(
-      "Restauration Destructrice",
-      `Vous êtes sur le point de restaurer les données de l'application "${explorerApp.value}" depuis la version "${folderName}".\n\nTOUTES LES DONNÉES ACTUELLES DE L'APPLICATION SERONT ÉCRASÉES ET REMPLACÉES PAR CETTE SAUVEGARDE.\n\nLes conteneurs vont s'arrêter pendant la restauration.\nVoulez-vous vraiment continuer ?`
+      "Restauration Parallèle (Staging)",
+      `Vous allez restaurer les données de la sauvegarde "${folderName}" dans un nouveau dossier parallèle.\n\nVos données actuelles ne seront PAS écrasées et l'application continuera de fonctionner normalement.\nVous pourrez ensuite basculer sur ce nouveau dossier manuellement si vous le souhaitez.\n\nVoulez-vous lancer la copie ?`
     );
     if (!confirmed) return;
     
@@ -270,7 +270,8 @@ const confirmRestoreBackup = async (folderName) => {
         });
         if (!res.ok) throw new Error(await res.text());
         
-        showAlert("Succès", "La sauvegarde a été restaurée et les conteneurs ont été redémarrés avec succès.");
+        const data = await res.json();
+        showAlert("Succès", `La sauvegarde a été restaurée avec succès dans le dossier :\n\n${data.restored_path}`);
     } catch (e) {
         explorerError.value = "Erreur lors de la restauration : " + (e.message || "Erreur inconnue");
         showAlert("Échec de la Restauration", explorerError.value);

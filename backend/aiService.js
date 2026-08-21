@@ -110,18 +110,29 @@ async function analyzeLog(logContext, containerName) {
                 console.warn("[AIOps] Impossible de vérifier les modèles Ollama avant l'analyse:", checkErr.message);
             }
 
-            const response = await fetch(`${settings.url}/api/generate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: settings.model,
-                    prompt: prompt,
-                    system: SYSTEM_PROMPT,
-                    stream: false,
-                    format: 'json',
-                    keep_alive: -1
-                })
-            });
+            let response;
+            let retries = 3;
+            while (retries > 0) {
+                try {
+                    response = await fetch(`${settings.url}/api/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: settings.model,
+                            prompt: prompt,
+                            system: SYSTEM_PROMPT,
+                            stream: false,
+                            format: 'json'
+                        })
+                    });
+                    break;
+                } catch (fetchErr) {
+                    retries--;
+                    if (retries === 0) throw fetchErr;
+                    console.log(`[AIOps] L'IA ne répond pas immédiatement (chargement du modèle en RAM ?). Nouvelle tentative dans 10s...`);
+                    await new Promise(r => setTimeout(r, 10000));
+                }
+            }
 
             if (!response.ok) {
                 throw new Error(`Erreur Ollama HTTP ${response.status}`);

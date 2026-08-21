@@ -116,10 +116,10 @@ async function executeBackup(jobId) {
                 
                 const bashScript = `
                     apk add --no-cache rsync && \\
-                    mkdir -p ${subDest}/backup_${dateStr} && \\
-                    rsync -avz --delete --link-dest=${subDest}/latest /source/ ${subDest}/backup_${dateStr}/ && \\
-                    cd ${subDest} && rm -f latest && ln -s backup_${dateStr} latest && \\
-                    ls -d backup_* | sort -r | tail -n +${retention + 1} | xargs -r rm -rf
+                    mkdir -p "$SUB_DEST/backup_$DATE_STR" && \\
+                    rsync -avz --delete --link-dest="$SUB_DEST/latest" /source/ "$SUB_DEST/backup_$DATE_STR/" && \\
+                    cd "$SUB_DEST" && rm -f latest && ln -s "backup_$DATE_STR" latest && \\
+                    ls -d backup_* | sort -r | tail -n +"$RETENTION_PLUS_ONE" | xargs -r rm -rf
                 `;
 
                 console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);
@@ -127,6 +127,11 @@ async function executeBackup(jobId) {
                 await ensureAlpine();
 
                 const runResult = await docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
+                    Env: [
+                        `SUB_DEST=/dest/${appName}`,
+                        `DATE_STR=${dateStr}`,
+                        `RETENTION_PLUS_ONE=${retention + 1}`
+                    ],
                     HostConfig: {
                         AutoRemove: true,
                         Binds: [
@@ -371,12 +376,15 @@ async function downloadBackup(jobId, appName, backupFolder, res) {
     res.setHeader('Content-Type', 'application/gzip');
     res.setHeader('Content-Disposition', `attachment; filename="${appName}_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}.tar.gz"`);
 
-    const bashScript = `cd "/dest" && tar -czf - "${safeFolder}"`;
+    const bashScript = `cd "/dest" && tar -czf - "$SAFE_FOLDER"`;
 
     await ensureAlpine();
     return new Promise((resolve, reject) => {
         // En passant res (qui est un flux inscriptible), dockerode pipe stdout directement vers le client
         docker.run('alpine:latest', ['sh', '-c', bashScript], res, {
+            Env: [
+                `SAFE_FOLDER=${safeFolder}`
+            ],
             HostConfig: {
                 AutoRemove: true,
                 Binds: [ `${dest}:/dest:ro` ]
@@ -410,8 +418,8 @@ async function restoreBackup(jobId, appName, backupFolder) {
 
     const bashScript = `
         apk add --no-cache rsync && \\
-        mkdir -p "/source_parent/${newFolderName}" && \\
-        rsync -a "/backup/${safeFolder}/" "/source_parent/${newFolderName}/"
+        mkdir -p "/source_parent/$NEW_FOLDER_NAME" && \\
+        rsync -a "/backup/$SAFE_FOLDER/" "/source_parent/$NEW_FOLDER_NAME/"
     `;
     
     console.log(`[Restauration Staging] Lancement de rsync pour ${appName} vers ${newFolderName}...`);
@@ -419,6 +427,10 @@ async function restoreBackup(jobId, appName, backupFolder) {
     await ensureAlpine();
     await new Promise((resolve, reject) => {
         docker.run('alpine:latest', ['sh', '-c', bashScript], process.stdout, {
+            Env: [
+                `NEW_FOLDER_NAME=${newFolderName}`,
+                `SAFE_FOLDER=${safeFolder}`
+            ],
             HostConfig: {
                 AutoRemove: true,
                 Binds: [

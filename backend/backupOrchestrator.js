@@ -532,11 +532,18 @@ async function importAndRestoreBackup(archivePath, targetPath) {
             const path = require('path');
             if (match) {
                 projectName = match[1].replace(/[^a-zA-Z0-9_-]/g, '');
-                // On s'assure d'utiliser les antislashs pour Windows dans la DB
-                workingDir = targetPath.replace(/\//g, '\\') + '\\' + match[1];
+                
+                // On s'adapte à l'OS cible : si targetPath commence par une lettre de lecteur ou contient des antislashs, on utilise \
+                const isWindows = /^[a-zA-Z]:/.test(targetPath) || targetPath.includes('\\');
+                if (isWindows) {
+                    workingDir = targetPath.replace(/\//g, '\\') + '\\' + match[1];
+                } else {
+                    workingDir = targetPath.replace(/\\/g, '/') + '/' + match[1];
+                }
             } else if (execOutput.includes('/dest/docker-compose.yml')) {
+                const isWindows = /^[a-zA-Z]:/.test(targetPath) || targetPath.includes('\\');
                 projectName = path.basename(targetPath.replace(/\\/g, '/')).replace(/[^a-zA-Z0-9_-]/g, '');
-                workingDir = targetPath.replace(/\//g, '\\');
+                workingDir = isWindows ? targetPath.replace(/\//g, '\\') : targetPath.replace(/\\/g, '/');
             }
             
             if (projectName && workingDir) {

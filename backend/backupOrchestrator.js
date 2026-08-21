@@ -118,9 +118,8 @@ async function executeBackup(jobId) {
                     apk add --no-cache rsync && \\
                     mkdir -p ${subDest}/backup_${dateStr} && \\
                     rsync -avz --delete --link-dest=${subDest}/latest /source/ ${subDest}/backup_${dateStr}/ && \\
-                    rm -f ${subDest}/latest && \\
-                    ln -s ${subDest}/backup_${dateStr} ${subDest}/latest && \\
-                    cd ${subDest} && ls -dt backup_* | tail -n +${retention + 1} | xargs -r rm -rf
+                    cd ${subDest} && rm -f latest && ln -s backup_${dateStr} latest && \\
+                    ls -d backup_* | sort -r | tail -n +${retention + 1} | xargs -r rm -rf
                 `;
 
                 console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);

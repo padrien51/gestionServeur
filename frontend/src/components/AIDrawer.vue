@@ -63,6 +63,16 @@ const retryInsight = async (id) => {
     }
 };
 
+const copiedId = ref(null);
+const copyLog = (id, text) => {
+    navigator.clipboard.writeText(text).then(() => {
+        copiedId.value = id;
+        setTimeout(() => {
+            if (copiedId.value === id) copiedId.value = null;
+        }, 2000);
+    }).catch(err => console.error("Erreur de copie: ", err));
+};
+
 const formatDate = (dateStr) => {
     if (!dateStr) return '';
     try {
@@ -118,8 +128,14 @@ const formatDate = (dateStr) => {
                     </div>
                 </div>
 
-                <div class="p-3 bg-slate-900 text-slate-300 text-xs font-mono overflow-x-auto max-h-48 overflow-y-auto">
-                    <pre>{{ insight.log_context }}</pre>
+                <div class="relative group p-3 bg-slate-900 text-slate-300 text-xs font-mono overflow-x-auto max-h-48 overflow-y-auto">
+                    <button @click="copyLog(insight.id, insight.log_context)" 
+                            class="absolute top-2 right-2 p-1.5 bg-slate-800 text-slate-400 hover:text-white rounded opacity-0 group-hover:opacity-100 transition-opacity" 
+                            :title="copiedId === insight.id ? 'Copié !' : 'Copier'">
+                        <svg v-if="copiedId === insight.id" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    </button>
+                    <pre class="pr-8">{{ insight.log_context }}</pre>
                 </div>
 
                 <div class="p-3 bg-white dark:bg-slate-800">

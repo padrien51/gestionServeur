@@ -479,55 +479,45 @@ async function importAndRestoreBackup(archivePath, targetPath) {
     console.log(`[Import Backup] Extraction de l'archive vers ${targetPath}`);
     await ensureAlpine();
     
-    // Détection de l'environnement hôte pour adapter les flags de permissions.
-    // Sur Docker Desktop (Windows/Mac), les chown échouent. Sur un serveur Linux, ils sont indispensables.
-    const info = await docker.info();
-    const isDockerDesktop = info.OperatingSystem.includes("Docker Desktop");
-    const tarFlags = isDockerDesktop ? "-xof" : "-xf";
-    const permFlags = isDockerDesktop ? "--no-same-permissions" : "";
-
-    // Le flux stdin est écrit dans /tmp/archive_tmp, puis tar -xf est utilisé. 
-    // tar (busybox) auto-détecte le gzip quand il lit depuis un fichier (mais pas depuis un flux stdin).
-    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar ${tarFlags} /tmp/archive_tmp ${permFlags} -C "/dest" 2>&1`;
-
+    // Au lieu de "cat > tmp && tar", on utilise l'API native putArchive de Docker.
+    // Docker se charge de l'extraction de manière fiable, en gérant automatiquement
+    // les bizarreries de permissions (Windows/Linux) sans planter.
+    
     const container = await docker.createContainer({
         Image: 'alpine:latest',
-        Cmd: ['sh', '-c', cmd],
-        OpenStdin: true,
-        StdinOnce: true,
+        Cmd: ['sleep', '3600'],
         HostConfig: {
             AutoRemove: true,
             Binds: [ `${targetPath}:/dest` ]
         }
     });
 
-    const stream = await container.attach({stream: true, stdin: true, stdout: true, stderr: true, hijack: true});
-    
-    // Gérer les erreurs sur le stream et lire la sortie pour le débogage
-    stream.on('error', (err) => console.log("[Import Backup] Stream Docker error ignorée :", err.message));
-    stream.on('data', (chunk) => console.log("[Import Backup Tar Output]:", chunk.toString()));
-    
     await container.start();
     
     const fs = require('fs');
+    const zlib = require('zlib');
+    
+    // putArchive attend un flux .tar brut. L'utilisateur upload un .tar.gz
+    // On décompresse le gz à la volée avant de l'envoyer au démon Docker.
     const fileStream = fs.createReadStream(archivePath);
+    const gunzip = zlib.createGunzip();
     
-    fileStream.on('error', (err) => console.log("[Import Backup] Erreur de lecture :", err.message));
+    const tarStream = fileStream.pipe(gunzip);
+
+    try {
+        await container.putArchive(tarStream, { path: '/dest' });
+        console.log(`[Import Backup] Extraction réussie via putArchive !`);
+    } catch (err) {
+        console.error(`[Import Backup] Erreur lors du putArchive :`, err);
+        try { await container.stop(); } catch(e) {}
+        throw err;
+    }
     
-    // On pipe en gérant les erreurs
-    fileStream.pipe(stream).on('error', (err) => {
-        console.log("[Import Backup] Broken pipe ignoré : le conteneur a probablement quitté plus tôt.");
-    });
+    try { await container.stop(); } catch(e) {}
     
-    return new Promise((resolve, reject) => {
-        container.wait((err, data) => {
-            fs.unlink(archivePath, () => {});
-            if (err) return reject(err);
-            if (data && data.StatusCode !== 0) return reject(new Error("Erreur d'extraction de l'archive (le format n'est peut-être pas valide). Code: " + data.StatusCode));
-            console.log(`[Import Backup] Succès vers ${targetPath}`);
-            resolve(true);
-        });
-    });
+    console.log(`[Import Backup] Nettoyage...`);
+    fs.unlink(archivePath, () => {});
+    return true;
 }
 
 module.exports = {

@@ -458,10 +458,18 @@ async function updateProjectFile(projectName, fileName, content) {
     
     const base64Content = Buffer.from(content).toString('base64');
     
+    // S'assurer que l'image alpine est bien téléchargée pour éviter l'erreur 404
+    await new Promise((resolve) => {
+        docker.pull('alpine:latest', (err, stream) => {
+            if (err) return resolve();
+            docker.modem.followProgress(stream, () => resolve());
+        });
+    });
+
     // Sécurité : Le contenu est passé via une variable d'environnement au lieu d'être
     // interpôlé dans la commande shell, ce qui évite toute injection de commande (RCE).
     const writerContainer = await docker.createContainer({
-        Image: 'alpine',
+        Image: 'alpine:latest',
         Cmd: ['sh', '-c', 'printf "%s" "$FILE_CONTENT" | base64 -d > "/host$FILE_PATH"'],
         Env: [
             `FILE_CONTENT=${base64Content}`,

@@ -372,33 +372,49 @@ async function downloadBackup(jobId, appName, backupFolder, res) {
     const safeFolder = path.normalize('/' + backupFolder).replace(/^(\.\.(\/|\\|$))+/, '').replace(/^\//, '');
     const dest = `${job.dest_path}/${appName}`;
     
-    // Configurer la réponse Express pour forcer le téléchargement en tar.gz
+    // Configuration de la réponse
     res.setHeader('Content-Type', 'application/gzip');
     res.setHeader('Content-Disposition', `attachment; filename="${appName}_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}.tar.gz"`);
 
-    const bashScript = `cd "/dest" && tar -czf - "$SAFE_FOLDER"`;
+    return new Promise(async (resolve, reject) => {
+        try {
+            await ensureAlpine();
+            // On crée un conteneur éphémère qui ne fait rien (sleep) juste pour monter le volume
+            const container = await docker.createContainer({
+                Image: 'alpine:latest',
+                Cmd: ['sleep', '3600'],
+                HostConfig: { AutoRemove: true, Binds: [`${dest}:/dest:ro`] }
+            });
+            
+            await container.start();
 
-    await ensureAlpine();
-    return new Promise((resolve, reject) => {
-        // En passant [res, process.stderr], dockerode démultiplexe le flux proprement.
-        // Sinon, Docker insère 8 octets de header réseau à chaque paquet, corrompant le fichier tar.gz !
-        docker.run('alpine:latest', ['sh', '-c', bashScript], [res, process.stderr], {
-            Env: [
-                `SAFE_FOLDER=${safeFolder}`
-            ],
-            HostConfig: {
-                AutoRemove: true,
-                Binds: [ `${dest}:/dest:ro` ]
-            }
-        }, (err, data) => {
-            if (err) {
-                if (!res.headersSent) res.status(500).json({ error: err.message });
-                else res.end();
-                return reject(err);
-            }
-            res.end(); // Indispensable pour clôturer le fichier téléchargé !
-            resolve();
-        });
+            // getArchive renvoie un flux brut (.tar) propre, sans multiplexage Docker
+            const archiveStream = await container.getArchive({ path: `/dest/${safeFolder}` });
+            
+            const zlib = require('zlib');
+            const gzip = zlib.createGzip();
+
+            archiveStream.on('error', (err) => reject(err));
+            gzip.on('error', (err) => reject(err));
+
+            // On compresse le .tar en .tar.gz à la volée et on l'envoie au client
+            archiveStream.pipe(gzip).pipe(res);
+
+            res.on('finish', async () => {
+                try { await container.stop(); } catch(e) {}
+                resolve();
+            });
+
+            res.on('error', async (err) => {
+                try { await container.stop(); } catch(e) {}
+                reject(err);
+            });
+
+        } catch (err) {
+            if (!res.headersSent) res.status(500).json({ error: err.message });
+            else res.end();
+            reject(err);
+        }
     });
 }
 

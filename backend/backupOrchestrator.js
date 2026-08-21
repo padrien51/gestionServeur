@@ -532,10 +532,11 @@ async function importAndRestoreBackup(archivePath, targetPath) {
             const path = require('path');
             if (match) {
                 projectName = match[1].replace(/[^a-zA-Z0-9_-]/g, '');
-                workingDir = path.posix.join(targetPath.replace(/\\/g, '/'), match[1]);
+                // On s'assure d'utiliser les antislashs pour Windows dans la DB
+                workingDir = targetPath.replace(/\//g, '\\') + '\\' + match[1];
             } else if (execOutput.includes('/dest/docker-compose.yml')) {
                 projectName = path.basename(targetPath.replace(/\\/g, '/')).replace(/[^a-zA-Z0-9_-]/g, '');
-                workingDir = targetPath.replace(/\\/g, '/');
+                workingDir = targetPath.replace(/\//g, '\\');
             }
             
             if (projectName && workingDir) {

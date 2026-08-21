@@ -162,7 +162,8 @@ async function getApplications() {
 // Translate Windows path to Docker Desktop Linux VM path
 function translateToVMPath(hostPath) {
     if (!hostPath) return hostPath;
-    if (/^[a-zA-Z]:\\/.test(hostPath)) {
+    // Supporte C:\ et C:/
+    if (/^[a-zA-Z]:[\\/]/.test(hostPath)) {
         const drive = hostPath.charAt(0).toLowerCase();
         return `/run/desktop/mnt/host/${drive}/` + hostPath.substring(3).replace(/\\/g, '/');
     }
@@ -266,7 +267,7 @@ async function runComposeAction(projectName, action) {
 
     const container = await docker.createContainer({
         Image: containerImage, 
-        Cmd: ['sh', '-c', `${setupAuthCmd}apk add --no-cache docker-cli docker-cli-compose > /dev/null 2>&1 && ${cmdArgs.join(' ')}`],
+        Cmd: ['sh', '-c', `${setupAuthCmd}apk add --no-cache docker-cli docker-cli-compose > /dev/null 2>&1 && exec "$@"`, 'sh', ...cmdArgs],
         Env: dockerConfigBase64 ? [`DOCKER_AUTH_B64=${dockerConfigBase64}`] : [],
         HostConfig: {
             Binds: [

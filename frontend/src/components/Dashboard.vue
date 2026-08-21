@@ -62,30 +62,37 @@ const groupedApps = computed(() => {
   
   // 1. Initialiser avec tous les projets connus (même ceux arrêtés)
   for (const app of knownProjects.value) {
-    if (!query || app.name.toLowerCase().includes(query)) {
-      map[app.name] = { name: app.name, containers: [] };
+    if (app && app.name) {
+      if (!query || app.name.toLowerCase().includes(query)) {
+        map[app.name] = { name: app.name, containers: [] };
+      }
     }
   }
 
   // 2. Ajouter les conteneurs actifs
   for (const c of containers.value) {
-    const projectMatch = c.project.toLowerCase().includes(query);
-    const containerMatch = c.name.toLowerCase().includes(query);
-    
-    if (!query || projectMatch || containerMatch) {
-      if (!map[c.project]) {
-        map[c.project] = { name: c.project, containers: [] };
+    if (c && c.project && c.name) {
+      const projectMatch = c.project.toLowerCase().includes(query);
+      const containerMatch = c.name.toLowerCase().includes(query);
+      
+      if (!query || projectMatch || containerMatch) {
+        if (!map[c.project]) {
+          map[c.project] = { name: c.project, containers: [] };
+        }
+        map[c.project].containers.push(c);
       }
-      map[c.project].containers.push(c);
     }
   }
-  return Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
+  return Object.values(map).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
 const filteredContainers = computed(() => {
     if (!searchQuery.value) return containers.value;
-    const q = searchQuery.value.toLowerCase().trim();
-    return containers.value.filter(c => c.name.toLowerCase().includes(q) || c.project.toLowerCase().includes(q));
+    const q = searchQuery.value.toLowerCase();
+    return containers.value.filter(c => 
+      (c.name && c.name.toLowerCase().includes(q)) || 
+      (c.project && c.project.toLowerCase().includes(q))
+    );
 });
 
 const API_BASE = '/api'; // Chemin relatif pour fonctionner avec le backend Express

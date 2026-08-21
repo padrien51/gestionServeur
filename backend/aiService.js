@@ -111,7 +111,7 @@ async function analyzeLog(logContext, containerName) {
             }
 
             let response;
-            let retries = 3;
+            let retries = 6;
             while (retries > 0) {
                 try {
                     response = await fetch(`${settings.url}/api/generate`, {

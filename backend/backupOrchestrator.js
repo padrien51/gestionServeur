@@ -453,29 +453,9 @@ async function importAndRestoreBackup(archivePath, targetPath) {
     console.log(`[Import Backup] Extraction de l'archive vers ${targetPath}`);
     await ensureAlpine();
     
-    // Create container that expects a tar stream on stdin. 
-    // On utilise tar -xf pour qu'il puisse gérer un .tar normal, 
-    // ou zcat si c'est un .tar.gz (on pipe l'entrée dans un script sh qui vérifie le format).
-    const bashScript = `
-        mkdir -p "/dest" && \\
-        file_head=$(head -c 2 -) && \\
-        if [ "$file_head" = "\\037\\213" ]; then
-            # C'est un gzip, on relance en passant tout le flux à zcat puis tar
-            # Mais head consomme les 2 premiers octets, ce qui corrompt le flux stdin.
-            # En fait, alpine tar avec l'option -z gère le gzip. S'il ne l'est pas, tar -xf suffit.
-            # Pour éviter de corrompre, on utilise simplement tar -xzf ou tar -xf selon l'extension,
-            # ou on essaie tar -xzf, et si ça échoue on essaie tar -xf.
-        fi
-        # Le plus simple sous Alpine pour ignorer l'erreur gzip sur un .tar non compressé :
-        # busybox tar détecte parfois automatiquement, sinon on laisse le client s'assurer du format.
-    `;
-    
-    // Simplification : on laisse l'utilisateur choisir ou on utilise simplement tar -xf 
-    // Mais busybox tar ne gère pas l'autodétection de gzip si on ne met pas -z.
-    // L'outil 'tar' sur Alpine est busybox, mais on peut installer le vrai tar.
-    
-    // Remplaçons par une commande robuste qui installe 'tar' GNU (qui auto-détecte)
-    const cmd = `apk add --no-cache tar && mkdir -p "/dest" && tar -xf - -C "/dest"`;
+    // Le flux stdin est écrit dans /tmp/archive_tmp, puis tar -xf est utilisé. 
+    // tar (busybox) auto-détecte le gzip quand il lit depuis un fichier (mais pas depuis un flux stdin).
+    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar -xf /tmp/archive_tmp -C "/dest"`;
 
     const container = await docker.createContainer({
         Image: 'alpine:latest',

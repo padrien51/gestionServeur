@@ -251,7 +251,16 @@ async function runComposeAction(projectName, action) {
     const os = require('os');
     const myContainerId = os.hostname();
     const myContainer = containersList.find(c => c.Id.startsWith(myContainerId));
-    const containerImage = myContainer ? myContainer.Image : 'alpine';
+    let containerImage = myContainer ? myContainer.Image : 'alpine:latest';
+
+    if (containerImage === 'alpine:latest') {
+        await new Promise((resolve) => {
+            docker.pull('alpine:latest', (err, stream) => {
+                if (err) return resolve();
+                docker.modem.followProgress(stream, () => resolve());
+            });
+        });
+    }
 
     const setupAuthCmd = dockerConfigBase64 ? 'mkdir -p ~/.docker && printf "%s" "$DOCKER_AUTH_B64" | base64 -d > ~/.docker/config.json && ' : '';
 

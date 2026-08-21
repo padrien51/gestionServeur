@@ -391,7 +391,12 @@ async function downloadBackup(jobId, appName, backupFolder, res) {
                 Binds: [ `${dest}:/dest:ro` ]
             }
         }, (err, data) => {
-            if (err) return reject(err);
+            if (err) {
+                if (!res.headersSent) res.status(500).json({ error: err.message });
+                else res.end();
+                return reject(err);
+            }
+            res.end(); // Indispensable pour clôturer le fichier téléchargé !
             resolve();
         });
     });

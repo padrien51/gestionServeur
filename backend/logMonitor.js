@@ -67,14 +67,26 @@ function processBufferAndAnalyze(containerId) {
     monitor.buffer = [];
 
     getAISettings().then(async (settings) => {
+        let diagnosis = "Analyse IA désactivée.";
+        let solution = "Veuillez consulter les logs bruts ci-dessous.";
+
         if (settings.enabled === 'true') {
             console.log(`[AIOps] Analyse en cours pour une erreur dans ${cName}...`);
-            const insight = await analyzeLog(contextLines, cName);
-            if (insight) {
-                await saveInsight(pName, cName, contextLines, insight.diagnosis, insight.solution);
+            try {
+                const insight = await analyzeLog(contextLines, cName);
+                if (insight) {
+                    diagnosis = insight.diagnosis;
+                    solution = insight.solution;
+                }
+            } catch (e) {
+                console.error("[AIOps] Erreur durant l'analyse:", e.message);
+                diagnosis = "Échec de l'analyse IA (" + e.message + ")";
+                solution = "L'IA est actuellement injoignable. Veuillez consulter les logs bruts ci-dessous pour identifier le problème.";
             }
         }
-    }).catch(e => console.error("[AIOps] Erreur durant l'analyse:", e.message))
+        
+        await saveInsight(pName, cName, contextLines, diagnosis, solution);
+    }).catch(e => console.error("[AIOps] Erreur système inattendue:", e.message))
       .finally(() => {
           if (containerMonitors[containerId]) {
               containerMonitors[containerId].isAnalyzing = false;

@@ -89,7 +89,7 @@ const formatDate = (dateStr) => {
                                 {{ insight.diagnosis }}
                             </div>
                         </div>
-                        <span class="text-[10px] text-rose-500/70 font-medium bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 rounded-full">{{ formatDate(insight.created_at) }}</span>
+                        <span class="text-[10px] text-rose-500/70 font-medium bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 rounded-full whitespace-nowrap ml-2">{{ formatDate(insight.created_at) }}</span>
                     </div>
                 </div>
 

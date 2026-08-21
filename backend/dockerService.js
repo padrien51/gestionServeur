@@ -274,7 +274,11 @@ async function runComposeAction(projectName, action) {
     await container.remove();
 
     if (status.StatusCode !== 0) {
-        throw new Error(`La commande docker compose a échoué (Code ${status.StatusCode})`);
+        if (action === 'kill') {
+            console.warn(`[Attention] La commande docker compose a échoué (Code ${status.StatusCode}) pour ${projectName}, mais l'action est 'kill', donc on force la suppression.`);
+        } else {
+            throw new Error(`La commande docker compose a échoué (Code ${status.StatusCode})`);
+        }
     }
 
     // Si c'est un kill, on doit ensuite supprimer le dossier de l'hôte
@@ -298,9 +302,17 @@ async function runComposeAction(projectName, action) {
         // Délai de 2 secondes pour s'assurer que Docker Desktop a bien relâché les verrous Windows
         await new Promise(resolve => setTimeout(resolve, 2000));
         
+        // S'assurer que l'image alpine est bien téléchargée pour éviter "404 no such image"
+        await new Promise((resolve) => {
+            docker.pull('alpine:latest', (err, stream) => {
+                if (err) return resolve();
+                docker.modem.followProgress(stream, () => resolve());
+            });
+        });
+        
         // On lance un micro-conteneur éphémère alpine avec les droits root pour supprimer le dossier sur l'hôte
         const rmContainer = await docker.createContainer({
-            Image: 'alpine',
+            Image: 'alpine:latest',
             Cmd: ['sh', '-c', 'rm -rf "/host$TARGET_PATH"'],
             Env: [`TARGET_PATH=${normalizedPath}`],
             HostConfig: {

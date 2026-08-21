@@ -1,5 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onErrorCaptured } from 'vue';
+const globalError = ref(null);
+onErrorCaptured((err, instance, info) => {
+  globalError.value = `CRITICAL APP ERROR: ${err.message}\nInfo: ${info}\nStack: ${err.stack}`;
+  return false;
+});
 import Dashboard from './components/Dashboard.vue';
 import Updates from './components/Updates.vue';
 import Backups from './components/Backups.vue';
@@ -174,8 +179,11 @@ const logout = () => {
       </div>
     </header>
 
-    <!-- Contenu Principal -->
+      <!-- Contenu Principal -->
       <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 flex-grow w-full h-full relative">
+        <div v-if="globalError" class="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-700 whitespace-pre-wrap mb-4 z-50 relative">
+          {{ globalError }}
+        </div>
         <transition name="fade" mode="out-in">
         <Dashboard v-if="currentTab === 'dashboard'" />
         <Networks v-if="currentTab === 'networks'" />

@@ -416,10 +416,14 @@ async function restoreBackup(jobId, appName, backupFolder) {
     const newFolderName = `${baseName}_restored_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}`;
     const newPath = path.join(parentDir, newFolderName);
 
+    const info = await docker.info();
+    const isDockerDesktop = info.OperatingSystem.includes("Docker Desktop");
+    const rsyncFlags = isDockerDesktop ? "-rltD" : "-a"; // -a = -rlptgoD (g et o pour group et owner)
+
     const bashScript = `
         apk add --no-cache rsync && \\
         mkdir -p "/source_parent/$NEW_FOLDER_NAME" && \\
-        rsync -a "/backup/$SAFE_FOLDER/" "/source_parent/$NEW_FOLDER_NAME/"
+        rsync ${rsyncFlags} "/backup/$SAFE_FOLDER/" "/source_parent/$NEW_FOLDER_NAME/"
     `;
     
     console.log(`[Restauration Staging] Lancement de rsync pour ${appName} vers ${newFolderName}...`);
@@ -453,10 +457,16 @@ async function importAndRestoreBackup(archivePath, targetPath) {
     console.log(`[Import Backup] Extraction de l'archive vers ${targetPath}`);
     await ensureAlpine();
     
+    // Détection de l'environnement hôte pour adapter les flags de permissions.
+    // Sur Docker Desktop (Windows/Mac), les chown échouent. Sur un serveur Linux, ils sont indispensables.
+    const info = await docker.info();
+    const isDockerDesktop = info.OperatingSystem.includes("Docker Desktop");
+    const tarFlags = isDockerDesktop ? "-xof" : "-xf";
+    const permFlags = isDockerDesktop ? "--no-same-permissions" : "";
+
     // Le flux stdin est écrit dans /tmp/archive_tmp, puis tar -xf est utilisé. 
     // tar (busybox) auto-détecte le gzip quand il lit depuis un fichier (mais pas depuis un flux stdin).
-    // Sur Windows, la restauration des permissions et propriétaires échoue souvent (Code 1), on ajoute donc -o et --no-same-permissions.
-    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar -xof /tmp/archive_tmp --no-same-permissions -C "/dest"`;
+    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar ${tarFlags} /tmp/archive_tmp ${permFlags} -C "/dest"`;
 
     const container = await docker.createContainer({
         Image: 'alpine:latest',

@@ -350,19 +350,57 @@ const triggerJob = async (id) => {
     "Lancement manuel",
     "Lancer cette sauvegarde immédiatement ? Les applications associées seront arrêtées puis redémarrées."
   );
-  if (!isConfirmed) return;
-  
-  try {
-    await fetch(`${API_BASE}/backups/${id}/trigger`, {
-      method: 'POST',
-      headers: getFetchOptions().headers
-    });
-    showAlert("Succès", "Sauvegarde lancée en arrière-plan ! Vérifiez les logs d'ici quelques minutes.");
-    activeTab.value = 'logs';
-    fetchLogs();
-  } catch (e) {
-    showAlert("Erreur", e.message);
-  }
+    if (!isConfirmed) return;
+    
+    try {
+        await fetch(`${API_BASE}/backups/${id}/trigger`, {
+            method: 'POST',
+            headers: getFetchOptions().headers
+        });
+        showAlert("Succès", "Sauvegarde lancée en arrière-plan ! Vérifiez les logs d'ici quelques minutes.");
+        activeTab.value = 'logs';
+        fetchLogs();
+    } catch (e) {
+        showAlert("Erreur", e.message);
+    }
+};
+
+// --- IMPORT ARCHIVE EXTERNE ---
+const showImportModal = ref(false);
+const importFile = ref(null);
+const importTargetPath = ref('');
+const importLoading = ref(false);
+
+const handleImportFileChange = (e) => {
+    importFile.value = e.target.files[0];
+};
+
+const submitImportArchive = async () => {
+    if (!importFile.value || !importTargetPath.value) return;
+    importLoading.value = true;
+    
+    const formData = new FormData();
+    formData.append('archive', importFile.value);
+    formData.append('targetPath', importTargetPath.value);
+
+    try {
+        const token = localStorage.getItem('auth_token') || '';
+        const res = await fetch(`${API_BASE}/backups/import`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }, // NO Content-Type, browser sets it automatically with boundary
+            body: formData
+        });
+        if (!res.ok) throw new Error(await res.text());
+        
+        showAlert("Succès", "L'archive a été restaurée avec succès !");
+        showImportModal.value = false;
+        importFile.value = null;
+        importTargetPath.value = '';
+    } catch (e) {
+        showAlert("Erreur", "Erreur lors de la restauration : " + e.message);
+    } finally {
+        importLoading.value = false;
+    }
 };
 
 onMounted(() => {
@@ -429,7 +467,10 @@ const formatBytes = (bytes) => {
 
     <!-- VUE DES JOBS -->
     <div v-if="activeTab === 'jobs'">
-      <div class="flex justify-end mb-4">
+      <div class="flex justify-end mb-4 space-x-3">
+        <button @click="showImportModal = true" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 shadow-md rounded-lg text-sm font-bold transition-all active:scale-95">
+          Restaurer une archive externe
+        </button>
         <button @click="openForm()" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 rounded-lg text-sm font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/50 transition-all active:scale-95">
           + Nouvelle Sauvegarde
         </button>
@@ -696,6 +737,37 @@ const formatBytes = (bytes) => {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal Import -->
+  <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+      <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+          <span class="mr-2">📦</span> Restaurer une archive
+        </h3>
+      </div>
+      <div class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fichier archive (.tar.gz)</label>
+          <input type="file" accept=".tar.gz" @change="handleImportFileChange" class="w-full text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-slate-700 dark:file:text-slate-200 hover:file:bg-blue-100 transition-all" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Chemin de destination complet sur le serveur</label>
+          <input type="text" v-model="importTargetPath" placeholder="Ex: /home/user/Applications/mon_app" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md p-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <p class="text-xs text-slate-500 mt-1">Le dossier cible sera créé s'il n'existe pas. L'archive y sera extraite.</p>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2 border-t border-slate-200 dark:border-slate-700">
+        <button @click="showImportModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors">
+          Annuler
+        </button>
+        <button @click="submitImportArchive" :disabled="importLoading || !importFile || !importTargetPath" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 flex items-center">
+          <svg v-if="importLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          Restaurer
+        </button>
       </div>
     </div>
   </div>

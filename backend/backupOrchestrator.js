@@ -449,6 +449,44 @@ async function restoreBackup(jobId, appName, backupFolder) {
     return newPath;
 }
 
+async function importAndRestoreBackup(archivePath, targetPath) {
+    console.log(`[Import Backup] Extraction de l'archive vers ${targetPath}`);
+    await ensureAlpine();
+    
+    // Create container that expects a tar stream on stdin
+    const container = await docker.createContainer({
+        Image: 'alpine:latest',
+        Cmd: ['sh', '-c', `mkdir -p "/dest" && tar -xzf - -C "/dest"`],
+        OpenStdin: true,
+        StdinOnce: true,
+        HostConfig: {
+            AutoRemove: true,
+            Binds: [ `${targetPath}:/dest` ]
+        }
+    });
+
+    const stream = await container.attach({stream: true, stdin: true, stdout: true, stderr: true, hijack: true});
+    
+    await container.start();
+    
+    // Pipe the uploaded file to the container's stdin
+    const fs = require('fs');
+    const fileStream = fs.createReadStream(archivePath);
+    fileStream.pipe(stream);
+    
+    return new Promise((resolve, reject) => {
+        container.wait((err, data) => {
+            // Supprimer le fichier temporaire
+            fs.unlink(archivePath, () => {});
+            
+            if (err) return reject(err);
+            if (data && data.StatusCode !== 0) return reject(new Error("Erreur d'extraction tar (code " + data.StatusCode + ")"));
+            console.log(`[Import Backup] Succès vers ${targetPath}`);
+            resolve(true);
+        });
+    });
+}
+
 module.exports = {
     initializeScheduler,
     getJobs,
@@ -459,5 +497,6 @@ module.exports = {
     getLogs,
     exploreBackup,
     downloadBackup,
-    restoreBackup
+    restoreBackup,
+    importAndRestoreBackup
 };

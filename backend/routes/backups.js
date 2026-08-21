@@ -82,4 +82,21 @@ router.post('/:id/restore/:app/:folder', async (req, res) => {
     }
 });
 
+const multer = require('multer');
+const upload = multer({ dest: '/tmp/backups' });
+
+router.post('/import', upload.single('archive'), async (req, res) => {
+    try {
+        if (!req.file) throw new Error("Aucun fichier n'a été uploadé.");
+        const targetPath = req.body.targetPath;
+        if (!targetPath) throw new Error("Le chemin de destination est manquant.");
+        
+        await backupOrchestrator.importAndRestoreBackup(req.file.path, targetPath);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("[Backup] Erreur import manuel:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

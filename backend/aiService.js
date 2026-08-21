@@ -61,6 +61,28 @@ async function analyzeLog(logContext, containerName) {
                     // Attente que le service Ollama soit prêt
                     await new Promise(resolve => setTimeout(resolve, 8000));
                 }
+
+                // Contournement du DNS Docker : on récupère l'IP réelle du conteneur
+                const inspectData = await ollamaContainer.inspect();
+                const networks = inspectData.NetworkSettings.Networks;
+                let ipAddress = null;
+                for (const net of Object.values(networks)) {
+                    if (net.IPAddress) {
+                        ipAddress = net.IPAddress;
+                        break;
+                    }
+                }
+                
+                if (ipAddress) {
+                    try {
+                        const parsedUrl = new URL(settings.url);
+                        parsedUrl.hostname = ipAddress;
+                        settings.url = parsedUrl.toString();
+                        if (settings.url.endsWith('/')) settings.url = settings.url.slice(0, -1);
+                    } catch (e) {
+                        // Ignore si settings.url est malformé
+                    }
+                }
             }
         } catch (e) {
             console.warn("[AIOps] Avertissement: Impossible d'interagir avec le conteneur Ollama via l'API Docker:", e.message);

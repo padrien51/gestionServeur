@@ -507,6 +507,53 @@ async function importAndRestoreBackup(archivePath, targetPath) {
     try {
         await container.putArchive(tarStream, { path: '/dest' });
         console.log(`[Import Backup] Extraction réussie via putArchive !`);
+        
+        // ---------------------------------------------------------
+        // NOUVEAUTÉ : Enregistrer l'app dans la DB pour le Dashboard
+        // ---------------------------------------------------------
+        try {
+            const exec = await container.exec({
+                Cmd: ['find', '/dest', '-maxdepth', '2', '-name', 'docker-compose.yml'],
+                AttachStdout: true
+            });
+            const execStream = await exec.start();
+            let execOutput = '';
+            execStream.on('data', chunk => execOutput += chunk.toString());
+            
+            await new Promise(r => {
+                execStream.on('end', r);
+                setTimeout(r, 2000);
+            });
+            
+            const match = execOutput.match(/\/dest\/([^\/]+)\/docker-compose\.yml/);
+            let projectName = null;
+            let workingDir = null;
+            
+            const path = require('path');
+            if (match) {
+                projectName = match[1].replace(/[^a-zA-Z0-9_-]/g, '');
+                workingDir = path.posix.join(targetPath.replace(/\\/g, '/'), match[1]);
+            } else if (execOutput.includes('/dest/docker-compose.yml')) {
+                projectName = path.basename(targetPath.replace(/\\/g, '/')).replace(/[^a-zA-Z0-9_-]/g, '');
+                workingDir = targetPath.replace(/\\/g, '/');
+            }
+            
+            if (projectName && workingDir) {
+                const { runQuery } = require('./db');
+                await runQuery(
+                    `INSERT INTO compose_projects (name, working_dir, last_seen)
+                     VALUES (?, ?, CURRENT_TIMESTAMP)
+                     ON CONFLICT(name) DO UPDATE SET 
+                        working_dir=excluded.working_dir,
+                        last_seen=CURRENT_TIMESTAMP`,
+                    [projectName, workingDir]
+                );
+                console.log(`[Import Backup] App ajoutée au Dashboard : ${projectName} (${workingDir})`);
+            }
+        } catch (e) {
+            console.error("[Import Backup] Erreur lors de l'ajout au dashboard :", e.message);
+        }
+
     } catch (err) {
         console.error(`[Import Backup] Erreur lors du putArchive :`, err);
         try { await container.stop(); } catch(e) {}

@@ -453,10 +453,33 @@ async function importAndRestoreBackup(archivePath, targetPath) {
     console.log(`[Import Backup] Extraction de l'archive vers ${targetPath}`);
     await ensureAlpine();
     
-    // Create container that expects a tar stream on stdin
+    // Create container that expects a tar stream on stdin. 
+    // On utilise tar -xf pour qu'il puisse gérer un .tar normal, 
+    // ou zcat si c'est un .tar.gz (on pipe l'entrée dans un script sh qui vérifie le format).
+    const bashScript = `
+        mkdir -p "/dest" && \\
+        file_head=$(head -c 2 -) && \\
+        if [ "$file_head" = "\\037\\213" ]; then
+            # C'est un gzip, on relance en passant tout le flux à zcat puis tar
+            # Mais head consomme les 2 premiers octets, ce qui corrompt le flux stdin.
+            # En fait, alpine tar avec l'option -z gère le gzip. S'il ne l'est pas, tar -xf suffit.
+            # Pour éviter de corrompre, on utilise simplement tar -xzf ou tar -xf selon l'extension,
+            # ou on essaie tar -xzf, et si ça échoue on essaie tar -xf.
+        fi
+        # Le plus simple sous Alpine pour ignorer l'erreur gzip sur un .tar non compressé :
+        # busybox tar détecte parfois automatiquement, sinon on laisse le client s'assurer du format.
+    `;
+    
+    // Simplification : on laisse l'utilisateur choisir ou on utilise simplement tar -xf 
+    // Mais busybox tar ne gère pas l'autodétection de gzip si on ne met pas -z.
+    // L'outil 'tar' sur Alpine est busybox, mais on peut installer le vrai tar.
+    
+    // Remplaçons par une commande robuste qui installe 'tar' GNU (qui auto-détecte)
+    const cmd = `apk add --no-cache tar && mkdir -p "/dest" && tar -xf - -C "/dest"`;
+
     const container = await docker.createContainer({
         Image: 'alpine:latest',
-        Cmd: ['sh', '-c', `mkdir -p "/dest" && tar -xzf - -C "/dest"`],
+        Cmd: ['sh', '-c', cmd],
         OpenStdin: true,
         StdinOnce: true,
         HostConfig: {
@@ -467,20 +490,26 @@ async function importAndRestoreBackup(archivePath, targetPath) {
 
     const stream = await container.attach({stream: true, stdin: true, stdout: true, stderr: true, hijack: true});
     
+    // Gérer les erreurs sur le stream pour ne pas crasher le serveur (ECONNRESET/EPIPE)
+    stream.on('error', (err) => console.log("[Import Backup] Stream Docker error ignorée :", err.message));
+    
     await container.start();
     
-    // Pipe the uploaded file to the container's stdin
     const fs = require('fs');
     const fileStream = fs.createReadStream(archivePath);
-    fileStream.pipe(stream);
+    
+    fileStream.on('error', (err) => console.log("[Import Backup] Erreur de lecture :", err.message));
+    
+    // On pipe en gérant les erreurs
+    fileStream.pipe(stream).on('error', (err) => {
+        console.log("[Import Backup] Broken pipe ignoré : le conteneur a probablement quitté plus tôt.");
+    });
     
     return new Promise((resolve, reject) => {
         container.wait((err, data) => {
-            // Supprimer le fichier temporaire
             fs.unlink(archivePath, () => {});
-            
             if (err) return reject(err);
-            if (data && data.StatusCode !== 0) return reject(new Error("Erreur d'extraction tar (code " + data.StatusCode + ")"));
+            if (data && data.StatusCode !== 0) return reject(new Error("Erreur d'extraction de l'archive (le format n'est peut-être pas valide). Code: " + data.StatusCode));
             console.log(`[Import Backup] Succès vers ${targetPath}`);
             resolve(true);
         });

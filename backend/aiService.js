@@ -118,7 +118,8 @@ async function analyzeLog(logContext, containerName) {
                     prompt: prompt,
                     system: SYSTEM_PROMPT,
                     stream: false,
-                    format: 'json'
+                    format: 'json',
+                    keep_alive: -1
                 })
             });
 

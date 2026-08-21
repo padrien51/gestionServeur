@@ -37,6 +37,19 @@ const ignoreInsight = async (id) => {
         console.error(e);
     }
 };
+
+const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr.replace(' ', 'T') + 'Z');
+        return d.toLocaleString('fr-FR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    } catch(e) {
+        return dateStr;
+    }
+};
 </script>
 
 <template>
@@ -76,6 +89,7 @@ const ignoreInsight = async (id) => {
                                 {{ insight.diagnosis }}
                             </div>
                         </div>
+                        <span class="text-[10px] text-rose-500/70 font-medium bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 rounded-full">{{ formatDate(insight.created_at) }}</span>
                     </div>
                 </div>
 

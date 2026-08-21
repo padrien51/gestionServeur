@@ -31,6 +31,14 @@ async function applyDockerUpdate(containerName) {
     console.log(`Lancement de Watchtower pour mettre à jour : ${containerName}`);
     
     try {
+        // S'assurer que l'image Watchtower est présente pour éviter l'erreur 404
+        await new Promise((resolve) => {
+            docker.pull('containrrr/watchtower:latest', (err, stream) => {
+                if (err) return resolve();
+                docker.modem.followProgress(stream, () => resolve());
+            });
+        });
+
         // Lance watchtower en tant que conteneur éphémère
         const data = await docker.run('containrrr/watchtower:latest', [containerName, '--run-once'], process.stdout, {
             Env: [

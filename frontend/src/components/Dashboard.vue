@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed, onErrorCaptured } from 'vue';
 import ContainerCard from './ContainerCard.vue';
 import WebTerminal from './WebTerminal.vue';
 import LiveLogs from './LiveLogs.vue';
@@ -14,6 +14,12 @@ const metrics = ref({ cpuLoad: 0, memUsed: 0, memTotal: 1, diskUsed: 0, diskTota
 const containers = ref([]);
 const loading = ref(true);
 const error = ref(null);
+
+onErrorCaptured((err, instance, info) => {
+  error.value = `CRITICAL ERROR: ${err.message}\nInfo: ${info}\nStack: ${err.stack}`;
+  loading.value = false;
+  return false; // Prevent error from propagating and unmounting the whole app
+});
 const aiInsights = ref([]);
 const isAIDrawerOpen = ref(false);
 
@@ -51,7 +57,6 @@ const toggleViewMode = (mode) => {
   localStorage.setItem('dashboard_view_mode', mode);
 };
 
-import { computed } from 'vue';
 
 const knownProjects = ref([]);
 const searchQuery = ref('');
@@ -555,7 +560,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         Chargement des données...
       </div>
       
-      <div v-else-if="error" class="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-700">
+      <div v-else-if="error" class="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-700 whitespace-pre-wrap">
         {{ error }}
       </div>
       

@@ -75,6 +75,23 @@ const fetchApplications = async () => {
     const res = await fetch(`${API_BASE}/docker/applications`, { headers: getFetchOptions().headers });
     if (res.ok) {
       const data = await res.json();
+      
+      // Auto-détecter le dossier parent pour les imports
+      const selfApp = data.find(a => a.name.toLowerCase() === 'gestionserveur' || a.name.toLowerCase() === 'gestion_serveur');
+      if (selfApp && selfApp.working_dir && !importTargetPath.value) {
+        const dir = selfApp.working_dir;
+        // Gérer les slash et antislash
+        const separator = dir.includes('\\') ? '\\' : '/';
+        const parts = dir.split(separator).filter(Boolean);
+        parts.pop(); // Retire le dossier courant (gestionServeur)
+        
+        if (dir.startsWith('/')) {
+            importTargetPath.value = '/' + parts.join(separator);
+        } else {
+            importTargetPath.value = parts.join(separator);
+        }
+      }
+
       // On exclut l'application elle-même pour éviter de s'auto-stopper
       applications.value = data.filter(app => 
         app.name.toLowerCase() !== 'gestionserveur' && 
@@ -82,7 +99,7 @@ const fetchApplications = async () => {
       );
     }
   } catch (e) {
-    console.error(e);
+    console.error("Erreur chargement applications:", e);
   }
 };
 

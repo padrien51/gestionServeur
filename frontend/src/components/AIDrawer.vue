@@ -38,6 +38,31 @@ const ignoreInsight = async (id) => {
     }
 };
 
+const retryingIds = ref(new Set());
+
+const retryInsight = async (id) => {
+    if (retryingIds.value.has(id)) return;
+    
+    // Create a new set to trigger Vue reactivity
+    const newSet = new Set(retryingIds.value);
+    newSet.add(id);
+    retryingIds.value = newSet;
+
+    try {
+        await fetch(`${API_BASE}/ai/insights/${id}/retry`, {
+            method: 'POST',
+            ...getFetchOptions()
+        });
+        emit('refresh');
+    } catch (e) {
+        console.error(e);
+    } finally {
+        const nextSet = new Set(retryingIds.value);
+        nextSet.delete(id);
+        retryingIds.value = nextSet;
+    }
+};
+
 const formatDate = (dateStr) => {
     if (!dateStr) return '';
     try {
@@ -106,6 +131,12 @@ const formatDate = (dateStr) => {
                 </div>
 
                 <div class="p-2 border-t border-slate-100 dark:border-slate-700/50 flex justify-end space-x-2 bg-slate-50 dark:bg-slate-800/50">
+                    <button v-if="insight.diagnosis && insight.diagnosis.includes('Échec de l\'analyse IA')" 
+                            @click="retryInsight(insight.id)" 
+                            :disabled="retryingIds.has(insight.id)"
+                            class="px-3 py-1.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-800/50 rounded transition-colors border border-indigo-200 dark:border-indigo-800/50 disabled:opacity-50">
+                        {{ retryingIds.has(insight.id) ? 'Analyse en cours...' : 'Relancer l\'analyse' }}
+                    </button>
                     <button @click="ignoreInsight(insight.id)" class="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
                         Faux positif (Ignorer)
                     </button>

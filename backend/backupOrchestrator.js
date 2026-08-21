@@ -455,7 +455,8 @@ async function importAndRestoreBackup(archivePath, targetPath) {
     
     // Le flux stdin est écrit dans /tmp/archive_tmp, puis tar -xf est utilisé. 
     // tar (busybox) auto-détecte le gzip quand il lit depuis un fichier (mais pas depuis un flux stdin).
-    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar -xf /tmp/archive_tmp -C "/dest"`;
+    // Sur Windows, la restauration des permissions et propriétaires échoue souvent (Code 1), on ajoute donc -o et --no-same-permissions.
+    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar -xof /tmp/archive_tmp --no-same-permissions -C "/dest"`;
 
     const container = await docker.createContainer({
         Image: 'alpine:latest',

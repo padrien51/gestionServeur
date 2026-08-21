@@ -435,6 +435,7 @@ const formatBytes = (bytes) => {
 </script>
 
 <template>
+  <div class="w-full h-full relative">
   <div class="p-4 space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
@@ -770,6 +771,7 @@ const formatBytes = (bytes) => {
         </button>
       </div>
     </div>
+  </div>
   </div>
 </template>
 

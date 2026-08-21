@@ -380,8 +380,9 @@ async function downloadBackup(jobId, appName, backupFolder, res) {
 
     await ensureAlpine();
     return new Promise((resolve, reject) => {
-        // En passant res (qui est un flux inscriptible), dockerode pipe stdout directement vers le client
-        docker.run('alpine:latest', ['sh', '-c', bashScript], res, {
+        // En passant [res, process.stderr], dockerode démultiplexe le flux proprement.
+        // Sinon, Docker insère 8 octets de header réseau à chaque paquet, corrompant le fichier tar.gz !
+        docker.run('alpine:latest', ['sh', '-c', bashScript], [res, process.stderr], {
             Env: [
                 `SAFE_FOLDER=${safeFolder}`
             ],
@@ -466,7 +467,7 @@ async function importAndRestoreBackup(archivePath, targetPath) {
 
     // Le flux stdin est écrit dans /tmp/archive_tmp, puis tar -xf est utilisé. 
     // tar (busybox) auto-détecte le gzip quand il lit depuis un fichier (mais pas depuis un flux stdin).
-    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar ${tarFlags} /tmp/archive_tmp ${permFlags} -C "/dest"`;
+    const cmd = `cat > /tmp/archive_tmp && mkdir -p "/dest" && tar ${tarFlags} /tmp/archive_tmp ${permFlags} -C "/dest" 2>&1`;
 
     const container = await docker.createContainer({
         Image: 'alpine:latest',
@@ -481,8 +482,9 @@ async function importAndRestoreBackup(archivePath, targetPath) {
 
     const stream = await container.attach({stream: true, stdin: true, stdout: true, stderr: true, hijack: true});
     
-    // Gérer les erreurs sur le stream pour ne pas crasher le serveur (ECONNRESET/EPIPE)
+    // Gérer les erreurs sur le stream et lire la sortie pour le débogage
     stream.on('error', (err) => console.log("[Import Backup] Stream Docker error ignorée :", err.message));
+    stream.on('data', (chunk) => console.log("[Import Backup Tar Output]:", chunk.toString()));
     
     await container.start();
     

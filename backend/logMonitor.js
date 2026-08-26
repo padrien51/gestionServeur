@@ -4,6 +4,7 @@ const { runQuery, getQuery } = require('./db');
 
 const BUFFER_SIZE = 25; // Nombre de lignes de contexte
 const ERROR_REGEX = /(exception|fatal|panic|error|timeout)/i;
+const IGNORE_REGEX = /(No such file or directory.*(favicon\.ico|apple-touch-icon\.png|robots\.txt|\.env)|HTTP\/[0-9\.]+"\s+(404|401|403)|"[A-Z_]*TIMEOUT[A-Z_]*"\s*:|"error"\s*:\s*"icon is not svg|"error"\s*:\s*"failed to get public address)/i;
 const DEBOUNCE_MS = 2000;
 
 // Stockage de l'état par conteneur
@@ -144,7 +145,7 @@ async function attachLogStream(containerInfo) {
                     monitor.buffer.shift();
                 }
 
-                if (ERROR_REGEX.test(line)) {
+                if (ERROR_REGEX.test(line) && !IGNORE_REGEX.test(line)) {
                     // Déclenche l'attente (debounce)
                     if (monitor.timer) clearTimeout(monitor.timer);
                     monitor.timer = setTimeout(() => {

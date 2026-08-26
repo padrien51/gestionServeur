@@ -26,6 +26,18 @@ const resolveInsight = async (id) => {
     }
 };
 
+const resolveAllInsights = async () => {
+    try {
+        await fetch(`${API_BASE}/ai/insights/resolve-all`, {
+            method: 'POST',
+            ...getFetchOptions()
+        });
+        emit('refresh');
+    } catch (e) {
+        console.error(e);
+    }
+};
+
 const ignoreInsight = async (id) => {
     try {
         await fetch(`${API_BASE}/ai/insights/${id}/ignore`, {
@@ -100,11 +112,16 @@ const formatDate = (dateStr) => {
         <!-- Header -->
         <div class="p-4 border-b border-slate-200/60 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
             <h2 class="text-xl font-bold flex items-center text-slate-800 dark:text-slate-100">
-                <span class="mr-2">🤖</span> AIOps Insights
+                <span class="mr-2">🧠</span> AIOps Insights
             </h2>
-            <button @click="emit('close')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+            <div class="flex items-center space-x-2">
+                <button v-if="insights.length > 0" @click="resolveAllInsights" class="px-3 py-1.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 rounded transition-colors border border-emerald-200 dark:border-emerald-800/50">
+                    Tout effacer
+                </button>
+                <button @click="emit('close')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
         </div>
 
         <!-- Content -->

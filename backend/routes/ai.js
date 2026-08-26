@@ -21,6 +21,15 @@ router.post('/insights/:id/resolve', async (req, res) => {
     }
 });
 
+router.post('/insights/resolve-all', async (req, res) => {
+    try {
+        await runQuery(`UPDATE ai_insights SET status = 'resolved' WHERE status = 'active'`);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const { analyzeLog } = require('../aiService');
 
 router.post('/insights/:id/ignore', async (req, res) => {

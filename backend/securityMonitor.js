@@ -1,4 +1,4 @@
-﻿const Docker = require('dockerode');
+const Docker = require('dockerode');
 const { runQuery } = require('./db');
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
@@ -51,11 +51,10 @@ async function analyzeLogForSecurity(containerName, line) {
             // Dans une version plus poussée, on utiliserait un cache Redis. Ici on écrit directement.
             try {
                 await runQuery(
-                    INSERT INTO security_events (container_name, attacker_ip, event_type, severity, log_line)
-                     VALUES (?, ?, ?, ?, ?),
+                    "INSERT INTO security_events (container_name, attacker_ip, event_type, severity, log_line) VALUES (?, ?, ?, ?, ?)",
                     [containerName, ip, pattern.type, pattern.severity, line]
                 );
-                console.log(\[Sécurité] Menace détectée sur \: \ (IP: \)\);
+                console.log(`[Sécurité] Menace détectée sur ${containerName}: ${pattern.type} (IP: ${ip})`);
             } catch (err) {
                 console.error("[Sécurité] Erreur DB:", err.message);
             }

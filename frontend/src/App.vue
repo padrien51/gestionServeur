@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard.vue';
 import Updates from './components/Updates.vue';
 import Backups from './components/Backups.vue';
 import Settings from './components/Settings.vue';
+import Security from './components/Security.vue';
 import Optimization from './components/Optimization.vue';
 import Networks from './components/Networks.vue';
 import Profile from './components/Profile.vue';
@@ -149,6 +150,7 @@ const logout = () => {
           <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
           <button @click="currentTab = 'networks'" :class="currentTab === 'networks' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Réseaux</button>
           <button @click="currentTab = 'optimization'" :class="currentTab === 'optimization' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Optimisation</button>
+          <button @click="currentTab = 'security'" :class="currentTab === 'security' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sécurité</button>
           <button @click="currentTab = 'updates'" :class="currentTab === 'updates' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Mises à jour</button>
           <button @click="currentTab = 'backups'" :class="currentTab === 'backups' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Sauvegardes</button>
           <button @click="currentTab = 'guide'" :class="currentTab === 'guide' ? 'bg-white text-indigo-700 shadow-[0_2px_8px_rgb(0,0,0,0.04)] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/50'" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap">Guide</button>
@@ -186,8 +188,9 @@ const logout = () => {
         </div>
         <transition name="fade" mode="out-in">
         <Dashboard v-if="currentTab === 'dashboard'" />
-        <Networks v-if="currentTab === 'networks'" />
-        <Optimization v-if="currentTab === 'optimization'" />
+        <Networks v-else-if="currentTab === 'networks'" />
+        <Optimization v-else-if="currentTab === 'optimization'" />
+        <Security v-else-if="currentTab === 'security'" />
         <Updates v-else-if="currentTab === 'updates'" />
         <Backups v-else-if="currentTab === 'backups'" />
         <Guide v-else-if="currentTab === 'guide'" />
@@ -209,6 +212,11 @@ const logout = () => {
       <button @click="currentTab = 'optimization'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'optimization' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
         <svg class="w-6 h-6 mb-1" :class="currentTab === 'optimization' ? 'stroke-2' : 'stroke-[1.5]'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
         <span class="text-[10px] font-medium">Opti</span>
+      </button>
+
+      <button @click="currentTab = 'security'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'security' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
+        <svg class="w-6 h-6 mb-1" :class="currentTab === 'security' ? 'stroke-2' : 'stroke-[1.5]'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <span class="text-[10px] font-medium">IDS</span>
       </button>
 
       <button @click="currentTab = 'updates'" class="flex flex-col items-center p-1.5 rounded-lg w-full transition-all" :class="currentTab === 'updates' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">

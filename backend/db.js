@@ -121,10 +121,22 @@ function initializeDB() {
             else {
                 console.log("Table ai_insights vérifiée.");
                 // Migration: ajout de trigger_line si inexistant
-                db.run(`ALTER TABLE ai_insights ADD COLUMN trigger_line TEXT`, (altErr) => {
-                    // Ignore l'erreur si la colonne existe déjà
-                });
+                db.run(`ALTER TABLE ai_insights ADD COLUMN trigger_line TEXT`, (altErr) => {});
             }
+        });
+
+        // Table des alertes de sécurité (IDS)
+        db.run(`CREATE TABLE IF NOT EXISTS security_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            container_name TEXT NOT NULL,
+            attacker_ip TEXT,
+            event_type TEXT NOT NULL, -- e.g., 'scan', 'auth_failure', 'xss', 'sqli'
+            severity TEXT DEFAULT 'medium', -- 'low', 'medium', 'high', 'critical'
+            log_line TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (err) console.error("Erreur création security_events :", err);
+            else console.log("Table security_events vérifiée.");
         });
     });
 };

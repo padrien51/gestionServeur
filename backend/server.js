@@ -35,9 +35,9 @@ require('./websocketService')(io);
 // ===================================================================
 app.use(compression()); // GZIP
 
-const rateLimit = require(String.fromCharCode(39) + 'express-rate-limit' + String.fromCharCode(39));
-const globalLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 1000, standardHeaders: true, legacyHeaders: false, message: { error: String.fromCharCode(34) + 'Too many requests' + String.fromCharCode(34) } });
-app.use(String.fromCharCode(39) + '/api/' + String.fromCharCode(39), globalLimiter);
+const rateLimit = require('express-rate-limit');
+const globalLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 1000, standardHeaders: true, legacyHeaders: false, message: { error: "Trop de requêtes, blocage temporaire." } });
+app.use('/api/', globalLimiter);
 
 // Sécurité : En-têtes HTTP avec CSP adaptée à une SPA Vue.js
 app.use(helmet({

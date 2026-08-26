@@ -76,6 +76,7 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/system', require('./routes/system'));
 app.use('/api/backups', require('./routes/backups'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/security', require('./routes/security'));
 
 // ===================================================================
 // FICHIERS STATIQUES (SPA Vue.js)
@@ -93,6 +94,7 @@ app.use((req, res) => {
 const updateService = require('./updateService');
 const backupOrchestrator = require('./backupOrchestrator');
 const { startLogMonitor } = require('./logMonitor');
+const { startSecurityMonitor } = require('./securityMonitor');
 
 server.listen(port, () => {
     console.log(`[Server] Démarré sur le port ${port}`);
@@ -108,5 +110,6 @@ server.listen(port, () => {
     // Moniteur de logs IA
     setTimeout(() => {
         startLogMonitor();
+        startSecurityMonitor();
     }, 3000);
 });

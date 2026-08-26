@@ -38,12 +38,12 @@ async function sendMattermostAlert(projectName, containerName, diagnosis, soluti
     }
 }
 
-async function saveInsight(projectName, containerName, context, diagnosis, solution) {
+async function saveInsight(projectName, containerName, context, diagnosis, solution, triggerLine) {
     try {
         await runQuery(
-            `INSERT INTO ai_insights (project_name, container_name, log_context, diagnosis, solution)
-             VALUES (?, ?, ?, ?, ?)`,
-            [projectName, containerName, context, diagnosis, solution]
+            `INSERT INTO ai_insights (project_name, container_name, log_context, diagnosis, solution, trigger_line)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [projectName, containerName, context, diagnosis, solution, triggerLine]
         );
         console.log(`[AIOps] Alerte sauvegardée pour ${containerName}`);
         
@@ -63,11 +63,26 @@ function processBufferAndAnalyze(containerId) {
     const contextLines = monitor.buffer.join('\n');
     const cName = monitor.name;
     const pName = monitor.project;
+    const triggerLine = monitor.triggerLine;
     
     // On vide le buffer pour éviter de réanalyser la même erreur en boucle
     monitor.buffer = [];
+    monitor.triggerLine = null;
 
     getAISettings().then(async (settings) => {
+        // Vérification si cette erreur a déjà été ignorée par l'utilisateur
+        if (triggerLine) {
+            const triggerSkeleton = triggerLine.replace(/\d+/g, '');
+            const ignoredRows = await getQuery(`SELECT trigger_line FROM ai_insights WHERE status = 'ignored' AND container_name = ? AND trigger_line IS NOT NULL`, [cName]);
+            
+            for (const row of ignoredRows) {
+                if (row.trigger_line.replace(/\d+/g, '') === triggerSkeleton) {
+                    console.log(`[AIOps] Erreur ignorée car marquée comme faux positif précédemment (${cName})`);
+                    return; // On annule l'analyse
+                }
+            }
+        }
+
         let diagnosis = "Analyse IA désactivée.";
         let solution = "Veuillez consulter les logs bruts ci-dessous.";
 
@@ -86,7 +101,7 @@ function processBufferAndAnalyze(containerId) {
             }
         }
         
-        await saveInsight(pName, cName, contextLines, diagnosis, solution);
+        await saveInsight(pName, cName, contextLines, diagnosis, solution, triggerLine);
     }).catch(e => console.error("[AIOps] Erreur système inattendue:", e.message))
       .finally(() => {
           if (containerMonitors[containerId]) {
@@ -113,6 +128,7 @@ async function attachLogStream(containerInfo) {
         project: project,
         buffer: [],
         timer: null,
+        triggerLine: null,
         isAnalyzing: false
     };
 
@@ -146,6 +162,7 @@ async function attachLogStream(containerInfo) {
                 }
 
                 if (ERROR_REGEX.test(line) && !IGNORE_REGEX.test(line)) {
+                    monitor.triggerLine = safeLine;
                     // Déclenche l'attente (debounce)
                     if (monitor.timer) clearTimeout(monitor.timer);
                     monitor.timer = setTimeout(() => {

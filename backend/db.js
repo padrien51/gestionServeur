@@ -118,7 +118,13 @@ function initializeDB() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => {
             if (err) console.error("Erreur création ai_insights :", err);
-            else console.log("Table ai_insights vérifiée.");
+            else {
+                console.log("Table ai_insights vérifiée.");
+                // Migration: ajout de trigger_line si inexistant
+                db.run(`ALTER TABLE ai_insights ADD COLUMN trigger_line TEXT`, (altErr) => {
+                    // Ignore l'erreur si la colonne existe déjà
+                });
+            }
         });
     });
 };

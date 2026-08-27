@@ -158,13 +158,22 @@ function isNewerVersion(versionA, versionB) {
 
 // Récupère les dernières versions disponibles via GitHub Releases
 // Utilisé pour agréger les changelogs des versions intermédiaires
-async function getRecentGitHubReleases(githubRepo) {
+async function getRecentGitHubReleases(githubRepo, currentTag = '') {
     try {
         const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases?per_page=100`, {
             headers: { 'User-Agent': 'GestionServeur-App' }
         });
         if (!res.ok) return [];
-        return await res.json();
+        const releases = await res.json();
+        
+        // Si l'utilisateur n'est pas explicitement sur un tag beta/edge/rc, on ignore les pré-releases
+        const isCurrentlyPreRelease = /beta|alpha|rc|edge|dev|b\d+/i.test(currentTag);
+        
+        if (!isCurrentlyPreRelease) {
+            return releases.filter(r => !r.prerelease && !r.draft && !/b\d+|rc\d+|alpha|beta|pre/i.test(r.tag_name));
+        }
+        
+        return releases;
     } catch (e) {
         return [];
     }
@@ -257,7 +266,7 @@ async function checkDockerUpdates() {
                 // On compare la version actuelle avec la dernière release GitHub.
                 // Fonctionne pour : HA (2026.7.4), Mealie (v1.9.0), Immich, etc.
                 isUpdatableViaUI = false;
-                const releases = await getRecentGitHubReleases(githubRepo);
+                const releases = await getRecentGitHubReleases(githubRepo, tag);
                 if (releases && releases.length > 0) {
                     const latestRelease = releases[0];
                     const latestTag = latestRelease.tag_name;
@@ -296,7 +305,7 @@ async function checkDockerUpdates() {
                         newVersion = remoteDigest.substring(7, 19);
                         // Bonus : si la source GitHub est connue, on récupère aussi le changelog
                         if (githubRepo) {
-                            const releases = await getRecentGitHubReleases(githubRepo);
+                            const releases = await getRecentGitHubReleases(githubRepo, tag);
                             if (releases && releases.length > 0) {
                                 const ghRelease = releases[0];
                                 newVersion = ghRelease.tag_name || newVersion;

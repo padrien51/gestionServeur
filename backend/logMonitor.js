@@ -83,22 +83,22 @@ function processBufferAndAnalyze(containerId) {
             }
         }
 
-        let diagnosis = "Analyse IA désactivée.";
-        let solution = "Veuillez consulter les logs bruts ci-dessous.";
+        if (settings.enabled !== 'true') {
+            // L'IA est désactivée, on ne génère pas de faux insight
+            return;
+        }
 
-        if (settings.enabled === 'true') {
-            console.log(`[AIOps] Analyse en cours pour une erreur dans ${cName}...`);
-            try {
-                const insight = await analyzeLog(contextLines, cName);
-                if (insight) {
-                    diagnosis = insight.diagnosis;
-                    solution = insight.solution;
-                }
-            } catch (e) {
-                console.error("[AIOps] Erreur durant l'analyse:", e.message);
-                diagnosis = "Échec de l'analyse IA (" + e.message + ")";
-                solution = "L'IA est actuellement injoignable. Veuillez consulter les logs bruts ci-dessous pour identifier le problème.";
+        console.log(`[AIOps] Analyse en cours pour une erreur dans ${cName}...`);
+        try {
+            const insight = await analyzeLog(contextLines, cName);
+            if (insight) {
+                diagnosis = insight.diagnosis;
+                solution = insight.solution;
             }
+        } catch (e) {
+            console.error("[AIOps] Erreur durant l'analyse:", e.message);
+            diagnosis = "Échec de l'analyse IA (" + e.message + ")";
+            solution = "L'IA est actuellement injoignable. Veuillez consulter les logs bruts ci-dessous pour identifier le problème.";
         }
         
         await saveInsight(pName, cName, contextLines, diagnosis, solution, triggerLine);
@@ -122,6 +122,9 @@ async function attachLogStream(containerInfo) {
 
     // On ignore le gestionnaire lui-même pour éviter une boucle infinie de logs
     if (name.includes('gestion_serveur')) return;
+    
+    // On ignore les conteneurs de backup éphémères
+    if (name.includes('backup_') || project.includes('backup_')) return;
 
     containerMonitors[containerInfo.Id] = {
         name: name,

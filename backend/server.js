@@ -42,6 +42,7 @@ app.use('/api/', globalLimiter);
 // Sécurité : En-têtes HTTP avec CSP adaptée à une SPA Vue.js
 app.use(helmet({
     contentSecurityPolicy: {
+        useDefaults: true,
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline nécessaire pour Vite en prod
@@ -49,6 +50,7 @@ app.use(helmet({
             connectSrc: ["'self'", "ws:", "wss:"],
             imgSrc: ["'self'", "data:"],
             fontSrc: ["'self'", "data:"],
+            upgradeInsecureRequests: null // Désactiver la conversion forcée vers HTTPS en réseau local
         }
     }
 }));

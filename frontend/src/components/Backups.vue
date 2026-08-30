@@ -394,6 +394,8 @@ const importFile = ref(null);
 const importTargetPath = ref('');
 const importCustomName = ref('');
 const importLoading = ref(false);
+const uploadProgress = ref(0);
+const importStatus = ref('');
 
 const handleImportFileChange = (e) => {
     importFile.value = e.target.files[0];
@@ -401,7 +403,10 @@ const handleImportFileChange = (e) => {
 
 const submitImportArchive = async () => {
     if (!importFile.value || !importTargetPath.value) return;
+    
     importLoading.value = true;
+    uploadProgress.value = 0;
+    importStatus.value = 'Envoi du fichier...';
     
     const formData = new FormData();
     formData.append('archive', importFile.value);
@@ -409,16 +414,40 @@ const submitImportArchive = async () => {
     if (importCustomName.value) {
         formData.append('customName', importCustomName.value.replace(/[^a-zA-Z0-9_-]/g, ''));
     }
-
+    
     try {
         const token = localStorage.getItem('auth_token') || '';
-        const res = await fetch(`${API_BASE}/backups/import`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }, // NO Content-Type, browser sets it automatically with boundary
-            body: formData
+        
+        await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_BASE}/backups/import`, true);
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    uploadProgress.value = Math.round((event.loaded / event.total) * 100);
+                    if (uploadProgress.value === 100) {
+                        importStatus.value = 'Extraction en cours par Docker (veuillez patienter)...';
+                    }
+                }
+            };
+            
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(JSON.parse(xhr.responseText));
+                } else {
+                    try {
+                        const err = JSON.parse(xhr.responseText);
+                        reject(new Error(err.error || 'Erreur lors de la restauration'));
+                    } catch(e) {
+                        reject(new Error('Erreur HTTP ' + xhr.status));
+                    }
+                }
+            };
+            
+            xhr.onerror = () => reject(new Error('Erreur réseau lors de la restauration'));
+            xhr.send(formData);
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur lors de la restauration');
         
         showAlert("Succès", "L'archive a été restaurée avec succès ! Vous la retrouverez dans vos Applications.");
         showImportModal.value = false;
@@ -429,6 +458,8 @@ const submitImportArchive = async () => {
         showAlert("Erreur", "Erreur lors de la restauration : " + e.message);
     } finally {
         importLoading.value = false;
+        uploadProgress.value = 0;
+        importStatus.value = '';
     }
 };
 
@@ -791,12 +822,22 @@ const formatBytes = (bytes) => {
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nom du projet / dossier final (Optionnel)</label>
-          <input type="text" v-model="importCustomName" placeholder="Ex: mon-application-restauree" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md p-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" v-model="importCustomName" placeholder="Ex: mon-application-restauree" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md p-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" :disabled="importLoading" />
           <p class="text-xs text-slate-500 mt-1">Laissez vide pour conserver le nom original de l'archive.</p>
+        </div>
+
+        <div v-if="importLoading" class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-semibold text-blue-700 dark:text-blue-300">{{ importStatus }}</span>
+            <span class="text-xs font-bold text-blue-700 dark:text-blue-300">{{ uploadProgress }}%</span>
+          </div>
+          <div class="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2">
+            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div>
+          </div>
         </div>
       </div>
       <div class="p-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2 border-t border-slate-200 dark:border-slate-700">
-        <button @click="showImportModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors">
+        <button @click="showImportModal = false" :disabled="importLoading" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors disabled:opacity-50">
           Annuler
         </button>
         <button @click="submitImportArchive" :disabled="importLoading || !importFile || !importTargetPath" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 flex items-center">

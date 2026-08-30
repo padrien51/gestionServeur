@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { io } from 'socket.io-client';
-import { useModal } from '../composables/useModal';
 
 const API_BASE = '/api';
 

@@ -475,7 +475,7 @@ async function restoreBackup(jobId, appName, backupFolder, customName = null) {
     return newPath;
 }
 
-async function importAndRestoreBackup(archivePath, targetPath) {
+async function importAndRestoreBackup(archivePath, targetPath, customName = null) {
     console.log(`[Import Backup] Extraction de l'archive vers ${targetPath}`);
     await ensureAlpine();
     
@@ -531,18 +531,30 @@ async function importAndRestoreBackup(archivePath, targetPath) {
             
             const path = require('path');
             if (match) {
-                projectName = match[1].replace(/[^a-zA-Z0-9_-]/g, '');
+                let extractedFolder = match[1];
+                
+                if (customName && customName !== extractedFolder) {
+                    const safeCustomName = customName.replace(/[^a-zA-Z0-9_-]/g, '');
+                    console.log(`[Import Backup] Renommage de /dest/${extractedFolder} vers /dest/${safeCustomName}`);
+                    const renameExec = await container.exec({
+                        Cmd: ['mv', `/dest/${extractedFolder}`, `/dest/${safeCustomName}`]
+                    });
+                    await renameExec.start();
+                    extractedFolder = safeCustomName;
+                }
+                
+                projectName = extractedFolder.replace(/[^a-zA-Z0-9_-]/g, '');
                 
                 // On s'adapte à l'OS cible : si targetPath commence par une lettre de lecteur ou contient des antislashs, on utilise \
                 const isWindows = /^[a-zA-Z]:/.test(targetPath) || targetPath.includes('\\');
                 if (isWindows) {
-                    workingDir = targetPath.replace(/\//g, '\\') + '\\' + match[1];
+                    workingDir = targetPath.replace(/\//g, '\\') + '\\' + extractedFolder;
                 } else {
-                    workingDir = targetPath.replace(/\\/g, '/') + '/' + match[1];
+                    workingDir = targetPath.replace(/\\/g, '/') + '/' + extractedFolder;
                 }
             } else if (execOutput.includes('/dest/docker-compose.yml')) {
                 const isWindows = /^[a-zA-Z]:/.test(targetPath) || targetPath.includes('\\');
-                projectName = path.basename(targetPath.replace(/\\/g, '/')).replace(/[^a-zA-Z0-9_-]/g, '');
+                projectName = customName ? customName.replace(/[^a-zA-Z0-9_-]/g, '') : path.basename(targetPath.replace(/\\/g, '/')).replace(/[^a-zA-Z0-9_-]/g, '');
                 workingDir = isWindows ? targetPath.replace(/\//g, '\\') : targetPath.replace(/\\/g, '/');
             }
             

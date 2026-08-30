@@ -392,6 +392,7 @@ const triggerJob = async (id) => {
 const showImportModal = ref(false);
 const importFile = ref(null);
 const importTargetPath = ref('');
+const importCustomName = ref('');
 const importLoading = ref(false);
 
 const handleImportFileChange = (e) => {
@@ -405,6 +406,9 @@ const submitImportArchive = async () => {
     const formData = new FormData();
     formData.append('archive', importFile.value);
     formData.append('targetPath', importTargetPath.value);
+    if (importCustomName.value) {
+        formData.append('customName', importCustomName.value.replace(/[^a-zA-Z0-9_-]/g, ''));
+    }
 
     try {
         const token = localStorage.getItem('auth_token') || '';
@@ -413,12 +417,14 @@ const submitImportArchive = async () => {
             headers: { 'Authorization': `Bearer ${token}` }, // NO Content-Type, browser sets it automatically with boundary
             body: formData
         });
-        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erreur lors de la restauration');
         
-        showAlert("Succès", "L'archive a été restaurée avec succès !");
+        showAlert("Succès", "L'archive a été restaurée avec succès ! Vous la retrouverez dans vos Applications.");
         showImportModal.value = false;
         importFile.value = null;
         importTargetPath.value = '';
+        importCustomName.value = '';
     } catch (e) {
         showAlert("Erreur", "Erreur lors de la restauration : " + e.message);
     } finally {
@@ -782,6 +788,11 @@ const formatBytes = (bytes) => {
           <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Chemin de destination complet sur le serveur</label>
           <input type="text" v-model="importTargetPath" placeholder="Ex: /home/user/Applications/mon_app" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md p-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <p class="text-xs text-slate-500 mt-1">Le dossier cible sera créé s'il n'existe pas. L'archive y sera extraite.</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nom du projet / dossier final (Optionnel)</label>
+          <input type="text" v-model="importCustomName" placeholder="Ex: mon-application-restauree" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md p-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <p class="text-xs text-slate-500 mt-1">Laissez vide pour conserver le nom original de l'archive.</p>
         </div>
       </div>
       <div class="p-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2 border-t border-slate-200 dark:border-slate-700">

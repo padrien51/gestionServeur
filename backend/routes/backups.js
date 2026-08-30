@@ -91,8 +91,9 @@ router.post('/import', upload.single('archive'), async (req, res) => {
         if (!req.file) throw new Error("Aucun fichier n'a été uploadé.");
         const targetPath = req.body.targetPath;
         if (!targetPath) throw new Error("Le chemin de destination est manquant.");
+        const customName = req.body.customName ? req.body.customName : null;
         
-        await backupOrchestrator.importAndRestoreBackup(req.file.path, targetPath);
+        await backupOrchestrator.importAndRestoreBackup(req.file.path, targetPath, customName);
         res.json({ success: true });
     } catch (err) {
         console.error("[Backup] Erreur import manuel:", err);

@@ -1,5 +1,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
+import { io } from 'socket.io-client';
+import { useModal } from '../composables/useModal';
 
 const API_BASE = '/api';
 
@@ -415,8 +417,23 @@ const submitImportArchive = async () => {
         formData.append('customName', importCustomName.value.replace(/[^a-zA-Z0-9_-]/g, ''));
     }
     
+    let socket = null;
+    
     try {
         const token = localStorage.getItem('auth_token') || '';
+        
+        // Initialiser socket.io pour écouter la progression de l'extraction
+        socket = io({ auth: { token } });
+        
+        let extractionStarted = false;
+        
+        socket.on('extraction-progress', (data) => {
+            if (!extractionStarted) {
+                extractionStarted = true;
+                importStatus.value = 'Extraction par Docker...';
+            }
+            uploadProgress.value = data.percentage;
+        });
         
         await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
@@ -424,10 +441,12 @@ const submitImportArchive = async () => {
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
             
             xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    uploadProgress.value = Math.round((event.loaded / event.total) * 100);
-                    if (uploadProgress.value === 100) {
-                        importStatus.value = 'Extraction en cours par Docker (veuillez patienter)...';
+                if (event.lengthComputable && !extractionStarted) {
+                    const pct = Math.round((event.loaded / event.total) * 100);
+                    // On bloque à 99% tant que le backend n'a pas pris le relais via socket
+                    uploadProgress.value = pct === 100 ? 99 : pct;
+                    if (pct === 100) {
+                        importStatus.value = 'Préparation de l\'extraction...';
                     }
                 }
             };
@@ -449,6 +468,9 @@ const submitImportArchive = async () => {
             xhr.send(formData);
         });
         
+        uploadProgress.value = 100;
+        importStatus.value = 'Terminé !';
+        
         showAlert("Succès", "L'archive a été restaurée avec succès ! Vous la retrouverez dans vos Applications.");
         showImportModal.value = false;
         importFile.value = null;
@@ -457,6 +479,7 @@ const submitImportArchive = async () => {
     } catch (e) {
         showAlert("Erreur", "Erreur lors de la restauration : " + e.message);
     } finally {
+        if (socket) socket.disconnect();
         importLoading.value = false;
         uploadProgress.value = 0;
         importStatus.value = '';

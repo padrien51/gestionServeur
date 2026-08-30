@@ -28,6 +28,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: allowedOrigin, methods: ['GET', 'POST'] }
 });
+global.io = io;
 require('./websocketService')(io);
 
 // ===================================================================

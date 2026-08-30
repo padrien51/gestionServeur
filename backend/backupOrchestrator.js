@@ -496,13 +496,31 @@ async function importAndRestoreBackup(archivePath, targetPath, customName = null
     
     const fs = require('fs');
     const zlib = require('zlib');
+    const { PassThrough } = require('stream');
     
     // putArchive attend un flux .tar brut. L'utilisateur upload un .tar.gz
     // On décompresse le gz à la volée avant de l'envoyer au démon Docker.
     const fileStream = fs.createReadStream(archivePath);
     const gunzip = zlib.createGunzip();
     
-    const tarStream = fileStream.pipe(gunzip);
+    // Ajout d'un stream intermédiaire pour traquer la progression
+    const totalBytes = fs.statSync(archivePath).size;
+    let processedBytes = 0;
+    let lastReportedPercentage = -1;
+    
+    const progressStream = new PassThrough();
+    progressStream.on('data', (chunk) => {
+        processedBytes += chunk.length;
+        const percentage = Math.round((processedBytes / totalBytes) * 100);
+        if (percentage !== lastReportedPercentage) {
+            lastReportedPercentage = percentage;
+            if (global.io) {
+                global.io.emit('extraction-progress', { percentage });
+            }
+        }
+    });
+    
+    const tarStream = fileStream.pipe(progressStream).pipe(gunzip);
 
     try {
         await container.putArchive(tarStream, { path: '/dest' });

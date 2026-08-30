@@ -235,6 +235,11 @@ async function runComposeAction(projectName, action) {
             const users = fs.readdirSync('/hostOS/home');
             users.forEach(u => osPaths.push(`/hostOS/home/${u}/.docker/config.json`));
         }
+        // Support Windows Docker Desktop (via WSL2 /run/desktop/mnt/host/c)
+        if (fs.existsSync('/hostOS/run/desktop/mnt/host/c/Users')) {
+            const winUsers = fs.readdirSync('/hostOS/run/desktop/mnt/host/c/Users');
+            winUsers.forEach(u => osPaths.push(`/hostOS/run/desktop/mnt/host/c/Users/${u}/.docker/config.json`));
+        }
     } catch(e) {}
 
     for (const p of osPaths) {

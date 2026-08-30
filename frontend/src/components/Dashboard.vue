@@ -61,6 +61,14 @@ const toggleViewMode = (mode) => {
 const knownProjects = ref([]);
 const searchQuery = ref('');
 
+const activeContainersCount = computed(() => {
+  return containers.value.filter(c => c.state === 'running').length;
+});
+
+const stoppedContainersCount = computed(() => {
+  return containers.value.length - activeContainersCount.value;
+});
+
 const groupedApps = computed(() => {
   const map = {};
   const query = searchQuery.value.toLowerCase().trim();
@@ -518,9 +526,16 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
     <!-- Section Conteneurs / Applications -->
     <section>
       <div class="flex flex-col lg:flex-row lg:justify-between lg:items-end mb-4 gap-4">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center shrink-0">
-          <span class="mr-2">📦</span> Applications & Conteneurs
-        </h2>
+        <div class="flex flex-col">
+          <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center shrink-0">
+            <span class="mr-2">📦</span> Applications & Conteneurs
+          </h2>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-3">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span> {{ activeContainersCount }} en cours</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]"></span> {{ stoppedContainersCount }} arrêté(s)</span>
+            <span class="text-slate-400 dark:text-slate-500 hidden sm:inline">({{ containers.length }} au total)</span>
+          </div>
+        </div>
         
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
           <!-- Recherche -->

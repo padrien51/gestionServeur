@@ -246,7 +246,17 @@ async function runComposeAction(projectName, action) {
         if (fs.existsSync(p)) {
             try {
                 const content = fs.readFileSync(p, 'utf8');
-                dockerConfigBase64 = Buffer.from(content).toString('base64');
+                try {
+                    const parsed = JSON.parse(content);
+                    // On ne garde QUE les auths pour éviter les crashs avec "currentContext": "desktop-linux"
+                    // ou "credsStore" qui nécessitent des binaires absents d'Alpine.
+                    const safeConfig = {};
+                    if (parsed.auths) safeConfig.auths = parsed.auths;
+                    dockerConfigBase64 = Buffer.from(JSON.stringify(safeConfig)).toString('base64');
+                } catch (jsonErr) {
+                    // Fallback si ce n'est pas du JSON valide (peu probable)
+                    dockerConfigBase64 = Buffer.from(content).toString('base64');
+                }
                 console.log(`Fichier d'authentification Docker trouvé : ${p}`);
                 break;
             } catch (e) {}
@@ -270,10 +280,15 @@ async function runComposeAction(projectName, action) {
 
     const setupAuthCmd = dockerConfigBase64 ? 'mkdir -p ~/.docker && printf "%s" "$DOCKER_AUTH_B64" | base64 -d > ~/.docker/config.json && ' : '';
 
+    let containerEnv = ['DOCKER_HOST=unix:///var/run/docker.sock', 'DOCKER_CONTEXT=default'];
+    if (dockerConfigBase64) {
+        containerEnv.push(`DOCKER_AUTH_B64=${dockerConfigBase64}`);
+    }
+
     const container = await docker.createContainer({
         Image: containerImage, 
         Cmd: ['sh', '-c', `${setupAuthCmd}apk add --no-cache docker-cli docker-cli-compose > /dev/null 2>&1 && exec "$@"`, 'sh', ...cmdArgs],
-        Env: dockerConfigBase64 ? [`DOCKER_AUTH_B64=${dockerConfigBase64}`] : [],
+        Env: containerEnv,
         HostConfig: {
             Binds: [
                 '/var/run/docker.sock:/var/run/docker.sock',

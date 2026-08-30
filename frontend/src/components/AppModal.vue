@@ -1,6 +1,19 @@
 <script setup>
 import { useModal } from '../composables/useModal';
+import { ref, watch } from 'vue';
+
 const { state, close } = useModal();
+const promptValue = ref('');
+
+watch(() => state.isOpen, (newVal) => {
+  if (newVal && state.type === 'prompt') {
+    promptValue.value = state.promptDefaultValue || '';
+  }
+});
+
+const submitPrompt = () => {
+  close(promptValue.value);
+};
 </script>
 
 <template>
@@ -17,8 +30,9 @@ const { state, close } = useModal();
              :class="state.type === 'confirm' ? 'bg-orange-950/30' : 'bg-white dark:bg-slate-800/50'">
           <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center">
             <span class="mr-2" v-if="state.type === 'confirm'">⚠️</span>
+            <span class="mr-2" v-else-if="state.type === 'prompt'">📝</span>
             <span class="mr-2" v-else>ℹ️</span>
-            {{ state.title || (state.type === 'confirm' ? 'Confirmation' : 'Information') }}
+            {{ state.title || (state.type === 'confirm' ? 'Confirmation' : (state.type === 'prompt' ? 'Entrée requise' : 'Information')) }}
           </h3>
           <button @click="close(false)" class="text-slate-500 dark:text-slate-400 hover:text-slate-200 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -28,6 +42,10 @@ const { state, close } = useModal();
         <!-- Body -->
         <div class="px-6 py-5 text-slate-600 dark:text-slate-300 text-sm whitespace-pre-line leading-relaxed">
           {{ state.message }}
+          
+          <div v-if="state.type === 'prompt'" class="mt-4">
+            <input type="text" v-model="promptValue" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md p-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500" @keyup.enter="submitPrompt" />
+          </div>
         </div>
         
         <!-- Footer -->
@@ -38,6 +56,15 @@ const { state, close } = useModal();
             </button>
             <button @click="close(true)" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 rounded-lg text-sm font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/50 transition-colors">
               Confirmer
+            </button>
+          </template>
+          
+          <template v-else-if="state.type === 'prompt'">
+            <button @click="close(false)" class="px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-200/60 dark:border-slate-700">
+              Annuler
+            </button>
+            <button @click="submitPrompt" :disabled="!promptValue.trim()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 rounded-lg text-sm font-bold shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-lg shadow-blue-900/50 transition-colors disabled:opacity-50">
+              Valider
             </button>
           </template>
           

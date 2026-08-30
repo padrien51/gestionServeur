@@ -418,7 +418,7 @@ async function downloadBackup(jobId, appName, backupFolder, res) {
     });
 }
 
-async function restoreBackup(jobId, appName, backupFolder) {
+async function restoreBackup(jobId, appName, backupFolder, customName = null) {
     const jobs = await getQuery(`SELECT dest_path, source_path FROM backup_jobs WHERE id = ?`, [jobId]);
     if (!jobs || jobs.length === 0) throw new Error("Job introuvable");
     const job = jobs[0];
@@ -435,7 +435,7 @@ async function restoreBackup(jobId, appName, backupFolder) {
     // On crée un nouveau dossier à côté du dossier de l'application.
     const parentDir = path.dirname(appInfo.working_dir);
     const baseName = path.basename(appInfo.working_dir);
-    const newFolderName = `${baseName}_restored_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+    const newFolderName = customName ? customName.replace(/[^a-zA-Z0-9_-]/g, '') : `${baseName}_restored_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}`;
     const newPath = path.join(parentDir, newFolderName);
 
     const info = await docker.info();

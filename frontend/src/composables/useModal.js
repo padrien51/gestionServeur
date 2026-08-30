@@ -2,9 +2,10 @@ import { reactive } from 'vue';
 
 const state = reactive({
   isOpen: false,
-  type: 'alert', // 'alert' ou 'confirm'
+  type: 'alert', // 'alert', 'confirm', 'prompt'
   title: '',
   message: '',
+  promptDefaultValue: '',
   resolvePromise: null,
 });
 
@@ -29,6 +30,17 @@ export const useModal = () => {
     });
   };
 
+  const showPrompt = (title, message, defaultValue = '') => {
+    state.type = 'prompt';
+    state.title = title;
+    state.message = message;
+    state.promptDefaultValue = defaultValue;
+    state.isOpen = true;
+    return new Promise((resolve) => {
+      state.resolvePromise = resolve;
+    });
+  };
+
   const close = (result) => {
     state.isOpen = false;
     if (state.resolvePromise) {
@@ -37,5 +49,5 @@ export const useModal = () => {
     }
   };
 
-  return { state, showAlert, showConfirm, close };
+  return { state, showAlert, showConfirm, showPrompt, close };
 };

@@ -269,11 +269,13 @@ const downloadBackupFolder = (folderName) => {
 };
 
 const confirmRestoreBackup = async (folderName) => {
-    const confirmed = await showConfirm(
+    const customName = await showPrompt(
       "Restauration Parallèle (Staging)",
-      `Vous allez restaurer les données de la sauvegarde "${folderName}" dans un nouveau dossier parallèle.\n\nVos données actuelles ne seront PAS écrasées et l'application continuera de fonctionner normalement.\nVous pourrez ensuite basculer sur ce nouveau dossier manuellement si vous le souhaitez.\n\nVoulez-vous lancer la copie ?`
+      `Vous allez restaurer les données de la sauvegarde "${folderName}" dans un nouveau dossier parallèle.\n\nVos données actuelles ne seront PAS écrasées et l'application continuera de fonctionner normalement.\nVous pourrez ensuite basculer sur ce nouveau dossier manuellement si vous le souhaitez.\n\nVeuillez nommer ce nouveau projet (sans espaces ni caractères spéciaux) :`,
+      `${explorerApp.value}_restored`
     );
-    if (!confirmed) return;
+    
+    if (!customName || typeof customName !== 'string') return;
     
     explorerLoading.value = true;
     explorerError.value = null;
@@ -282,15 +284,19 @@ const confirmRestoreBackup = async (folderName) => {
         const url = `${API_BASE}/backups/${explorerJob.value.id}/restore/${explorerApp.value}/${folderName}`;
         const res = await fetch(url, {
             method: 'POST',
-            ...getFetchOptions()
+            headers: { 'Content-Type': 'application/json', ...getFetchOptions().headers },
+            body: JSON.stringify({ customName: customName.replace(/[^a-zA-Z0-9_-]/g, '') })
         });
-        if (!res.ok) throw new Error(await res.text());
         
+        if (res.status === 401) return; // Simplified handleUnauthorized
         const data = await res.json();
-        showAlert("Succès", `La sauvegarde a été restaurée avec succès dans le dossier :\n\n${data.restored_path}`);
-    } catch (e) {
-        explorerError.value = "Erreur lors de la restauration : " + (e.message || "Erreur inconnue");
-        showAlert("Échec de la Restauration", explorerError.value);
+        
+        if (!res.ok) throw new Error(data.error || 'Erreur lors de la restauration');
+        
+        showAlert("Succès", "La restauration a été effectuée avec succès dans le nouveau dossier parallèle. Vous le retrouverez dans l'onglet Applications.");
+    } catch (err) {
+        explorerError.value = err.message;
+        showAlert("Erreur", err.message);
     } finally {
         explorerLoading.value = false;
     }

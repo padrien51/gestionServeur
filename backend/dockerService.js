@@ -279,15 +279,30 @@ async function runComposeAction(projectName, action) {
 
     await container.start();
     
-    // Attendre la fin du process (facultatif si on veut bloquer)
+    // Attendre la fin du process
     const status = await container.wait();
+    
+    // Récupérer les logs avant de supprimer le conteneur pour le diagnostic
+    let logString = "";
+    try {
+        const logBuffer = await container.logs({ stdout: true, stderr: true });
+        if (logBuffer) {
+            // Nettoyage basique des headers Docker multiplexés (caractères non imprimables)
+            logString = logBuffer.toString('utf8').replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F]/g, '').trim();
+        }
+    } catch (e) {
+        console.error("Impossible de lire les logs du conteneur compose:", e);
+    }
+
     await container.remove();
 
     if (status.StatusCode !== 0) {
         if (action === 'kill') {
             console.warn(`[Attention] La commande docker compose a échoué (Code ${status.StatusCode}) pour ${projectName}, mais l'action est 'kill', donc on force la suppression.`);
+            if (logString) console.warn("Logs de l'erreur :", logString);
         } else {
-            throw new Error(`La commande docker compose a échoué (Code ${status.StatusCode})`);
+            let errorMsg = `La commande docker compose a échoué (Code ${status.StatusCode}).\n\nDétails :\n${logString}`;
+            throw new Error(errorMsg);
         }
     }
 

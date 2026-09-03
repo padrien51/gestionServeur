@@ -63,13 +63,12 @@ const toggleViewMode = (mode) => {
 const knownProjects = ref([]);
 const searchQuery = ref('');
 
-const activeContainersCount = computed(() => {
-  return containers.value.filter(c => c.state === 'running').length;
-});
-
+const activeContainersCount = computed(() => containers.value.filter(c => c.state === 'running').length);
 const stoppedContainersCount = computed(() => {
   return containers.value.length - activeContainersCount.value;
 });
+
+const filterState = ref('all'); // 'all', 'running', 'stopped'
 
 const groupedApps = computed(() => {
   const map = {};
@@ -84,9 +83,12 @@ const groupedApps = computed(() => {
     }
   }
 
-  // 2. Ajouter les conteneurs actifs
+  // 2. Ajouter les conteneurs actifs en fonction des filtres
   for (const c of containers.value) {
     if (c && c.project && c.name) {
+      if (filterState.value === 'running' && c.state !== 'running') continue;
+      if (filterState.value === 'stopped' && c.state === 'running') continue;
+
       const projectMatch = c.project.toLowerCase().includes(query);
       const containerMatch = c.name.toLowerCase().includes(query);
       
@@ -98,13 +100,31 @@ const groupedApps = computed(() => {
       }
     }
   }
+
+  // 3. Si on filtre par état, on retire les projets vides
+  if (filterState.value !== 'all') {
+    for (const key in map) {
+      if (map[key].containers.length === 0) {
+        delete map[key];
+      }
+    }
+  }
+
   return Object.values(map).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
 const filteredContainers = computed(() => {
-    if (!searchQuery.value) return containers.value;
+    let filtered = containers.value;
+    
+    if (filterState.value === 'running') {
+      filtered = filtered.filter(c => c.state === 'running');
+    } else if (filterState.value === 'stopped') {
+      filtered = filtered.filter(c => c.state !== 'running');
+    }
+
+    if (!searchQuery.value) return filtered;
     const q = searchQuery.value.toLowerCase();
-    return containers.value.filter(c => 
+    return filtered.filter(c => 
       (c.name && c.name.toLowerCase().includes(q)) || 
       (c.project && c.project.toLowerCase().includes(q))
     );
@@ -573,13 +593,24 @@ const metrics = ref({
     <section>
       <div class="flex flex-col lg:flex-row lg:justify-between lg:items-end mb-4 gap-4">
         <div class="flex flex-col">
-          <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center shrink-0">
+          <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center shrink-0 mb-1">
             <span class="mr-2">📦</span> Applications & Conteneurs
           </h2>
-          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-3">
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span> {{ activeContainersCount }} en cours</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]"></span> {{ stoppedContainersCount }} arrêté(s)</span>
-            <span class="text-slate-400 dark:text-slate-500 hidden sm:inline">({{ containers.length }} au total)</span>
+          <div class="flex flex-wrap items-center gap-2 mt-1">
+            <button @click="filterState = filterState === 'running' ? 'all' : 'running'" :class="['px-2 py-1 text-xs rounded-full border transition-colors flex items-center gap-1.5', filterState === 'running' ? 'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300 font-medium' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800']">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              {{ activeContainersCount }} en cours
+            </button>
+            
+            <button @click="filterState = filterState === 'stopped' ? 'all' : 'stopped'" :class="['px-2 py-1 text-xs rounded-full border transition-colors flex items-center gap-1.5', filterState === 'stopped' ? 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 font-medium' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800']">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
+              {{ stoppedContainersCount }} arrêté(s)
+            </button>
+
+            <button v-if="filterState !== 'all'" @click="filterState = 'all'" class="px-2 py-1 text-xs rounded-full text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:underline">
+              Voir tout ({{ containers.length }})
+            </button>
+            <span v-else class="text-xs text-slate-400 dark:text-slate-500 ml-1">({{ containers.length }} au total)</span>
           </div>
         </div>
         

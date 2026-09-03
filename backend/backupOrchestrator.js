@@ -103,9 +103,10 @@ async function executeBackup(jobId) {
             const bashScript = `
                 apk add --no-cache rsync && \\
                 mkdir -p "$SUB_DEST/backup_$DATE_STR" && \\
-                rsync -a --delete --link-dest="$SUB_DEST/latest" /source/ "$SUB_DEST/backup_$DATE_STR/" && \\
-                cd "$SUB_DEST" && rm -f latest && ln -s "backup_$DATE_STR" latest && \\
-                ls -d backup_* | sort -r | tail -n +"$RETENTION_PLUS_ONE" | xargs -r rm -rf
+                LATEST_BACKUP=$(ls -td "$SUB_DEST"/backup_* 2>/dev/null | grep -v "backup_$DATE_STR" | head -n 1) && \\
+                if [ -n "$LATEST_BACKUP" ]; then LINK_DEST_ARG="--link-dest=$LATEST_BACKUP"; else LINK_DEST_ARG=""; fi && \\
+                rsync -a --delete $LINK_DEST_ARG /source/ "$SUB_DEST/backup_$DATE_STR/" && \\
+                cd "$SUB_DEST" && ls -d backup_* | sort -r | tail -n +"$RETENTION_PLUS_ONE" | xargs -r rm -rf
             `;
 
             console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);

@@ -78,11 +78,17 @@ async function executeBackup(jobId) {
 
         const allApps = await require('./dockerService').getApplications();
 
+        let successCount = 0;
+        let failureCount = 0;
+        let failureMessages = [];
+
         for (let i = 0; i < appsList.length; i++) {
             const appName = appsList[i];
             const appInfo = allApps.find(a => a.name === appName);
             if (!appInfo) {
                 console.warn(`[Backup] Application ${appName} introuvable, ignorée.`);
+                failureCount++;
+                failureMessages.push(`${appName} : Introuvable`);
                 continue;
             }
 
@@ -94,87 +100,96 @@ async function executeBackup(jobId) {
                 global.io.emit('backup-progress', { jobId: job.id, message: progressMsg });
             }
 
-            // 1. Arrêter les conteneurs cibles
-            for (const cInfo of appInfo.containers) {
-                if (cInfo.state === 'running') {
-                    console.log(`[Backup] Arrêt du conteneur ${cInfo.name}`);
-                    await stopContainer(cInfo.id);
+            try {
+                // 1. Arrêter les conteneurs cibles
+                for (const cInfo of appInfo.containers) {
+                    if (cInfo.state === 'running') {
+                        console.log(`[Backup] Arrêt du conteneur ${cInfo.name}`);
+                        await stopContainer(cInfo.id);
+                    }
                 }
-            }
 
-            // 2. Lancer le conteneur éphémère rsync
-            const dateStr = formatDate(new Date());
-            const retention = job.retention_count || 15;
-            const hostDest = `${job.dest_path}/${appName}`;
-            
-            const bashScript = `
-                apk add --no-cache rsync && \\
-                mkdir -p "$SUB_DEST/backup_$DATE_STR" && \\
-                LATEST_BACKUP=$(ls -td "$SUB_DEST"/backup_* 2>/dev/null | grep -v "backup_$DATE_STR" | head -n 1) && \\
-                if [ -n "$LATEST_BACKUP" ]; then LINK_DEST_ARG="--link-dest=$LATEST_BACKUP"; else LINK_DEST_ARG=""; fi && \\
-                rsync -a --delete $LINK_DEST_ARG /source/ "$SUB_DEST/backup_$DATE_STR/" && \\
-                cd "$SUB_DEST" && ls -d backup_* | sort -r | tail -n +"$RETENTION_PLUS_ONE" | xargs -r rm -rf
-            `;
+                // 2. Lancer le conteneur éphémère rsync
+                const dateStr = formatDate(new Date());
+                const retention = job.retention_count || 15;
+                const hostDest = `${job.dest_path}/${appName}`;
+                
+                const bashScript = `
+                    apk add --no-cache rsync && \\
+                    mkdir -p "$SUB_DEST/backup_$DATE_STR" && \\
+                    LATEST_BACKUP=$(ls -td "$SUB_DEST"/backup_* 2>/dev/null | grep -v "backup_$DATE_STR" | head -n 1) && \\
+                    if [ -n "$LATEST_BACKUP" ]; then LINK_DEST_ARG="--link-dest=$LATEST_BACKUP"; else LINK_DEST_ARG=""; fi && \\
+                    rsync -a --delete $LINK_DEST_ARG /source/ "$SUB_DEST/backup_$DATE_STR/" && \\
+                    cd "$SUB_DEST" && ls -d backup_* | sort -r | tail -n +"$RETENTION_PLUS_ONE" | xargs -r rm -rf
+                `;
 
-            console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);
-            await ensureAlpine();
+                console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);
+                await ensureAlpine();
 
-            const backupPromise = docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
-                Env: [ `SUB_DEST=/dest/${appName}`, `DATE_STR=${dateStr}`, `RETENTION_PLUS_ONE=${retention + 1}` ],
-                HostConfig: {
-                    AutoRemove: true,
-                    Binds: [ `${appInfo.working_dir}:/source:ro`, `${job.dest_path}:/dest` ]
+                const backupPromise = docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
+                    Env: [ `SUB_DEST=/dest/${appName}`, `DATE_STR=${dateStr}`, `RETENTION_PLUS_ONE=${retention + 1}` ],
+                    HostConfig: {
+                        AutoRemove: true,
+                        Binds: [ `${appInfo.working_dir}:/source:ro`, `${job.dest_path}:/dest` ]
+                    }
+                });
+
+                // Timeout de 3 heures (10800000 ms) pour rsync, indispensable pour la 1ère sauvegarde complète
+                const timeoutMs = 3 * 60 * 60 * 1000;
+                let timeoutId;
+                const timeoutPromise = new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => {
+                        reject(new Error(`Timeout après ${timeoutMs/60000} minutes`));
+                    }, timeoutMs);
+                });
+
+                const runResult = await Promise.race([ backupPromise, timeoutPromise ]).finally(() => clearTimeout(timeoutId));
+                
+                const statusCode = runResult && runResult[0] ? runResult[0].StatusCode : 0;
+                if (statusCode !== 0) {
+                    throw new Error(`Code de sortie : ${statusCode}`);
                 }
-            });
 
-            // Timeout de 3 heures (10800000 ms) pour rsync, indispensable pour la 1ère sauvegarde complète
-            const timeoutMs = 3 * 60 * 60 * 1000;
-            let timeoutId;
-            const timeoutPromise = new Promise((_, reject) => {
-                timeoutId = setTimeout(() => {
-                    reject(new Error(`Timeout de la sauvegarde pour ${appName} après ${timeoutMs/60000} minutes. Le processus rsync est bloqué.`));
-                }, timeoutMs);
-            });
-
-            const runResult = await Promise.race([ backupPromise, timeoutPromise ]).finally(() => clearTimeout(timeoutId));
-            
-            const statusCode = runResult && runResult[0] ? runResult[0].StatusCode : 0;
-            if (statusCode !== 0) {
-                throw new Error(`Le processus rsync a échoué pour ${appName} (code de sortie : ${statusCode})`);
-            }
-
-            // 3. Redémarrer les conteneurs (en cas de succès)
-            for (const cInfo of appInfo.containers) {
-                console.log(`[Backup] Redémarrage du conteneur ${cInfo.name}`);
-                await startContainer(cInfo.id).catch(e => console.error("Erreur relance:", e));
+                // 3. Redémarrer les conteneurs (en cas de succès)
+                for (const cInfo of appInfo.containers) {
+                    console.log(`[Backup] Redémarrage du conteneur ${cInfo.name}`);
+                    await startContainer(cInfo.id).catch(e => console.error("Erreur relance:", e));
+                }
+                
+                successCount++;
+            } catch (appErr) {
+                console.error(`[Backup] Échec pour ${appName}:`, appErr);
+                failureCount++;
+                failureMessages.push(`${appName} : ${appErr.message}`);
+                
+                // Redémarrer les conteneurs laissés à l'arrêt pour cette application
+                for (const cInfo of appInfo.containers) {
+                    console.log(`[Backup Error Recovery] Relance du conteneur ${cInfo.name}`);
+                    await startContainer(cInfo.id).catch(e => console.error("Erreur relance recovery:", e));
+                }
             }
         }
 
-        // Log Succès
-        const successMsg = `Sauvegarde terminée avec succès pour ${appsList.length} application(s).`;
-        await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['SUCCESS', successMsg, job.id]);
-        await sendWebhook(successMsg, "#00FF00", job.name);
+        // Bilan final
+        const total = appsList.length;
+        if (failureCount > 0) {
+            const errorMsg = `Sauvegarde terminée avec des erreurs.\nSuccès : ${successCount}/${total}\nÉchecs : ${failureCount}\n\nDétails :\n${failureMessages.join('\n')}`;
+            await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['FAILED', errorMsg, job.id]);
+            await sendWebhook(errorMsg, "#FF0000", job.name);
+        } else {
+            const successMsg = `Sauvegarde terminée avec succès pour ${successCount} application(s).`;
+            await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['SUCCESS', successMsg, job.id]);
+            await sendWebhook(successMsg, "#00FF00", job.name);
+        }
 
     } catch (err) {
-        console.error(`[Backup] Erreur critique lors de la sauvegarde ${jobId}:`, err);
+        console.error(`[Backup] Erreur fatale lors de la sauvegarde ${jobId}:`, err);
         
         if (job) {
-            await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['FAILED', err.message, job.id]);
-            await sendWebhook(`Erreur critique: ${err.message}`, "#FF0000", job.name);
-
-            // Redémarrer les conteneurs laissés à l'arrêt en cas de crash
-            let containerNames = [];
-            try { containerNames = JSON.parse(job.containers); } catch(e) {}
-            for (const name of containerNames) {
-                const allContainers = await docker.listContainers({ all: true });
-                const c = allContainers.find(c => c.Names.some(n => n.includes(name)));
-                if (c && c.State !== 'running') {
-                    console.log(`[Backup Error Recovery] Relance du conteneur ${name}`);
-                    await startContainer(c.Id).catch(e => console.error("Erreur relance recovery:", e));
-                }
-            }
+            await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['FAILED', `Erreur fatale de l'orchestrateur: ${err.message}`, job.id]);
+            await sendWebhook(`Erreur fatale: ${err.message}`, "#FF0000", job.name);
         } else {
-            await sendWebhook(`Erreur critique sur un job introuvable (ID: ${jobId}): ${err.message}`, "#FF0000", "Job Inconnu");
+            await sendWebhook(`Erreur fatale sur un job introuvable (ID: ${jobId}): ${err.message}`, "#FF0000", "Job Inconnu");
         }
     }
 }

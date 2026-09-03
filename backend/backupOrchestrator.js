@@ -120,8 +120,8 @@ async function executeBackup(jobId) {
                 }
             });
 
-            // Timeout de 1 heure (3600000 ms) pour rsync
-            const timeoutMs = 60 * 60 * 1000;
+            // Timeout de 3 heures (10800000 ms) pour rsync, indispensable pour la 1ère sauvegarde complète
+            const timeoutMs = 3 * 60 * 60 * 1000;
             let timeoutId;
             const timeoutPromise = new Promise((_, reject) => {
                 timeoutId = setTimeout(() => {

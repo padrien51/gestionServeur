@@ -92,7 +92,13 @@ async function executeBackup(jobId) {
                 continue;
             }
 
-            const progressMsg = `Sauvegarde en cours (${i + 1}/${appsList.length}) : ${appName}...`;
+            const doneApps = appsList.slice(0, i);
+            const remainingApps = appsList.slice(i + 1);
+            
+            let progressMsg = `[${i + 1}/${appsList.length}] En cours : ${appName}`;
+            if (doneApps.length > 0) progressMsg += ` | Fait : ${doneApps.join(', ')}`;
+            if (remainingApps.length > 0) progressMsg += ` | Reste : ${remainingApps.join(', ')}`;
+
             console.log(`[Backup] ${progressMsg}`);
             
             await runQuery(`UPDATE backup_logs SET message = ? WHERE job_id = ? AND status = 'RUNNING'`, [progressMsg, job.id]);

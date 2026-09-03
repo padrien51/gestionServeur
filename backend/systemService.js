@@ -1,5 +1,6 @@
 const si = require('systeminformation');
 const { db } = require('./db');
+const { statfs } = require('fs/promises');
 
 // En prod (dans docker), le système hôte est monté en read-only
 // systeminformation gère cela de manière relativement transparente,
@@ -18,12 +19,26 @@ async function getSystemMetrics() {
         // En développement (Docker Desktop Windows), cela retournera la taille du disque virtuel (souvent 1To)
         const mainDisk = fsSize.find(fs => fs.mount === '/' || fs.mount === '/hostOS') || fsSize[0];
 
+        let backupDiskUsed = 0;
+        let backupDiskTotal = 0;
+
+        try {
+            // Tente de lire les stats du disque externe (monté dans /hostOS)
+            const stats = await statfs('/hostOS/mnt/Backup_serveur');
+            backupDiskTotal = stats.blocks * stats.bsize;
+            backupDiskUsed = backupDiskTotal - (stats.bfree * stats.bsize);
+        } catch (e) {
+            // Silencieux si le disque n'est pas trouvé ou non monté
+        }
+
         const metrics = {
             cpuLoad: cpu.currentLoad,
             memUsed: mem.active,
             memTotal: mem.total,
             diskUsed: mainDisk ? mainDisk.used : 0,
-            diskTotal: mainDisk ? mainDisk.size : 0
+            diskTotal: mainDisk ? mainDisk.size : 0,
+            backupDiskUsed,
+            backupDiskTotal
         };
 
         return metrics;

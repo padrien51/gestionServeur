@@ -10,7 +10,7 @@ import { useModal } from '../composables/useModal';
 
 const { showConfirm, showAlert } = useModal();
 
-const metrics = ref({ cpuLoad: 0, memUsed: 0, memTotal: 1, diskUsed: 0, diskTotal: 1 });
+
 const containers = ref([]);
 const loading = ref(true);
 const error = ref(null);
@@ -432,19 +432,29 @@ onUnmounted(() => {
   clearInterval(intervalId);
 });
 
-// Utilitaires de calcul
-const formatBytes = (bytes) => {
-  if (!bytes) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
+const metrics = ref({
+    cpuLoad: 0,
+    memUsed: 0,
+    memTotal: 1,
+    diskUsed: 0,
+    diskTotal: 1,
+    backupDiskUsed: 0,
+    backupDiskTotal: 0
+  });
 
-const memPercent = ref(() => (metrics.value.memUsed / metrics.value.memTotal) * 100);
-const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal) * 100);
+  const formatBytes = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
 
-</script>
+  const memPercent = ref(() => (metrics.value.memUsed / metrics.value.memTotal) * 100);
+  const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal) * 100);
+  const backupPercent = ref(() => metrics.value.backupDiskTotal > 0 ? (metrics.value.backupDiskUsed / metrics.value.backupDiskTotal) * 100 : 0);
+  
+  </script>
 
 <template>
   <div class="p-4 space-y-6">
@@ -454,7 +464,7 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
         <span class="mr-2">🖥️</span> Ressources Système
       </h2>
       
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <!-- CPU Gauge -->
         <div class="bg-white dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-200/60 dark:border-slate-700 shadow-[0_2px_10px_rgb(0,0,0,0.02)] dark:shadow-inner">
           <div class="relative w-16 h-16 flex items-center justify-center">
@@ -490,12 +500,25 @@ const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal)
           </div>
           <span class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">SSD</span>
         </div>
+
+        <!-- Backup Disk Gauge -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-200/60 dark:border-slate-700 shadow-[0_2px_10px_rgb(0,0,0,0.02)] dark:shadow-inner">
+          <div class="relative w-16 h-16 flex items-center justify-center">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+              <path class="text-amber-500 transition-all duration-500" :stroke-dasharray="`${backupPercent()}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+            </svg>
+            <span class="absolute text-xs font-bold">{{ Math.round(backupPercent()) }}%</span>
+          </div>
+          <span class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">HDD (Sauvegardes)</span>
+        </div>
       </div>
       
       <!-- Détails en texte sous les jauges -->
-      <div class="mt-3 text-xs text-slate-500 dark:text-slate-400 flex justify-between px-1 mb-6">
+      <div class="mt-3 text-xs text-slate-500 dark:text-slate-400 flex flex-wrap gap-2 justify-between px-1 mb-6">
         <span>RAM: {{ formatBytes(metrics.memUsed) }} / {{ formatBytes(metrics.memTotal) }}</span>
         <span>SSD: {{ formatBytes(metrics.diskUsed) }} / {{ formatBytes(metrics.diskTotal) }}</span>
+        <span v-if="metrics.backupDiskTotal > 0">HDD: {{ formatBytes(metrics.backupDiskUsed) }} / {{ formatBytes(metrics.backupDiskTotal) }}</span>
       </div>
 
       <!-- Graphique d'historique -->

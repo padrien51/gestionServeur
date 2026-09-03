@@ -14,6 +14,8 @@ const { showConfirm, showAlert } = useModal();
 const containers = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const showDiskConfigModal = ref(false);
+const diskConfigPath = ref("");
 
 onErrorCaptured((err, instance, info) => {
   error.value = `CRITICAL ERROR: ${err.message}\nInfo: ${info}\nStack: ${err.stack}`;
@@ -454,24 +456,24 @@ const metrics = ref({
   const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal) * 100);
   const backupPercent = ref(() => metrics.value.backupDiskTotal > 0 ? (metrics.value.backupDiskUsed / metrics.value.backupDiskTotal) * 100 : 0);
   
-  const configureBackupDisk = async () => {
-    const newPath = prompt(
-      "Indiquez le point de montage de votre disque de sauvegarde.\nNote : si votre conteneur monte la racine de l'hôte dans /hostOS, précédez le chemin par /hostOS.\n\nExemple : /hostOS/mnt/Backup_serveur",
-      "/hostOS/mnt/Backup_serveur"
-    );
-    if (newPath !== null) {
-      try {
-        await fetch(`${API_BASE}/settings`, {
-          method: 'PUT',
-          headers: getFetchOptions().headers,
-          body: JSON.stringify({ backup_disk_path: newPath.trim() })
-        });
-        showAlert("Succès", "Chemin du disque sauvegardé. La jauge va se mettre à jour.");
-        setTimeout(fetchMetrics, 1000);
-      } catch (e) {
-        console.error(e);
-        showAlert("Erreur", "Impossible de sauvegarder le paramètre.");
-      }
+  const configureBackupDisk = () => {
+    diskConfigPath.value = metrics.value.backupDiskPath || "/hostOS/mnt/Backup_serveur";
+    showDiskConfigModal.value = true;
+  };
+
+  const saveBackupDisk = async () => {
+    try {
+      await fetch(`${API_BASE}/settings`, {
+        method: 'PUT',
+        headers: getFetchOptions().headers,
+        body: JSON.stringify({ backup_disk_path: diskConfigPath.value.trim() })
+      });
+      showDiskConfigModal.value = false;
+      showAlert("Succès", "Chemin du disque sauvegardé. La jauge va se mettre à jour.");
+      setTimeout(fetchMetrics, 1000);
+    } catch (e) {
+      console.error(e);
+      showAlert("Erreur", "Impossible de sauvegarder le paramètre.");
     }
   };
 
@@ -768,5 +770,37 @@ const metrics = ref({
       @close="activeEditorProject = null" 
       @saved="onEditorSaved(activeEditorProject)" 
     />
+    <!-- Disk Config Modal -->
+    <div v-if="showDiskConfigModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white">Configuration du Disque de Sauvegarde</h3>
+          <button @click="showDiskConfigModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            Indiquez le point de montage de votre disque de sauvegarde tel qu'il est visible par le conteneur <span class="font-semibold text-slate-800 dark:text-slate-200">GestionServeur</span>.
+          </p>
+          <div class="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 p-3 rounded-md text-xs border border-amber-200 dark:border-amber-800">
+            <strong>Note :</strong> Si votre conteneur monte la racine de l'hôte dans <code>/hostOS</code>, vous devez précéder le chemin par <code>/hostOS</code>.
+            <br>Exemple : <code>/hostOS/mnt/Backup_serveur</code>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Chemin du disque</label>
+            <input v-model="diskConfigPath" type="text" placeholder="/hostOS/mnt/..." class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white sm:text-sm transition-colors" />
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end space-x-3">
+          <button @click="showDiskConfigModal = false" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 transition-colors">
+            Annuler
+          </button>
+          <button @click="saveBackupDisk" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

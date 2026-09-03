@@ -21,10 +21,21 @@ async function getSystemMetrics() {
 
         let backupDiskUsed = 0;
         let backupDiskTotal = 0;
+        let backupDiskPath = '/hostOS/mnt/Backup_serveur';
+
+        try {
+            const { getQuery } = require('./db');
+            const rows = await getQuery(`SELECT value FROM settings WHERE key = 'backup_disk_path'`);
+            if (rows && rows.length > 0 && rows[0].value) {
+                backupDiskPath = rows[0].value;
+            }
+        } catch (e) {
+            // Ignorer l'erreur DB et utiliser la valeur par défaut
+        }
 
         try {
             // Tente de lire les stats du disque externe (monté dans /hostOS)
-            const stats = await statfs('/hostOS/mnt/Backup_serveur');
+            const stats = await statfs(backupDiskPath);
             backupDiskTotal = stats.blocks * stats.bsize;
             backupDiskUsed = backupDiskTotal - (stats.bfree * stats.bsize);
         } catch (e) {

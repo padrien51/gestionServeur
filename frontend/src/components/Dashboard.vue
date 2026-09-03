@@ -454,6 +454,27 @@ const metrics = ref({
   const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal) * 100);
   const backupPercent = ref(() => metrics.value.backupDiskTotal > 0 ? (metrics.value.backupDiskUsed / metrics.value.backupDiskTotal) * 100 : 0);
   
+  const configureBackupDisk = async () => {
+    const newPath = prompt(
+      "Indiquez le point de montage de votre disque de sauvegarde.\nNote : si votre conteneur monte la racine de l'hôte dans /hostOS, précédez le chemin par /hostOS.\n\nExemple : /hostOS/mnt/Backup_serveur",
+      "/hostOS/mnt/Backup_serveur"
+    );
+    if (newPath !== null) {
+      try {
+        await fetch(`${API_BASE}/settings`, {
+          method: 'PUT',
+          headers: getFetchOptions().headers,
+          body: JSON.stringify({ backup_disk_path: newPath.trim() })
+        });
+        showAlert("Succès", "Chemin du disque sauvegardé. La jauge va se mettre à jour.");
+        setTimeout(fetchMetrics, 1000);
+      } catch (e) {
+        console.error(e);
+        showAlert("Erreur", "Impossible de sauvegarder le paramètre.");
+      }
+    }
+  };
+
   </script>
 
 <template>
@@ -502,7 +523,7 @@ const metrics = ref({
         </div>
 
         <!-- Backup Disk Gauge -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-200/60 dark:border-slate-700 shadow-[0_2px_10px_rgb(0,0,0,0.02)] dark:shadow-inner">
+        <div @click="configureBackupDisk" title="Cliquez pour configurer le chemin du disque" class="bg-white dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-200/60 dark:border-slate-700 shadow-[0_2px_10px_rgb(0,0,0,0.02)] dark:shadow-inner cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors">
           <div class="relative w-16 h-16 flex items-center justify-center">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
@@ -510,7 +531,7 @@ const metrics = ref({
             </svg>
             <span class="absolute text-xs font-bold">{{ Math.round(backupPercent()) }}%</span>
           </div>
-          <span class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">HDD (Sauvegardes)</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">HDD (Config...)</span>
         </div>
       </div>
       

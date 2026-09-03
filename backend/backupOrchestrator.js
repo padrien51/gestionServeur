@@ -78,14 +78,21 @@ async function executeBackup(jobId) {
 
         const allApps = await require('./dockerService').getApplications();
 
-        for (const appName of appsList) {
+        for (let i = 0; i < appsList.length; i++) {
+            const appName = appsList[i];
             const appInfo = allApps.find(a => a.name === appName);
             if (!appInfo) {
                 console.warn(`[Backup] Application ${appName} introuvable, ignorée.`);
                 continue;
             }
 
-            console.log(`[Backup] Traitement de l'application ${appName}...`);
+            const progressMsg = `Sauvegarde en cours (${i + 1}/${appsList.length}) : ${appName}...`;
+            console.log(`[Backup] ${progressMsg}`);
+            
+            await runQuery(`UPDATE backup_logs SET message = ? WHERE job_id = ? AND status = 'RUNNING'`, [progressMsg, job.id]);
+            if (global.io) {
+                global.io.emit('backup-progress', { jobId: job.id, message: progressMsg });
+            }
 
             // 1. Arrêter les conteneurs cibles
             for (const cInfo of appInfo.containers) {

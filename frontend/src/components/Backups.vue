@@ -122,6 +122,25 @@ const fetchLogs = async () => {
   }
 };
 
+let globalSocket = null;
+
+onMounted(() => {
+  fetchApplications();
+  fetchJobs();
+  fetchLogs();
+
+  const token = localStorage.getItem('auth_token') || '';
+  globalSocket = io({ auth: { token } });
+  globalSocket.on('backup-progress', (data) => {
+      const logEntry = logs.value.find(l => l.job_id === data.jobId && l.status === 'RUNNING');
+      if (logEntry) {
+          logEntry.message = data.message;
+      } else {
+          fetchLogs();
+      }
+  });
+});
+
 const parseContainers = (containersStr) => {
   if (!containersStr) return [];
   try {
@@ -485,11 +504,7 @@ const submitImportArchive = async () => {
     }
 };
 
-onMounted(() => {
-  fetchApplications();
-  fetchJobs();
-  fetchLogs();
-});
+
 
 const formatDate = (dateStr) => {
   if (!dateStr) return 'Jamais';

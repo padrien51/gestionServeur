@@ -74,9 +74,11 @@ router.get('/:id/download/:app/:folder', async (req, res) => {
 
 router.post('/:id/restore/:app/:folder', async (req, res) => {
     try {
+        const mode = req.body && req.body.mode ? req.body.mode : 'staging';
         const customName = req.body && req.body.customName ? req.body.customName : null;
-        await backupOrchestrator.restoreBackup(req.params.id, req.params.app, req.params.folder, customName);
-        res.json({ success: true });
+        
+        const resultPath = await backupOrchestrator.restoreBackup(req.params.id, req.params.app, req.params.folder, { mode, customName });
+        res.json({ success: true, resultPath });
     } catch (err) {
         console.error("[Backup] Erreur restauration:", err);
         res.status(500).json({ error: err.message });

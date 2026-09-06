@@ -217,6 +217,12 @@ const explorerFiles = ref([]);
 const explorerLoading = ref(false);
 const explorerError = ref(null);
 
+const showRestoreModal = ref(false);
+const restoreFolderName = ref('');
+const restoreMode = ref('staging'); // 'staging' or 'in-place'
+const restoreCustomName = ref('');
+const restoreConfirmAppName = ref('');
+
 const explorerPathParts = computed(() => {
     return explorerPath.value.split('/').filter(Boolean);
 });
@@ -288,35 +294,59 @@ const downloadBackupFolder = (folderName) => {
     window.location.href = url;
 };
 
-const confirmRestoreBackup = async (folderName) => {
-    const customName = await showPrompt(
-      "Restauration Parallèle (Staging)",
-      `Vous allez restaurer les données de la sauvegarde "${folderName}" dans un nouveau dossier parallèle.\n\nVos données actuelles ne seront PAS écrasées et l'application continuera de fonctionner normalement.\nVous pourrez ensuite basculer sur ce nouveau dossier manuellement si vous le souhaitez.\n\nVeuillez nommer ce nouveau projet (sans espaces ni caractères spéciaux) :`,
-      `${explorerApp.value}_restored`
-    );
-    
-    if (!customName || typeof customName !== 'string') return;
-    
+const openRestoreModal = (folderName) => {
+    restoreFolderName.value = folderName;
+    restoreMode.value = 'staging';
+    restoreCustomName.value = `${explorerApp.value}_restored`;
+    restoreConfirmAppName.value = '';
+    showRestoreModal.value = true;
+};
+
+const executeRestore = async () => {
+    if (restoreMode.value === 'in-place') {
+        if (restoreConfirmAppName.value !== explorerApp.value) {
+            showAlert("Erreur", "Le nom de l'application tapé ne correspond pas.");
+            return;
+        }
+    } else if (restoreMode.value === 'staging') {
+        if (!restoreCustomName.value) {
+            showAlert("Erreur", "Veuillez entrer un nom pour le dossier de restauration.");
+            return;
+        }
+    }
+
+    showRestoreModal.value = false;
     explorerLoading.value = true;
     explorerError.value = null;
     
     try {
-        const url = `${API_BASE}/backups/${explorerJob.value.id}/restore/${explorerApp.value}/${folderName}`;
+        const url = `${API_BASE}/backups/${explorerJob.value.id}/restore/${explorerApp.value}/${restoreFolderName.value}`;
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...getFetchOptions().headers },
-            body: JSON.stringify({ customName: customName.replace(/[^a-zA-Z0-9_-]/g, '') })
+            body: JSON.stringify({ 
+                mode: restoreMode.value, 
+                customName: restoreMode.value === 'staging' ? restoreCustomName.value.replace(/[^a-zA-Z0-9_-]/g, '') : null 
+            })
         });
         
-        if (res.status === 401) return; // Simplified handleUnauthorized
+        if (res.status === 401) return;
+        
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Erreur inconnue');
+        }
+        
         const data = await res.json();
-        
-        if (!res.ok) throw new Error(data.error || 'Erreur lors de la restauration');
-        
-        showAlert("Succès", "La restauration a été effectuée avec succès dans le nouveau dossier parallèle. Vous le retrouverez dans l'onglet Applications.");
+        showAlert(
+            "Restauration terminée", 
+            restoreMode.value === 'in-place' 
+                ? "L'application a été restaurée en place et redémarrée.\n\nNote: Un dossier .bak de sécurité a été créé sur le disque à côté du dossier de l'application." 
+                : `Les données ont été restaurées dans le dossier :\n\n${data.resultPath}`
+        );
     } catch (err) {
         explorerError.value = err.message;
-        showAlert("Erreur", err.message);
+        showAlert("Erreur de restauration", err.message);
     } finally {
         explorerLoading.value = false;
     }
@@ -784,12 +814,11 @@ const formatBytes = (bytes) => {
                 <div class="flex items-center gap-3 truncate">
                    <span class="text-2xl">{{ f.isDirectory ? '📁' : '📄' }}</span>
                    <span class="truncate dark:text-slate-200" :class="{'font-bold text-blue-600 dark:text-blue-400': f.isDirectory}">{{ f.name }}</span>
-                </div>
                 <div class="flex items-center gap-4 text-sm text-slate-500 shrink-0">
                    <!-- Boutons d'action (visibles uniquement à la racine pour les dossiers backup_...) -->
                    <div v-if="!explorerPath && f.isDirectory && f.name.startsWith('backup_')" class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button @click.stop="downloadBackupFolder(f.name)" class="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-md transition-colors title='Télécharger (tar.gz)'">📥</button>
-                      <button @click.stop="confirmRestoreBackup(f.name)" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-md transition-colors title='Restaurer cette version (Écrase les données actuelles)'">🔄</button>
+                      <button @click.stop="openRestoreModal(f.name)" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-md transition-colors title='Restaurer cette version (Écrase les données actuelles)'">🔄</button>
                    </div>
                    
                    <span v-if="!f.isDirectory" class="font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">{{ formatBytes(f.size) }}</span>
@@ -813,18 +842,14 @@ const formatBytes = (bytes) => {
               <th class="px-6 py-4 font-semibold tracking-wider">Détails</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200 dark:divide-slate-700/50">
-            <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-200 dark:hover:bg-slate-700/20 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ formatDate(log.created_at) }}</td>
-              <td class="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{{ log.job_name || 'Job Supprimé' }}</td>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+            <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
+              <td class="px-6 py-4 font-medium">{{ getJobName(log.job_id) }}</td>
               <td class="px-6 py-4">
-                <span v-if="log.status === 'SUCCESS'" class="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50 rounded-full text-xs font-medium">
-                  <span class="w-1.5 h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full mr-1.5"></span> Succès
-                </span>
-                <span v-else-if="log.status === 'FAILED'" class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50 rounded-full text-xs font-medium">
-                  <span class="w-1.5 h-1.5 bg-red-500 dark:bg-red-400 rounded-full mr-1.5"></span> Échec
-                </span>
-                <span v-else class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50 rounded-full text-xs font-medium">
+                <span v-if="log.status === 'SUCCESS'" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">Succès</span>
+                <span v-else-if="log.status === 'ERROR'" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Erreur</span>
+                <span v-else-if="log.status === 'RUNNING'" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                   <span class="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mr-1.5 animate-pulse"></span> En cours
                 </span>
               </td>
@@ -835,6 +860,89 @@ const formatBytes = (bytes) => {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+    
+  <!-- Restore Modal -->
+    <div v-if="showRestoreModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-700 my-auto">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Restaurer la Sauvegarde
+          </h3>
+          <button @click="showRestoreModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        
+        <div class="p-6 space-y-6">
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            Vous êtes sur le point de restaurer la sauvegarde <strong>{{ restoreFolderName }}</strong> pour l'application <span class="font-bold text-blue-600 dark:text-blue-400">{{ explorerApp }}</span>.
+            Veuillez choisir le mode de restauration :
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Mode Staging -->
+            <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none" :class="restoreMode === 'staging' ? 'border-blue-500 ring-1 ring-blue-500 dark:bg-slate-700/50' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-800'">
+              <input type="radio" v-model="restoreMode" value="staging" class="sr-only">
+              <span class="flex flex-1">
+                <span class="flex flex-col">
+                  <span class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Restauration Parallèle</span>
+                  <span class="mt-1 flex items-center text-xs text-slate-500 dark:text-slate-400">Crée un dossier "clone" à côté de l'application sans toucher à la production actuelle. Idéal pour tester sans risque.</span>
+                </span>
+              </span>
+              <svg class="h-5 w-5 text-blue-600" :class="restoreMode === 'staging' ? 'block' : 'hidden'" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            </label>
+
+            <!-- Mode In-Place -->
+            <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none" :class="restoreMode === 'in-place' ? 'border-red-500 ring-1 ring-red-500 dark:bg-red-900/10' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-800'">
+              <input type="radio" v-model="restoreMode" value="in-place" class="sr-only">
+              <span class="flex flex-1">
+                <span class="flex flex-col">
+                  <span class="block text-sm font-medium text-red-600 dark:text-red-400 mb-1 flex items-center gap-1">Restauration en Place <span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">DANGER</span></span>
+                  <span class="mt-1 flex items-center text-xs text-slate-500 dark:text-slate-400">Arrête l'application et remplace directement les données de production. L'ancien dossier sera renommé en .bak.</span>
+                </span>
+              </span>
+              <svg class="h-5 w-5 text-red-600" :class="restoreMode === 'in-place' ? 'block' : 'hidden'" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            </label>
+          </div>
+
+          <!-- Options Staging -->
+          <div v-if="restoreMode === 'staging'" class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nom du dossier parallèle à créer</label>
+            <input v-model="restoreCustomName" type="text" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm" />
+          </div>
+
+          <!-- Options In-Place -->
+          <div v-if="restoreMode === 'in-place'" class="bg-red-50 dark:bg-red-900/10 p-4 rounded-lg border border-red-200 dark:border-red-800 space-y-3">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <div class="text-sm text-red-800 dark:text-red-200">
+                <p class="font-bold mb-1">Attention, action destructrice !</p>
+                <p>Vos conteneurs de production vont être arrêtés, vos données seront déplacées dans un dossier de sauvegarde <code>.bak</code>, puis remplacées par cette sauvegarde.</p>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Veuillez taper le nom <strong class="text-slate-900 dark:text-white">{{ explorerApp }}</strong> pour confirmer :</label>
+              <input v-model="restoreConfirmAppName" type="text" :placeholder="explorerApp" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:text-white text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end space-x-3">
+          <button @click="showRestoreModal = false" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 transition-colors">
+            Annuler
+          </button>
+          <button @click="executeRestore" :disabled="(restoreMode === 'in-place' && restoreConfirmAppName !== explorerApp) || (restoreMode === 'staging' && !restoreCustomName)" :class="[restoreMode === 'in-place' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500', 'px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed']">
+            Lancer la Restauration
+          </button>
+        </div>
       </div>
     </div>
   </div>

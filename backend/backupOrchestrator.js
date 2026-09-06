@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const path = require('path');
-const { docker, startContainer, stopContainer } = require('./dockerService');
+const { docker, startContainer, stopContainer, handleProjectAction } = require('./dockerService');
 const { db } = require('./db');
 
 const activeCronJobs = {};
@@ -429,7 +429,10 @@ async function downloadBackup(jobId, appName, backupFolder, res) {
     });
 }
 
-async function restoreBackup(jobId, appName, backupFolder, customName = null) {
+async function restoreBackup(jobId, appName, backupFolder, options = {}) {
+    const mode = options.mode || 'staging';
+    const customName = options.customName || null;
+
     const jobs = await getQuery(`SELECT dest_path, source_path FROM backup_jobs WHERE id = ?`, [jobId]);
     if (!jobs || jobs.length === 0) throw new Error("Job introuvable");
     const job = jobs[0];
@@ -441,31 +444,51 @@ async function restoreBackup(jobId, appName, backupFolder, customName = null) {
     const appInfo = allApps.find(a => a.name === appName);
     if (!appInfo) throw new Error("Application introuvable ou plus gérée.");
 
-    // Option 3 : Restauration Parallèle (Staging)
-    // On ne supprime pas et on n'arrête pas les conteneurs.
-    // On crée un nouveau dossier à côté du dossier de l'application.
     const parentDir = path.dirname(appInfo.working_dir);
     const baseName = path.basename(appInfo.working_dir);
-    const newFolderName = customName ? customName.replace(/[^a-zA-Z0-9_-]/g, '') : `${baseName}_restored_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}`;
-    const newPath = path.join(parentDir, newFolderName);
 
     const info = await docker.info();
     const isDockerDesktop = info.OperatingSystem.includes("Docker Desktop");
     const rsyncFlags = isDockerDesktop ? "-rltD" : "-a"; // -a = -rlptgoD (g et o pour group et owner)
 
-    const bashScript = `
-        apk add --no-cache rsync && \\
-        mkdir -p "/source_parent/$NEW_FOLDER_NAME" && \\
-        rsync ${rsyncFlags} "/backup/$SAFE_FOLDER/" "/source_parent/$NEW_FOLDER_NAME/"
-    `;
-    
-    console.log(`[Restauration Staging] Lancement de rsync pour ${appName} vers ${newFolderName}...`);
+    let newPath = '';
+    let bashScript = '';
+
+    if (mode === 'in-place') {
+        newPath = appInfo.working_dir;
+        const backupSuffix = `bak_${new Date().toISOString().replace(/[:.]/g, '')}`;
+        
+        // On arrête d'abord les conteneurs pour ne pas corrompre les données
+        console.log(`[Restauration En Place] Arrêt des conteneurs de ${appName}...`);
+        await handleProjectAction(appName, 'stop').catch(err => {
+            console.warn(`Attention lors de l'arrêt des conteneurs : ${err.message}`);
+        });
+
+        // Script pour renommer le dossier actuel (filet de sécurité) et copier la sauvegarde
+        bashScript = `
+            apk add --no-cache rsync && \\
+            if [ -d "/source_parent/${baseName}" ]; then mv "/source_parent/${baseName}" "/source_parent/${baseName}.${backupSuffix}"; fi && \\
+            mkdir -p "/source_parent/${baseName}" && \\
+            rsync ${rsyncFlags} "/backup/$SAFE_FOLDER/" "/source_parent/${baseName}/"
+        `;
+        console.log(`[Restauration En Place] Lancement de rsync pour écraser ${appName}...`);
+    } else {
+        // Mode Staging (Restauration Parallèle)
+        const newFolderName = customName ? customName.replace(/[^a-zA-Z0-9_-]/g, '') : `${baseName}_restored_${safeFolder.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+        newPath = path.join(parentDir, newFolderName);
+        bashScript = `
+            apk add --no-cache rsync && \\
+            mkdir -p "/source_parent/$NEW_FOLDER_NAME" && \\
+            rsync ${rsyncFlags} "/backup/$SAFE_FOLDER/" "/source_parent/$NEW_FOLDER_NAME/"
+        `;
+        console.log(`[Restauration Staging] Lancement de rsync pour ${appName} vers ${newFolderName}...`);
+    }
 
     await ensureAlpine();
     await new Promise((resolve, reject) => {
         docker.run('alpine:latest', ['sh', '-c', bashScript], process.stdout, {
             Env: [
-                `NEW_FOLDER_NAME=${newFolderName}`,
+                `NEW_FOLDER_NAME=${mode === 'staging' ? path.basename(newPath) : ''}`,
                 `SAFE_FOLDER=${safeFolder}`
             ],
             HostConfig: {
@@ -475,14 +498,20 @@ async function restoreBackup(jobId, appName, backupFolder, customName = null) {
                     `${dest}:/backup:ro`
                 ]
             }
-        }, (err, data) => {
+        }, (err, data, container) => {
             if (err) return reject(err);
-            if (data && data.StatusCode !== 0) return reject(new Error("Erreur rsync (code " + data.StatusCode + ")"));
-            resolve();
+            if (data.StatusCode !== 0) return reject(new Error(`Le script de restauration a échoué avec le code ${data.StatusCode}`));
+            resolve(data);
         });
     });
-    
-    console.log(`[Restauration Staging] Succès vers ${newPath}`);
+
+    if (mode === 'in-place') {
+        console.log(`[Restauration En Place] Redémarrage des conteneurs de ${appName}...`);
+        await handleProjectAction(appName, 'start').catch(err => {
+            console.warn(`Attention lors du redémarrage des conteneurs : ${err.message}`);
+        });
+    }
+
     return newPath;
 }
 

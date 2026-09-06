@@ -376,7 +376,7 @@ async function runComposeAction(projectName, action) {
 
 async function pruneSystem() {
     try {
-        const imagePrune = await docker.pruneImages({ filters: { dangling: ["false"] } });
+        const imagePrune = await docker.pruneImages({ filters: { dangling: ["true"] } });
         const containerPrune = await docker.pruneContainers();
         const networkPrune = await docker.pruneNetworks();
         const volumePrune = await docker.pruneVolumes();
@@ -412,24 +412,70 @@ async function getSystemDf() {
     let totalSize = 0;
     let reclaimable = 0;
     
-    if (res.ImageUsage) {
-        totalSize += res.ImageUsage.TotalSize || 0;
-        reclaimable += res.ImageUsage.Reclaimable || 0;
-    }
-    if (res.ContainerUsage) {
-        totalSize += res.ContainerUsage.TotalSize || 0;
-        reclaimable += res.ContainerUsage.Reclaimable || 0;
-    }
-    if (res.VolumeUsage) {
-        totalSize += res.VolumeUsage.TotalSize || 0;
-        reclaimable += res.VolumeUsage.Reclaimable || 0;
-    }
-    if (res.BuildCacheUsage) {
-        totalSize += res.BuildCacheUsage.TotalSize || 0;
-        reclaimable += res.BuildCacheUsage.Reclaimable || 0;
+    // Nouveaux moteurs Docker (statistiques d'utilisation natives et précises)
+    if (res.ImageUsage || res.ContainerUsage || res.VolumeUsage) {
+        if (res.ImageUsage) {
+            totalSize += res.ImageUsage.TotalSize || 0;
+            reclaimable += res.ImageUsage.Reclaimable || 0;
+        }
+        if (res.ContainerUsage) {
+            totalSize += res.ContainerUsage.TotalSize || 0;
+            reclaimable += res.ContainerUsage.Reclaimable || 0;
+        }
+        if (res.VolumeUsage) {
+            totalSize += res.VolumeUsage.TotalSize || 0;
+            reclaimable += res.VolumeUsage.Reclaimable || 0;
+        }
+        if (res.BuildCacheUsage) {
+            totalSize += res.BuildCacheUsage.TotalSize || 0;
+            reclaimable += res.BuildCacheUsage.Reclaimable || 0;
+        }
+    } else {
+        // Fallback pour anciens moteurs Docker (approximation)
+        if (res.LayersSize) {
+            totalSize += res.LayersSize;
+        } else {
+            const images = res.Images || [];
+            images.forEach(img => { totalSize += img.Size || img.VirtualSize || 0; });
+        }
+        
+        const images = res.Images || [];
+        images.forEach(img => {
+            if (img.Containers === 0) {
+                const isDangling = !img.RepoTags || img.RepoTags.length === 0 || img.RepoTags.includes('<none>:<none>');
+                if (isDangling) {
+                    const size = img.Size || img.VirtualSize || 0;
+                    const shared = (img.SharedSize && img.SharedSize > 0) ? img.SharedSize : 0;
+                    reclaimable += Math.max(0, size - shared);
+                }
+            }
+        });
+        
+        const containers = res.Containers || [];
+        containers.forEach(c => {
+            const size = c.SizeRw || 0;
+            totalSize += size;
+            if (c.State !== 'running') reclaimable += size;
+        });
+        
+        const volumes = res.Volumes || [];
+        volumes.forEach(v => {
+            if (v.UsageData) {
+                const size = v.UsageData.Size || 0;
+                totalSize += size;
+                if (v.UsageData.RefCount === 0) reclaimable += size;
+            }
+        });
+        
+        const caches = res.BuildCache || [];
+        caches.forEach(c => {
+            const size = c.Size || 0;
+            totalSize += size;
+            if (c.InUse === false) reclaimable += size;
+        });
     }
     
-    return { TotalSize: totalSize, Reclaimable: reclaimable, raw: res };
+    return { TotalSize: totalSize, Reclaimable: Math.max(0, reclaimable), raw: res };
 }
 
 async function getProjectFiles(projectName) {

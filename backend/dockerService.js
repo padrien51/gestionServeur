@@ -429,7 +429,7 @@ async function getSystemDf() {
         reclaimable += res.BuildCacheUsage.Reclaimable || 0;
     }
     
-    return { TotalSize: totalSize, Reclaimable: reclaimable };
+    return { TotalSize: totalSize, Reclaimable: reclaimable, raw: res };
 }
 
 async function getProjectFiles(projectName) {

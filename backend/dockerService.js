@@ -412,54 +412,24 @@ async function getSystemDf() {
     let totalSize = 0;
     let reclaimable = 0;
     
-    // Images
-    const images = res.Images || [];
-    images.forEach(img => {
-        // Some properties differ across docker versions, prefer Size or VirtualSize
-        const size = img.Size || img.VirtualSize || 0;
-        totalSize += size;
-        if (img.Containers === 0) {
-            reclaimable += size;
-        }
-    });
+    if (res.ImageUsage) {
+        totalSize += res.ImageUsage.TotalSize || 0;
+        reclaimable += res.ImageUsage.Reclaimable || 0;
+    }
+    if (res.ContainerUsage) {
+        totalSize += res.ContainerUsage.TotalSize || 0;
+        reclaimable += res.ContainerUsage.Reclaimable || 0;
+    }
+    if (res.VolumeUsage) {
+        totalSize += res.VolumeUsage.TotalSize || 0;
+        reclaimable += res.VolumeUsage.Reclaimable || 0;
+    }
+    if (res.BuildCacheUsage) {
+        totalSize += res.BuildCacheUsage.TotalSize || 0;
+        reclaimable += res.BuildCacheUsage.Reclaimable || 0;
+    }
     
-    // Containers
-    const containers = res.Containers || [];
-    containers.forEach(c => {
-        const size = c.SizeRw || 0;
-        totalSize += size;
-        if (c.State !== 'running') {
-            reclaimable += size;
-        }
-    });
-    
-    // Volumes
-    const volumes = res.Volumes || [];
-    volumes.forEach(v => {
-        if (v.UsageData) {
-            const size = v.UsageData.Size || 0;
-            totalSize += size;
-            if (v.UsageData.RefCount === 0) {
-                reclaimable += size;
-            }
-        }
-    });
-    
-    // BuildCache
-    const caches = res.BuildCache || [];
-    caches.forEach(c => {
-        const size = c.Size || 0;
-        totalSize += size;
-        if (c.InUse === false) {
-            reclaimable += size;
-        }
-    });
-    
-    return {
-        TotalSize: totalSize,
-        Reclaimable: reclaimable,
-        raw: res // on garde la réponse brute au cas où
-    };
+    return { TotalSize: totalSize, Reclaimable: reclaimable };
 }
 
 async function getProjectFiles(projectName) {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { io } from 'socket.io-client';
 
 const API_BASE = '/api';
@@ -139,6 +139,13 @@ onMounted(() => {
           fetchLogs();
       }
   });
+});
+
+onUnmounted(() => {
+  if (globalSocket) {
+    globalSocket.disconnect();
+    globalSocket = null;
+  }
 });
 
 const parseContainers = (containersStr) => {
@@ -706,7 +713,7 @@ const formatBytes = (bytes) => {
 
       <!-- Liste des Jobs -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div v-for="job in jobs" :key="job.id" class="bg-white dark:bg-slate-800/80 backdrop-blur rounded-2xl p-6 border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl relative overflow-hidden transition-all hover:border-slate-600">
+        <div v-for="job in jobs" :key="job.id" class="bg-white dark:bg-slate-800/80 rounded-2xl p-6 border border-slate-200/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl relative overflow-hidden transition-all hover:border-slate-600">
           <!-- Indicateur on/off -->
           <div class="absolute top-0 right-0 w-1.5 h-full transition-colors" :class="job.enabled ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-600'"></div>
           
@@ -834,7 +841,7 @@ const formatBytes = (bytes) => {
     <div v-if="activeTab === 'logs'" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-xl">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-          <thead class="bg-slate-50 dark:bg-slate-900/80 text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200/60 dark:border-slate-700 backdrop-blur">
+          <thead class="bg-slate-50 dark:bg-slate-900/80 text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200/60 dark:border-slate-700">
             <tr>
               <th class="px-6 py-4 font-semibold tracking-wider">Date</th>
               <th class="px-6 py-4 font-semibold tracking-wider">Job</th>

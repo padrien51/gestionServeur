@@ -287,7 +287,7 @@ onMounted(() => {
                     Aucun conteneur arrêté.
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
-                    <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10">
                         <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('containers')" :checked="selectedIds.containers.length === unusedResources.containers.length && unusedResources.containers.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-1">Nom du Conteneur</div>
                         <div class="flex-1 hidden md:block">Image</div>
@@ -330,7 +330,7 @@ onMounted(() => {
                     Aucune image inutilisée.
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
-                    <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10">
                         <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('images')" :checked="selectedIds.images.length === unusedResources.images.length && unusedResources.images.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-[2]">Image</div>
                         <div class="flex-1 text-right pr-4">Taille</div>
@@ -373,7 +373,7 @@ onMounted(() => {
                     Aucun volume orphelin.
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
-                    <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10">
                         <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('volumes')" :checked="selectedIds.volumes.length === unusedResources.volumes.length && unusedResources.volumes.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-[2]">Nom du Volume</div>
                         <div class="flex-1 text-right pr-4">Taille</div>
@@ -415,7 +415,7 @@ onMounted(() => {
                     Aucun réseau personnalisé inutilisé.
                 </div>
                 <div v-else class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
-                    <div class="p-3 bg-slate-50/50 dark:bg-slate-800/50 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur-md">
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800 flex text-xs font-semibold text-slate-500 dark:text-slate-400 sticky top-0 z-10">
                         <div class="w-8 flex justify-center"><input type="checkbox" @change="selectAll('networks')" :checked="selectedIds.networks.length === unusedResources.networks.length && unusedResources.networks.length > 0" class="rounded border-slate-200/60 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-transparent"></div>
                         <div class="flex-1">Nom du Réseau</div>
                         <div class="flex-1 hidden md:block">Driver</div>

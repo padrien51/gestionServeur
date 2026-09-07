@@ -1,19 +1,23 @@
 <script setup>
-import { ref, onMounted, onErrorCaptured } from 'vue';
+import { ref, computed, defineAsyncComponent, onMounted, onErrorCaptured } from 'vue';
 const globalError = ref(null);
 onErrorCaptured((err, instance, info) => {
   globalError.value = `CRITICAL APP ERROR: ${err.message}\nInfo: ${info}\nStack: ${err.stack}`;
   return false;
 });
-import Dashboard from './components/Dashboard.vue';
-import Updates from './components/Updates.vue';
-import Backups from './components/Backups.vue';
-import Settings from './components/Settings.vue';
-import Security from './components/Security.vue';
-import Optimization from './components/Optimization.vue';
-import Networks from './components/Networks.vue';
-import Profile from './components/Profile.vue';
-import Guide from './components/Guide.vue';
+
+// Composants lourds chargés à la demande (code splitting)
+const Dashboard = defineAsyncComponent(() => import('./components/Dashboard.vue'));
+const Updates = defineAsyncComponent(() => import('./components/Updates.vue'));
+const Backups = defineAsyncComponent(() => import('./components/Backups.vue'));
+const Settings = defineAsyncComponent(() => import('./components/Settings.vue'));
+const Security = defineAsyncComponent(() => import('./components/Security.vue'));
+const Optimization = defineAsyncComponent(() => import('./components/Optimization.vue'));
+const Networks = defineAsyncComponent(() => import('./components/Networks.vue'));
+const Profile = defineAsyncComponent(() => import('./components/Profile.vue'));
+const Guide = defineAsyncComponent(() => import('./components/Guide.vue'));
+
+// Composants légers chargés immédiatement
 import AppModal from './components/AppModal.vue';
 
 // Vues d'authentification
@@ -105,6 +109,19 @@ const logout = () => {
   localStorage.removeItem('auth_token');
   authState.value = 'login';
 };
+
+const tabComponents = {
+  dashboard: Dashboard,
+  networks: Networks,
+  optimization: Optimization,
+  security: Security,
+  updates: Updates,
+  backups: Backups,
+  guide: Guide,
+  settings: Settings,
+  profile: Profile,
+};
+const tabComponent = computed(() => tabComponents[currentTab.value] || Dashboard);
 </script>
 
 <template>
@@ -186,17 +203,9 @@ const logout = () => {
         <div v-if="globalError" class="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-700 whitespace-pre-wrap mb-4 z-50 relative">
           {{ globalError }}
         </div>
-        <transition name="fade" mode="out-in">
-        <Dashboard v-if="currentTab === 'dashboard'" />
-        <Networks v-else-if="currentTab === 'networks'" />
-        <Optimization v-else-if="currentTab === 'optimization'" />
-        <Security v-else-if="currentTab === 'security'" />
-        <Updates v-else-if="currentTab === 'updates'" />
-        <Backups v-else-if="currentTab === 'backups'" />
-        <Guide v-else-if="currentTab === 'guide'" />
-        <Settings v-else-if="currentTab === 'settings'" />
-        <Profile v-else-if="currentTab === 'profile'" />
-      </transition>
+        <KeepAlive :include="['Dashboard']">
+          <component :is="tabComponent" :key="currentTab" />
+        </KeepAlive>
       </main>
     
     <!-- Modale Globale -->

@@ -443,15 +443,35 @@ const handleToggleIgnoreUpdate = async (container) => {
 };
 
 let intervalId;
+
+const startPolling = () => {
+  if (!intervalId) intervalId = setInterval(refreshData, 10000);
+};
+const stopPolling = () => {
+  clearInterval(intervalId);
+  intervalId = null;
+};
+
+const handleVisibility = () => {
+  if (document.visibilityState === 'visible') {
+    refreshData();
+    startPolling();
+  } else {
+    stopPolling();
+  }
+};
+
 onMounted(() => {
   refreshData();
   fetchUpdates();
   fetchIgnoredUpdates();
-  intervalId = setInterval(refreshData, 5000); // Auto refresh toutes les 5s
+  startPolling();
+  document.addEventListener('visibilitychange', handleVisibility);
 });
 
 onUnmounted(() => {
-  clearInterval(intervalId);
+  stopPolling();
+  document.removeEventListener('visibilitychange', handleVisibility);
 });
 
 const metrics = ref({
@@ -472,9 +492,9 @@ const metrics = ref({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const memPercent = ref(() => (metrics.value.memUsed / metrics.value.memTotal) * 100);
-  const diskPercent = ref(() => (metrics.value.diskUsed / metrics.value.diskTotal) * 100);
-  const backupPercent = ref(() => metrics.value.backupDiskTotal > 0 ? (metrics.value.backupDiskUsed / metrics.value.backupDiskTotal) * 100 : 0);
+  const memPercent = computed(() => (metrics.value.memUsed / metrics.value.memTotal) * 100);
+  const diskPercent = computed(() => (metrics.value.diskUsed / metrics.value.diskTotal) * 100);
+  const backupPercent = computed(() => metrics.value.backupDiskTotal > 0 ? (metrics.value.backupDiskUsed / metrics.value.backupDiskTotal) * 100 : 0);
   
   const configureBackupDisk = () => {
     diskConfigPath.value = metrics.value.backupDiskPath || "/hostOS/mnt/Backup_serveur";
@@ -525,9 +545,9 @@ const metrics = ref({
           <div class="relative w-16 h-16 flex items-center justify-center">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
-              <path class="text-purple-500 transition-all duration-500" :stroke-dasharray="`${memPercent()}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+              <path class="text-purple-500 transition-all duration-500" :stroke-dasharray="`${memPercent}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
             </svg>
-            <span class="absolute text-xs font-bold">{{ Math.round(memPercent()) }}%</span>
+            <span class="absolute text-xs font-bold">{{ Math.round(memPercent) }}%</span>
           </div>
           <span class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">RAM</span>
         </div>
@@ -537,9 +557,9 @@ const metrics = ref({
           <div class="relative w-16 h-16 flex items-center justify-center">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
-              <path class="text-teal-500 transition-all duration-500" :stroke-dasharray="`${diskPercent()}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+              <path class="text-teal-500 transition-all duration-500" :stroke-dasharray="`${diskPercent}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
             </svg>
-            <span class="absolute text-xs font-bold">{{ Math.round(diskPercent()) }}%</span>
+            <span class="absolute text-xs font-bold">{{ Math.round(diskPercent) }}%</span>
           </div>
           <span class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">SSD</span>
         </div>
@@ -549,9 +569,9 @@ const metrics = ref({
           <div class="relative w-16 h-16 flex items-center justify-center">
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path class="text-slate-200 dark:text-slate-700" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
-              <path class="text-amber-500 transition-all duration-500" :stroke-dasharray="`${backupPercent()}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+              <path class="text-amber-500 transition-all duration-500" :stroke-dasharray="`${backupPercent}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
             </svg>
-            <span class="absolute text-xs font-bold">{{ Math.round(backupPercent()) }}%</span>
+            <span class="absolute text-xs font-bold">{{ Math.round(backupPercent) }}%</span>
           </div>
           <span class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">HDD (Config...)</span>
         </div>

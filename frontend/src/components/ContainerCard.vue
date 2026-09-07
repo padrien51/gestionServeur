@@ -42,7 +42,7 @@ const handleAction = async (action) => {
 </script>
 
 <template>
-  <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-3 border border-slate-200/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-sm dark:hover:shadow-md transition-shadow relative overflow-hidden group">
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-4 mb-3 border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors relative overflow-hidden group">
     <!-- Ligne colorée indicatrice sur la gauche -->
     <div class="absolute left-0 top-0 bottom-0 w-1" :class="isUp ? 'bg-emerald-500' : 'bg-red-500'"></div>
     

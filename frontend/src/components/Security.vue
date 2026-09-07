@@ -91,12 +91,36 @@ const severityClass = (sev) => {
   }
 };
 
+const startPolling = () => {
+  if (!interval) {
+    interval = setInterval(fetchEvents, 5000);
+  }
+};
+
+const stopPolling = () => {
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+  }
+};
+
+const handleVisibility = () => {
+  if (document.visibilityState === 'visible') {
+    fetchEvents();
+    startPolling();
+  } else {
+    stopPolling();
+  }
+};
+
 onMounted(() => {
   fetchEvents();
-  interval = setInterval(fetchEvents, 5000);
+  startPolling();
+  document.addEventListener('visibilitychange', handleVisibility);
 });
 
 onUnmounted(() => {
-  if (interval) clearInterval(interval);
+  stopPolling();
+  document.removeEventListener('visibilitychange', handleVisibility);
 });
 </script>

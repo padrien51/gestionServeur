@@ -182,10 +182,16 @@ async function executeBackup(jobId) {
             const errorMsg = `Sauvegarde terminée avec des erreurs.\nSuccès : ${successCount}/${total}\nÉchecs : ${failureCount}\n\nDétails :\n${failureMessages.join('\n')}`;
             await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['FAILED', errorMsg, job.id]);
             await sendWebhook(errorMsg, "#FF0000", job.name);
+            if (global.io) {
+                global.io.emit('backup-finished', { jobId: job.id, status: 'FAILED', message: errorMsg });
+            }
         } else {
             const successMsg = `Sauvegarde terminée avec succès pour ${successCount} application(s).`;
             await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['SUCCESS', successMsg, job.id]);
             await sendWebhook(successMsg, "#00FF00", job.name);
+            if (global.io) {
+                global.io.emit('backup-finished', { jobId: job.id, status: 'SUCCESS', message: successMsg });
+            }
         }
 
     } catch (err) {
@@ -194,6 +200,9 @@ async function executeBackup(jobId) {
         if (job) {
             await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['FAILED', `Erreur fatale de l'orchestrateur: ${err.message}`, job.id]);
             await sendWebhook(`Erreur fatale: ${err.message}`, "#FF0000", job.name);
+            if (global.io) {
+                global.io.emit('backup-finished', { jobId: job.id, status: 'FAILED', message: err.message });
+            }
         } else {
             await sendWebhook(`Erreur fatale sur un job introuvable (ID: ${jobId}): ${err.message}`, "#FF0000", "Job Inconnu");
         }

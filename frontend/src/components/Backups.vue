@@ -139,6 +139,9 @@ onMounted(() => {
           fetchLogs();
       }
   });
+  globalSocket.on('backup-finished', () => {
+      fetchLogs();
+  });
 });
 
 onUnmounted(() => {
@@ -543,9 +546,18 @@ const submitImportArchive = async () => {
 
 
 
+const getJobName = (jobId) => {
+  const job = jobs.value.find(j => j.id === jobId);
+  return job ? job.name : `Job #${jobId}`;
+};
+
 const formatDate = (dateStr) => {
   if (!dateStr) return 'Jamais';
-  return new Date(dateStr).toLocaleString('fr-FR');
+  const isoStr = typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')
+    ? dateStr.replace(' ', 'T') + 'Z'
+    : dateStr;
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? dateStr : d.toLocaleString('fr-FR');
 };
 
 const formatBackupNameDate = (name) => {
@@ -852,10 +864,10 @@ const formatBytes = (bytes) => {
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
             <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
-              <td class="px-6 py-4 font-medium">{{ getJobName(log.job_id) }}</td>
+              <td class="px-6 py-4 font-medium">{{ log.job_name || getJobName(log.job_id) }}</td>
               <td class="px-6 py-4">
                 <span v-if="log.status === 'SUCCESS'" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">Succès</span>
-                <span v-else-if="log.status === 'ERROR'" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Erreur</span>
+                <span v-else-if="log.status === 'ERROR' || log.status === 'FAILED'" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Échec</span>
                 <span v-else-if="log.status === 'RUNNING'" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                   <span class="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mr-1.5 animate-pulse"></span> En cours
                 </span>

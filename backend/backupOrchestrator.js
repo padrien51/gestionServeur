@@ -82,14 +82,14 @@ async function executeBackup(jobId) {
         let successCount = 0;
         let failureCount = 0;
         let failureMessages = [];
+        let orphanedApps = [];
 
         for (let i = 0; i < appsList.length; i++) {
             const appName = appsList[i];
             const appInfo = allApps.find(a => a.name === appName);
             if (!appInfo) {
-                console.warn(`[Backup] Application ${appName} introuvable, ignorée.`);
-                failureCount++;
-                failureMessages.push(`${appName} : Introuvable`);
+                console.warn(`[Backup] Application '${appName}' introuvable sur le système (supprimée ?). Ignorée et nettoyée du plan.`);
+                orphanedApps.push(appName);
                 continue;
             }
 
@@ -177,17 +177,30 @@ async function executeBackup(jobId) {
             }
         }
 
+        // Si des applications orphelines (ex: supprimées) ont été rencontrées, on nettoie le job
+        if (orphanedApps.length > 0) {
+            const cleanedList = appsList.filter(name => !orphanedApps.includes(name));
+            await runQuery(`UPDATE backup_jobs SET containers = ? WHERE id = ?`, [JSON.stringify(cleanedList), job.id]);
+            console.log(`[Backup] Applications orphelines retirées automatiquement du job #${job.id} : ${orphanedApps.join(', ')}`);
+        }
+
         // Bilan final
-        const total = appsList.length;
+        const total = appsList.length - orphanedApps.length;
         if (failureCount > 0) {
-            const errorMsg = `Sauvegarde terminée avec des erreurs.\nSuccès : ${successCount}/${total}\nÉchecs : ${failureCount}\n\nDétails :\n${failureMessages.join('\n')}`;
+            let errorMsg = `Sauvegarde terminée avec des erreurs.\nSuccès : ${successCount}/${total}\nÉchecs : ${failureCount}\n\nDétails :\n${failureMessages.join('\n')}`;
+            if (orphanedApps.length > 0) {
+                errorMsg += `\n⚠️ Applications supprimées nettoyées du plan : ${orphanedApps.join(', ')}`;
+            }
             await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['FAILED', errorMsg, job.id]);
             await sendWebhook(errorMsg, "#FF0000", job.name);
             if (global.io) {
                 global.io.emit('backup-finished', { jobId: job.id, status: 'FAILED', message: errorMsg });
             }
         } else {
-            const successMsg = `Sauvegarde terminée avec succès pour ${successCount} application(s).`;
+            let successMsg = `Sauvegarde terminée avec succès pour ${successCount} application(s).`;
+            if (orphanedApps.length > 0) {
+                successMsg += ` (Applications introuvables nettoyées : ${orphanedApps.join(', ')})`;
+            }
             await runQuery(`UPDATE backup_logs SET status = ?, message = ? WHERE job_id = ? AND status = 'RUNNING'`, ['SUCCESS', successMsg, job.id]);
             await sendWebhook(successMsg, "#00FF00", job.name);
             if (global.io) {
@@ -452,10 +465,24 @@ async function restoreBackup(jobId, appName, backupFolder, options = {}) {
 
     const allApps = await require('./dockerService').getApplications();
     const appInfo = allApps.find(a => a.name === appName);
-    if (!appInfo) throw new Error("Application introuvable ou plus gérée.");
 
-    const parentDir = path.dirname(appInfo.working_dir);
-    const baseName = path.basename(appInfo.working_dir);
+    let parentDir = '';
+    let baseName = appName;
+
+    if (appInfo) {
+        parentDir = path.dirname(appInfo.working_dir);
+        baseName = path.basename(appInfo.working_dir);
+    } else {
+        if (mode === 'in-place') {
+            throw new Error(`L'application ${appName} n'existe plus sur le système Docker. Impossible de faire une restauration 'En place'. Veuillez choisir le mode 'Dossier de staging'.`);
+        }
+        // Pour une application archivée, on prend le dossier parent d'une autre application existante
+        if (allApps.length > 0 && allApps[0].working_dir) {
+            parentDir = path.dirname(allApps[0].working_dir);
+        } else {
+            parentDir = '/home';
+        }
+    }
 
     const info = await docker.info();
     const isDockerDesktop = info.OperatingSystem.includes("Docker Desktop");
@@ -655,6 +682,68 @@ async function importAndRestoreBackup(archivePath, targetPath, customName = null
     return true;
 }
 
+async function getJobAvailableApps(jobId) {
+    const jobs = await getQuery(`SELECT dest_path, containers FROM backup_jobs WHERE id = ?`, [jobId]);
+    if (!jobs || jobs.length === 0) throw new Error("Job introuvable");
+    const job = jobs[0];
+
+    let configuredApps = [];
+    try { configuredApps = JSON.parse(job.containers); } catch(e) {}
+
+    let allApps = [];
+    try {
+        allApps = await require('./dockerService').getApplications();
+    } catch(e) {}
+    const activeAppNames = allApps.map(a => a.name);
+
+    // Recherche des dossiers existants sur le disque de sauvegarde (dest_path)
+    let diskFolders = [];
+    const absolutePath = path.posix.join('/hostOS', job.dest_path);
+    try {
+        if (fs.existsSync(absolutePath)) {
+            const entries = fs.readdirSync(absolutePath, { withFileTypes: true });
+            diskFolders = entries.filter(e => e.isDirectory()).map(e => e.name);
+        }
+    } catch(e) {
+        console.warn("[Backup] Lecture directe de dest_path impossible:", e.message);
+    }
+
+    // Fallback conteneur éphémère si /hostOS n'a rien renvoyé
+    if (diskFolders.length === 0) {
+        try {
+            await ensureAlpine();
+            const bashScript = `cd "/dest" 2>/dev/null && ls -1d */ 2>/dev/null | sed 's#/##'`;
+            const { PassThrough } = require('stream');
+            const outStream = new PassThrough();
+            let output = '';
+            outStream.on('data', chunk => output += chunk.toString('utf8'));
+            
+            await new Promise((resolve) => {
+                docker.run('alpine:latest', ['sh', '-c', bashScript], outStream, {
+                    HostConfig: {
+                        AutoRemove: true,
+                        Binds: [ `${job.dest_path}:/dest:ro` ]
+                    }
+                }, () => resolve());
+            });
+            diskFolders = output.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('.'));
+        } catch(e) {
+            console.warn("[Backup] Fallback conteneur éphémère pour apps disponibles impossible:", e.message);
+        }
+    }
+
+    // Fusion de toutes les apps trouvées
+    const uniqueNames = Array.from(new Set([...configuredApps, ...diskFolders]));
+    
+    return uniqueNames.map(name => ({
+        name,
+        isConfigured: configuredApps.includes(name),
+        isActive: activeAppNames.includes(name),
+        hasBackupOnDisk: diskFolders.includes(name),
+        isArchived: !activeAppNames.includes(name)
+    })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 module.exports = {
     initializeScheduler,
     getJobs,
@@ -666,5 +755,6 @@ module.exports = {
     exploreBackup,
     downloadBackup,
     restoreBackup,
-    importAndRestoreBackup
+    importAndRestoreBackup,
+    getJobAvailableApps
 };

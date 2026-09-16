@@ -195,6 +195,20 @@ const toggleAppSelection = (appName) => {
   }
 };
 
+const orphanApps = computed(() => {
+  const activeNames = applications.value.map(a => a.name);
+  return (form.value.containers || []).filter(name => !activeNames.includes(name));
+});
+
+const removeOrphanApps = () => {
+  const activeNames = applications.value.map(a => a.name);
+  form.value.containers = (form.value.containers || []).filter(name => activeNames.includes(name));
+};
+
+const isAppActive = (appName) => {
+  return applications.value.some(a => a.name === appName);
+};
+
 import { useModal } from '../composables/useModal';
 const { showAlert, showConfirm } = useModal();
 
@@ -226,6 +240,27 @@ const explorerPath = ref('');
 const explorerFiles = ref([]);
 const explorerLoading = ref(false);
 const explorerError = ref(null);
+const explorerAvailableApps = ref([]);
+
+const fetchExplorerApps = async (jobId) => {
+    if (!jobId) {
+        explorerAvailableApps.value = [];
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/backups/${jobId}/available-apps`, getFetchOptions());
+        if (res.ok) {
+            explorerAvailableApps.value = await res.json();
+        }
+    } catch(e) {
+        console.error("Erreur chargement applications disponibles:", e);
+    }
+};
+
+const isCurrentAppArchived = computed(() => {
+    const found = explorerAvailableApps.value.find(a => a.name === explorerApp.value);
+    return !!found?.isArchived;
+});
 
 const showRestoreModal = ref(false);
 const restoreFolderName = ref('');
@@ -245,13 +280,18 @@ const sortedExplorerFiles = computed(() => {
     });
 });
 
-const openExplorer = (job = null, app = null, inModal = true) => {
+const openExplorer = async (job = null, app = null) => {
     if (job) explorerJob.value = job;
     else if (jobs.value.length > 0 && !explorerJob.value) explorerJob.value = jobs.value[0];
     
-    if (app) explorerApp.value = app;
-    else if (explorerJob.value && parseContainers(explorerJob.value.containers).length > 0 && (!explorerApp.value || !parseContainers(explorerJob.value.containers).includes(explorerApp.value))) {
-        explorerApp.value = parseContainers(explorerJob.value.containers)[0];
+    if (explorerJob.value) {
+        await fetchExplorerApps(explorerJob.value.id);
+        const appNames = explorerAvailableApps.value.map(a => a.name);
+        if (app && appNames.includes(app)) {
+            explorerApp.value = app;
+        } else if (!appNames.includes(explorerApp.value)) {
+            explorerApp.value = appNames.length > 0 ? appNames[0] : '';
+        }
     }
 
     explorerPath.value = '';
@@ -362,21 +402,42 @@ const executeRestore = async () => {
     }
 };
 
-watch(activeTab, (newTab) => {
-    if (newTab === 'explore' && (!explorerJob.value || !explorerApp.value)) {
-        openExplorer(null, null, false);
+watch(activeTab, async (newTab) => {
+    if (newTab === 'explore') {
+        if (!explorerJob.value && jobs.value.length > 0) {
+            explorerJob.value = jobs.value[0];
+        }
+        if (explorerJob.value) {
+            await fetchExplorerApps(explorerJob.value.id);
+            const appNames = explorerAvailableApps.value.map(a => a.name);
+            if (!appNames.includes(explorerApp.value)) {
+                explorerApp.value = appNames.length > 0 ? appNames[0] : '';
+            }
+            if (explorerApp.value) {
+                loadExplorerFiles();
+            }
+        }
     }
 });
 
-// Écouter les changements des selects pour recharger les fichiers
-watch([explorerJob, explorerApp], () => {
-    if (activeTab.value === 'explore' && explorerJob.value && explorerApp.value) {
-        // Reset l'app si elle n'appartient pas au job
-        const apps = parseContainers(explorerJob.value.containers);
-        if (!apps.includes(explorerApp.value)) {
-            explorerApp.value = apps.length > 0 ? apps[0] : '';
+// Écouter les changements de job pour recharger les apps disponibles
+watch(explorerJob, async (newJob, oldJob) => {
+    if (newJob && newJob?.id !== oldJob?.id) {
+        await fetchExplorerApps(newJob.id);
+        const appNames = explorerAvailableApps.value.map(a => a.name);
+        if (!appNames.includes(explorerApp.value)) {
+            explorerApp.value = appNames.length > 0 ? appNames[0] : '';
         }
-        
+        explorerPath.value = '';
+        if (activeTab.value === 'explore' && explorerApp.value) {
+            loadExplorerFiles();
+        }
+    }
+});
+
+// Écouter les changements d'application sélectionnée
+watch(explorerApp, (newApp, oldApp) => {
+    if (activeTab.value === 'explore' && explorerJob.value && newApp && newApp !== oldApp) {
         explorerPath.value = '';
         loadExplorerFiles();
     }
@@ -691,6 +752,31 @@ const formatBytes = (bytes) => {
               </div>
             </div>
 
+            <!-- Applications orphelines / introuvables -->
+            <div v-if="orphanApps.length > 0" class="pt-4 border-t border-slate-200/60 dark:border-slate-700">
+              <div class="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <span>⚠️</span> Applications introuvables ou supprimées ({{ orphanApps.length }})
+                  </span>
+                  <button type="button" @click="removeOrphanApps" class="text-xs text-red-600 dark:text-red-400 hover:underline font-bold">
+                    Tout retirer
+                  </button>
+                </div>
+                <p class="text-xs text-amber-700 dark:text-amber-400">
+                  Ces applications ont été supprimées ou ne sont plus actives sur Docker. Cliquez sur la croix ou sur "Tout retirer" pour garder un plan propre :
+                </p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                  <div v-for="appName in orphanApps" :key="appName" class="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-xs font-medium text-red-800 dark:text-red-200">
+                    <span>🗑️ {{ appName }}</span>
+                    <button type="button" @click="toggleAppSelection(appName)" title="Retirer cette application" class="text-red-500 hover:text-red-800 dark:hover:text-red-100 font-bold ml-1 text-sm">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Sélection des applications -->
             <div class="pt-4 border-t border-slate-200/60 dark:border-slate-700">
               <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-3">Applications à sauvegarder</label>
@@ -750,9 +836,12 @@ const formatBytes = (bytes) => {
               <div class="flex flex-wrap gap-1 flex-1">
                 <span v-for="app in parseContainers(job.containers)" :key="app" 
                       @click="openExplorer(job, app)" 
-                      title="Explorer les sauvegardes de cette application"
-                      class="px-2 py-0.5 bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 border dark:border-blue-800/50 rounded text-xs font-medium cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center gap-1">
-                  {{ app }} <span class="opacity-70 text-[10px]">🔍</span>
+                      :title="isAppActive(app) ? 'Explorer les sauvegardes de cette application' : 'Application supprimée de Docker - Explorer les archives'"
+                      class="px-2 py-0.5 border rounded text-xs font-medium cursor-pointer transition-colors flex items-center gap-1"
+                      :class="isAppActive(app) ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50 hover:bg-blue-200 dark:hover:bg-blue-800' : 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/50 hover:bg-amber-200 dark:hover:bg-amber-800'">
+                  <span>{{ app }}</span>
+                  <span v-if="!isAppActive(app)" class="text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-200/60 dark:bg-amber-800/50 px-1 rounded">archivée</span>
+                  <span class="opacity-70 text-[10px]">🔍</span>
                 </span>
                 <span v-if="!job.containers || parseContainers(job.containers).length === 0" class="text-slate-500 italic">Aucune</span>
               </div>
@@ -801,7 +890,9 @@ const formatBytes = (bytes) => {
           </select>
           <select v-model="explorerApp" class="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-lg p-2 text-sm text-slate-900 dark:text-slate-100 flex-1" :disabled="!explorerJob">
             <option value="" disabled>Sélectionner une application...</option>
-            <option v-if="explorerJob" v-for="app in parseContainers(explorerJob.containers)" :key="app" :value="app">{{ app }}</option>
+            <option v-for="app in explorerAvailableApps" :key="app.name" :value="app.name">
+              {{ app.isArchived ? `📦 ${app.name} (archivée)` : app.name }}
+            </option>
           </select>
         </div>
         
@@ -919,15 +1010,26 @@ const formatBytes = (bytes) => {
             </label>
 
             <!-- Mode In-Place -->
-            <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none" :class="restoreMode === 'in-place' ? 'border-red-500 ring-1 ring-red-500 dark:bg-red-900/10' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-800'">
-              <input type="radio" v-model="restoreMode" value="in-place" class="sr-only">
+            <label 
+              class="relative flex rounded-lg border bg-white p-4 shadow-sm focus:outline-none" 
+              :class="[
+                isCurrentAppArchived ? 'opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-700 dark:bg-slate-800/40' : 'cursor-pointer',
+                restoreMode === 'in-place' ? 'border-red-500 ring-1 ring-red-500 dark:bg-red-900/10' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-800'
+              ]"
+            >
+              <input type="radio" v-model="restoreMode" value="in-place" :disabled="isCurrentAppArchived" class="sr-only">
               <span class="flex flex-1">
                 <span class="flex flex-col">
-                  <span class="block text-sm font-medium text-red-600 dark:text-red-400 mb-1 flex items-center gap-1">Restauration en Place <span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">DANGER</span></span>
-                  <span class="mt-1 flex items-center text-xs text-slate-500 dark:text-slate-400">Arrête l'application et remplace directement les données de production. L'ancien dossier sera renommé en .bak.</span>
+                  <span class="block text-sm font-medium text-red-600 dark:text-red-400 mb-1 flex items-center gap-1">
+                    Restauration en Place 
+                    <span v-if="!isCurrentAppArchived" class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">DANGER</span>
+                    <span v-else class="px-1.5 py-0.5 rounded text-[10px] bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">INDISPONIBLE</span>
+                  </span>
+                  <span v-if="!isCurrentAppArchived" class="mt-1 flex items-center text-xs text-slate-500 dark:text-slate-400">Arrête l'application et remplace directement les données de production. L'ancien dossier sera renommé en .bak.</span>
+                  <span v-else class="mt-1 flex items-center text-xs text-amber-600 dark:text-amber-400">L'application a été supprimée du serveur Docker. Utilisez la restauration parallèle pour récupérer ses fichiers.</span>
                 </span>
               </span>
-              <svg class="h-5 w-5 text-red-600" :class="restoreMode === 'in-place' ? 'block' : 'hidden'" viewBox="0 0 20 20" fill="currentColor">
+              <svg v-if="!isCurrentAppArchived" class="h-5 w-5 text-red-600" :class="restoreMode === 'in-place' ? 'block' : 'hidden'" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
               </svg>
             </label>

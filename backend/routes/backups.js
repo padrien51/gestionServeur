@@ -52,6 +52,16 @@ router.get('/logs', async (req, res) => {
     }
 });
 
+// --- APPLICATIONS DISPONIBLES DANS UN JOB (ACTIVES ET ARCHIVÉES) ---
+router.get('/:id/available-apps', async (req, res) => {
+    try {
+        const apps = await backupOrchestrator.getJobAvailableApps(req.params.id);
+        res.json(apps);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- EXPLORATEUR DE FICHIERS ---
 router.get('/:id/explore/:app', async (req, res) => {
     try {

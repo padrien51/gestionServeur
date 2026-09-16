@@ -371,6 +371,22 @@ async function runComposeAction(projectName, action) {
         
         // Et on purge de la base de données
         await runQuery(`DELETE FROM compose_projects WHERE name = ?`, [projectName]);
+
+        // Retrait automatique de l'application de tous les jobs de sauvegarde
+        try {
+            const jobs = await getQuery(`SELECT id, containers FROM backup_jobs`);
+            for (const job of jobs) {
+                let containersList = [];
+                try { containersList = JSON.parse(job.containers); } catch(e) {}
+                if (Array.isArray(containersList) && containersList.includes(projectName)) {
+                    const updated = containersList.filter(name => name !== projectName);
+                    await runQuery(`UPDATE backup_jobs SET containers = ? WHERE id = ?`, [JSON.stringify(updated), job.id]);
+                    console.log(`[Backup] Application ${projectName} retirée automatiquement du job #${job.id}`);
+                }
+            }
+        } catch (err) {
+            console.error(`[Backup] Erreur lors du retrait de ${projectName} des jobs de sauvegarde:`, err.message);
+        }
     }
 }
 

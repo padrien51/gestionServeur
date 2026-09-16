@@ -833,6 +833,7 @@ const formatBytes = (bytes) => {
                 <div class="flex items-center gap-3 truncate">
                    <span class="text-2xl">{{ f.isDirectory ? '📁' : '📄' }}</span>
                    <span class="truncate dark:text-slate-200" :class="{'font-bold text-blue-600 dark:text-blue-400': f.isDirectory}">{{ f.name }}</span>
+                </div>
                 <div class="flex items-center gap-4 text-sm text-slate-500 shrink-0">
                    <!-- Boutons d'action (visibles uniquement à la racine pour les dossiers backup_...) -->
                    <div v-if="!explorerPath && f.isDirectory && f.name.startsWith('backup_')" class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1010,7 +1011,6 @@ const formatBytes = (bytes) => {
         </button>
       </div>
     </div>
-  </div>
   </div>
 </template>
 

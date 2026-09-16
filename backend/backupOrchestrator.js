@@ -51,13 +51,14 @@ async function executeBackup(jobId) {
     const sendWebhook = async (text, color, jobName) => {
         if (!webhookUrl) return;
         const notifyPref = await getQuery(`SELECT value FROM settings WHERE key = 'notify_backups'`);
-        if (notifyPref.length > 0 && notifyPref[0].value === 'false') return;
+        if (notifyPref.length > 0 && (notifyPref[0].value === 'false' || notifyPref[0].value === '0')) return;
+        const envTag = process.env.NODE_ENV === 'development' ? ' [DEV]' : '';
         try {
             await fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    attachments: [{ color: color, title: `Sauvegarde : ${jobName || 'Inconnue'}`, text: text }]
+                    attachments: [{ color: color, title: `Sauvegarde${envTag} : ${jobName || 'Inconnue'}`, text: text }]
                 })
             });
         } catch (e) { console.error("[Backup] Erreur envoi webhook:", e); }

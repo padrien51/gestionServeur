@@ -28,10 +28,12 @@ Réponds UNIQUEMENT au format JSON avec deux clés:
 - "solution": "La solution technique recommandée ou la commande à exécuter."
 Ne rajoute aucun markdown autour du JSON. Seulement le JSON valide.`;
 
+const isEnabled = (val) => val === true || val === 'true' || val === 1 || val === '1';
+
 async function analyzeLog(logContext, containerName) {
     const settings = await getAISettings();
     
-    if (settings.enabled !== 'true') {
+    if (!isEnabled(settings.enabled)) {
         return null;
     }
 

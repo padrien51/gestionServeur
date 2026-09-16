@@ -369,7 +369,7 @@ async function checkAndNotifyUpdates() {
         if (!webhookUrl) return; // Pas de webhook configuré
 
         const notifyPref = await getQuery(`SELECT value FROM settings WHERE key = 'notify_updates'`);
-        if (notifyPref.length > 0 && notifyPref[0].value === 'false') return;
+        if (notifyPref.length > 0 && (notifyPref[0].value === 'false' || notifyPref[0].value === '0')) return;
 
         let message = "";
         
@@ -391,7 +391,8 @@ async function checkAndNotifyUpdates() {
         }
         
         if (message) {
-            const finalMessage = `🔔 **Rapport de Mises à Jour (Gestion Serveur)**\n\n` + message;
+            const envTag = process.env.NODE_ENV === 'development' ? ' [DEV]' : '';
+            const finalMessage = `🔔 **Rapport de Mises à Jour (Gestion Serveur${envTag})**\n\n` + message;
             await fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

@@ -10,15 +10,22 @@ const DEBOUNCE_MS = 2000;
 // Stockage de l'état par conteneur
 const containerMonitors = {}; // { [containerId]: { buffer: [], timer: null, name: '', project: '' } }
 
+const isEnabled = (val) => val === true || val === 'true' || val === 1 || val === '1';
+
 async function sendMattermostAlert(projectName, containerName, diagnosis, solution) {
     try {
+        // Double garde : si l'IA globale OU les notifications IA sont désactivées, ne pas envoyer
+        const aiPref = await getQuery(`SELECT value FROM settings WHERE key = 'ai_enabled'`);
+        if (aiPref.length === 0 || !isEnabled(aiPref[0].value)) return;
+
         const notifyPref = await getQuery(`SELECT value FROM settings WHERE key = 'notify_ai_alerts'`);
-        if (notifyPref.length > 0 && notifyPref[0].value === 'false') return;
+        if (notifyPref.length === 0 || !isEnabled(notifyPref[0].value)) return;
 
         const webhookRow = await getQuery(`SELECT value FROM settings WHERE key = 'mattermost_webhook_url'`);
         const webhookUrl = webhookRow.length > 0 ? webhookRow[0].value : null;
         if (!webhookUrl) return;
 
+        const envTag = process.env.NODE_ENV === 'development' ? ' [DEV]' : '';
         const text = `**Diagnostic :**\n${diagnosis}\n\n**Solution proposée :**\n${solution}`;
 
         // Utilisation de fetch natif (Node >= 18)
@@ -28,7 +35,7 @@ async function sendMattermostAlert(projectName, containerName, diagnosis, soluti
             body: JSON.stringify({
                 attachments: [{
                     color: "#e11d48",
-                    title: `🤖 Alerte IA : Problème détecté sur [${projectName}] ${containerName}`,
+                    title: `🤖 Alerte IA${envTag} : Problème détecté sur [${projectName}] ${containerName}`,
                     text: text
                 }]
             })
@@ -83,7 +90,7 @@ function processBufferAndAnalyze(containerId) {
             }
         }
 
-        if (settings.enabled !== 'true') {
+        if (!isEnabled(settings.enabled)) {
             // L'IA est désactivée, on ne génère pas de faux insight
             return;
         }

@@ -79,6 +79,11 @@ const loadSettings = async () => {
     if (res.ok) {
       const data = await res.json();
       form.value = { ...form.value, ...data };
+      ['ai_enabled', 'notify_ai_alerts', 'notify_backups', 'notify_updates'].forEach(key => {
+        if (data[key] !== undefined) {
+          form.value[key] = (data[key] === true || data[key] === 'true' || data[key] === 1 || data[key] === '1') ? 'true' : 'false';
+        }
+      });
       parseCronToUI(form.value.update_cron_schedule);
     }
   } catch (e) {

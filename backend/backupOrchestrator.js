@@ -122,19 +122,29 @@ async function executeBackup(jobId) {
                 const hostDest = `${job.dest_path}/${appName}`;
                 
                 const bashScript = `
-                    apk add --no-cache rsync && \\
+                    apk add -q --no-cache rsync && \\
+                    LATEST_BACKUP=$(ls -d "$SUB_DEST"/backup_* 2>/dev/null | sort | tail -n 1) && \\
                     mkdir -p "$SUB_DEST/backup_$DATE_STR" && \\
-                    LATEST_BACKUP=$(ls -td "$SUB_DEST"/backup_* 2>/dev/null | grep -v "backup_$DATE_STR" | head -n 1) && \\
-                    if [ -n "$LATEST_BACKUP" ]; then LINK_DEST_ARG="--link-dest=$LATEST_BACKUP"; else LINK_DEST_ARG=""; fi && \\
-                    rsync -a --delete $LINK_DEST_ARG /source/ "$SUB_DEST/backup_$DATE_STR/" && \\
-                    cd "$SUB_DEST" && ls -d backup_* | sort -r | tail -n +"$RETENTION_PLUS_ONE" | xargs -r rm -rf
+                    if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then \\
+                        echo "[rsync] Sauvegarde incrémentale liée à : $LATEST_BACKUP" && \\
+                        rsync -a --delete --link-dest="$LATEST_BACKUP" /source/ "$SUB_DEST/backup_$DATE_STR/"; \\
+                    else \\
+                        echo "[rsync] Première sauvegarde (complète) pour $SUB_DEST" && \\
+                        rsync -a --delete /source/ "$SUB_DEST/backup_$DATE_STR/"; \\
+                    fi && \\
+                    cd "$SUB_DEST" && ls -d backup_* 2>/dev/null | sort | head -n -"$RETENTION" | xargs -r rm -rf
                 `;
 
                 console.log(`[Backup] Lancement de rsync pour ${appName} (vers ${hostDest})`);
                 await ensureAlpine();
 
-                const backupPromise = docker.run('alpine:latest', ['sh', '-c', bashScript], null, {
-                    Env: [ `SUB_DEST=/dest/${appName}`, `DATE_STR=${dateStr}`, `RETENTION_PLUS_ONE=${retention + 1}` ],
+                const backupPromise = docker.run('alpine:latest', ['sh', '-c', bashScript], process.stdout, {
+                    Env: [
+                        `SUB_DEST=/dest/${appName}`,
+                        `DATE_STR=${dateStr}`,
+                        `RETENTION=${retention}`,
+                        `RETENTION_PLUS_ONE=${retention + 1}`
+                    ],
                     HostConfig: {
                         AutoRemove: true,
                         Binds: [ `${appInfo.working_dir}:/source:ro`, `${job.dest_path}:/dest` ]
